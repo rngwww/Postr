@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- App Icon Background Silhouette -->
+  <rect width="512" height="512" rx="115" fill="#000000"/>
+  <rect width="496" height="496" x="8" y="8" rx="107" fill="none" stroke="#1c1c1c" stroke-width="8"/>
+  
+  <!-- Apple San Francisco Typography 'P' Glyph -->
+  <text 
+    x="236" 
+    y="368" 
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro', system-ui, sans-serif" 
+    font-size="340" 
+    font-weight="900" 
+    letter-spacing="-0.04em"
+    fill="#ffffff" 
+    text-anchor="middle">P</text>
+  
+  <!-- Glowing Red Accent Dot -->
+  <circle cx="370" cy="148" r="28" fill="#ff3b30"/>
+</svg>
