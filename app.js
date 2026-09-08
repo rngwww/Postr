@@ -1,4 +1,4 @@
-const CURRENT_VERSION = "1.1";
+const CURRENT_VERSION = "1.3";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
@@ -12,7 +12,6 @@ const PASTEL_MAP = {
   Tasks: "#b5ead7"
 };
 
-// Sync version badge dynamically on launch
 function syncVersionDisplay() {
   const badge = document.getElementById("app-version-badge");
   if (badge) {
@@ -54,23 +53,34 @@ document.getElementById("btn-notify-perm").addEventListener("click", async () =>
     const perm = await Notification.requestPermission();
     updateNotifyButton();
     if (perm === "granted") {
-      triggerNotification("Postr Enabled", "Lock screen pings and custom intervals active.");
+      triggerNotification("Reminders Active", "Lock screen pings and custom intervals enabled.", "perm_granted");
     }
   }
 });
 
-function triggerNotification(title, body, tag) {
+function triggerNotification(primaryText, secondaryText, tag) {
   triggerHapticPing();
+
+  const payload = {
+    title: primaryText,
+    body: secondaryText || "",
+    tag: tag || "postr_ping_" + Date.now(),
+    icon: "icon.svg",
+    badge: "icon.svg"
+  };
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: "TRIGGER_NOTIFICATION",
-      title: title,
-      body: body,
-      tag: tag
+      ...payload
     });
   } else if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(title, { body: body, tag: tag });
+    new Notification(payload.title, {
+      body: payload.body,
+      tag: payload.tag,
+      icon: payload.icon,
+      badge: payload.badge
+    });
   }
 }
 
@@ -207,7 +217,8 @@ setInterval(() => {
       const intervalMs = item.pingMinutes * 60 * 1000;
       if (now - item.lastPing >= intervalMs) {
         item.lastPing = now;
-        triggerNotification(`POSTR: ${item.title}`, item.body || "Sticky note is still active on lock screen.", item.id);
+        const alertHeading = item.label ? `[${item.label}] ${item.title}` : item.title;
+        triggerNotification(alertHeading, item.body || "Pinned note remains active.", item.id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
       }
     }
@@ -286,7 +297,9 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
   reminders.unshift(newReminder);
   persistAndSync();
-  triggerNotification(`Pinned: ${title}`, body || "Active reminder posted.", newReminder.id);
+
+  const alertHeading = newReminder.label ? `[${newReminder.label}] ${title}` : title;
+  triggerNotification(alertHeading, body || "Added to active reminders.", newReminder.id);
 
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
@@ -295,7 +308,6 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   closeModal("splash-modal");
 });
 
-// Carousel Logic
 let currentSlide = 0;
 const totalSlides = 4;
 const track = document.querySelector(".carousel-slides");
