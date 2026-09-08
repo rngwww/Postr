@@ -88,9 +88,17 @@ function triggerHapticPing() {
   }
 }
 
+function triggerIslandPulse() {
+  const islandPill = document.getElementById("dynamic-island");
+  islandPill.classList.remove("pulse");
+  void islandPill.offsetWidth; // Trigger reflow
+  islandPill.classList.add("pulse");
+}
+
 function persistAndSync() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
   render();
+  triggerIslandPulse();
 }
 
 function render() {
@@ -173,19 +181,16 @@ function completeReminder(id) {
   }
 }
 
+/* Modal Open & Close Transition Hooks */
 function openModal(modalId) {
   initAudio();
   const el = document.getElementById(modalId);
-  el.classList.remove("hidden", "closing");
+  el.classList.add("active");
 }
 
 function closeModal(modalId) {
   const el = document.getElementById(modalId);
-  el.classList.add("closing");
-  setTimeout(() => {
-    el.classList.add("hidden");
-    el.classList.remove("closing");
-  }, 260);
+  el.classList.remove("active");
 }
 
 setInterval(() => {
@@ -233,7 +238,6 @@ document.getElementById("btn-close-tips").addEventListener("click", () => {
   closeModal("tips-modal");
 });
 
-// Logo Click -> Open Version Screen
 document.getElementById("btn-logo").addEventListener("click", () => {
   openModal("version-modal");
   triggerHapticPing();
@@ -243,7 +247,6 @@ document.getElementById("btn-close-version").addEventListener("click", () => {
   closeModal("version-modal");
 });
 
-// Form Submit
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
   initAudio();
