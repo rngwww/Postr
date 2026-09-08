@@ -7,10 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Postr">
   
-  <!-- Apple Home Screen & Touch Icons -->
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="mask-icon" href="icon.svg" color="#ff3b30">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
@@ -28,10 +26,9 @@
 
     <!-- Top Navigation -->
     <nav class="top-nav">
-      <!-- Tappable Logo to show Version Sheet -->
       <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
       <div class="nav-actions">
-        <!-- Notification Bell (Monochrome) -->
+        <!-- Notification Bell -->
         <button id="btn-notify-perm" class="btn-icon" title="Enable Notifications" aria-label="Notifications">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -39,7 +36,7 @@
           </svg>
         </button>
 
-        <!-- Detailed Realistic Lightbulb (Monochrome Black & White) -->
+        <!-- Guide Lightbulb -->
         <button id="btn-tips" class="btn-icon" title="Tips & Guide" aria-label="Guide">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18h6"></path>
@@ -61,7 +58,7 @@
       <div id="card-list" class="cards-list"></div>
     </main>
 
-    <!-- 360° Omnidirectional Glowing Floating Action Button -->
+    <!-- Floating Action Button -->
     <button id="btn-add" class="fab" aria-label="Add Reminder">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -69,7 +66,7 @@
       </svg>
     </button>
 
-    <!-- Quick Pin Modal -->
+    <!-- Unified Create/Edit Modal -->
     <div id="splash-modal" class="modal-backdrop">
       <div class="hud-card">
         <div class="hud-header">
@@ -82,33 +79,29 @@
           </button>
         </div>
         <form id="reminder-form">
+          <input type="hidden" id="edit-reminder-id" value="">
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
           <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="2"></textarea>
 
-          <!-- Pastel Label Picker -->
+          <!-- Toggleable Pastel Labels -->
           <div class="picker-section">
-            <label class="section-label">SELECT LABEL</label>
+            <label class="section-label">SELECT LABEL (TAP TO TOGGLE)</label>
             <div class="labels-container" id="label-selector">
-              <label class="label-pill" style="--pastel: #b2d8d8;">
-                <input type="radio" name="noteLabel" value="School" checked>
+              <button type="button" class="label-pill" data-label="School" style="--pastel: #b2d8d8;">
                 <span>School</span>
-              </label>
-              <label class="label-pill" style="--pastel: #d4b8e5;">
-                <input type="radio" name="noteLabel" value="Work">
+              </button>
+              <button type="button" class="label-pill" data-label="Work" style="--pastel: #d4b8e5;">
                 <span>Work</span>
-              </label>
-              <label class="label-pill" style="--pastel: #f8c8dc;">
-                <input type="radio" name="noteLabel" value="Shopping">
+              </button>
+              <button type="button" class="label-pill" data-label="Shopping" style="--pastel: #f8c8dc;">
                 <span>Shopping</span>
-              </label>
-              <label class="label-pill" style="--pastel: #fde49e;">
-                <input type="radio" name="noteLabel" value="Personal">
+              </button>
+              <button type="button" class="label-pill" data-label="Personal" style="--pastel: #fde49e;">
                 <span>Personal</span>
-              </label>
-              <label class="label-pill" style="--pastel: #b5ead7;">
-                <input type="radio" name="noteLabel" value="Tasks">
+              </button>
+              <button type="button" class="label-pill" data-label="Tasks" style="--pastel: #b5ead7;">
                 <span>Tasks</span>
-              </label>
+              </button>
             </div>
           </div>
 
@@ -151,10 +144,12 @@
         </div>
         <div class="version-content">
           <h2 class="version-logo">POSTR</h2>
-          <div class="version-tag" id="app-version-badge">VERSION 1.3</div>
+          <div class="version-tag" id="app-version-badge">VERSION 1.5</div>
           <p class="version-desc">Minimalist, persistent lock screen reminder system designed for iOS & Web.</p>
           <div class="version-specs">
             <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED</strong></div>
+            <div class="spec-row"><span>HAPTICS</span><strong>TOUCH-SYNTHESIZED FEEDBACK</strong></div>
+            <div class="spec-row"><span>GESTURES</span><strong>PRESS & HOLD / SWIPE TO DELETE</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
             <div class="spec-row"><span>STATUS</span><strong>ACTIVE</strong></div>
           </div>
@@ -162,7 +157,7 @@
       </div>
     </div>
 
-    <!-- Multi-Screen Tips Carousel Modal with Triple Tap Setup Guide -->
+    <!-- Multi-Screen Tips Carousel Modal -->
     <div id="tips-modal" class="modal-backdrop">
       <div class="hud-card tips-card">
         <div class="hud-header">
@@ -200,8 +195,9 @@
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 3 / 4</div>
-              <h3>PASTEL LABELS & TIMERS</h3>
-              <p>Tag reminders with School, Work, Shopping, Personal, or Tasks labels. Set recurring audio pings in minutes or hours.</p>
+              <h3>GESTURES & CONTROLS</h3>
+              <p><strong>Press & Hold:</strong> Hold any note to bring up the edit sheet.<br>
+              <strong>Swipe Left:</strong> Drag from the right edge to reveal the scaling trash can and delete.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 4 / 4</div>
