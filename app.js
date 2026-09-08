@@ -1,4 +1,4 @@
-const CURRENT_VERSION = "1.5";
+const CURRENT_VERSION = "1.6";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
@@ -13,6 +13,7 @@ const PASTEL_MAP = {
   Tasks: "#b5ead7"
 };
 
+// Generates high-res PNG for iOS Homescreen
 function setupDynamicAppIcon() {
   try {
     const canvas = document.createElement("canvas");
@@ -57,12 +58,68 @@ function syncVersionDisplay() {
   }
 }
 
+// iOS Safari / WebKit Sound-Based Physical Haptic Engine
 function initAudio() {
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
   }
-  if (audioCtx.state === "suspended") {
+  if (audioCtx && audioCtx.state === "suspended") {
     audioCtx.resume();
+  }
+}
+
+// Low-frequency sub-bass transducer pulse simulating native Taptic Engine taps
+function triggerHaptic(type = "light") {
+  initAudio();
+  if (!audioCtx) return;
+
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    if (type === "light") {
+      // Crisp subtle tap (plus button / selection)
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.04);
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.04);
+    } else if (type === "medium") {
+      // Solid click (modal / about / hold edit)
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.07);
+      gain.gain.setValueAtTime(0.65, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    } else if (type === "delete") {
+      // Double tactile thud (swipe delete / discard)
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(25, now + 0.09);
+      gain.gain.setValueAtTime(0.85, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    }
+  } catch (err) {}
+
+  if ("vibrate" in navigator) {
+    try {
+      if (type === "delete") navigator.vibrate([30, 40, 60]);
+      else if (type === "medium") navigator.vibrate(40);
+      else navigator.vibrate(20);
+    } catch (e) {}
   }
 }
 
@@ -86,8 +143,7 @@ function updateNotifyButton() {
 }
 
 document.getElementById("btn-notify-perm").addEventListener("click", async () => {
-  initAudio();
-  triggerHapticPing(0.12, 800, [60]);
+  triggerHaptic("medium");
   if ("Notification" in window) {
     const perm = await Notification.requestPermission();
     updateNotifyButton();
@@ -98,7 +154,7 @@ document.getElementById("btn-notify-perm").addEventListener("click", async () =>
 });
 
 function triggerNotification(primaryText, secondaryText, tag) {
-  triggerHapticPing(0.2, 880, [100, 50, 100]);
+  triggerHaptic("medium");
 
   const payload = {
     title: primaryText,
@@ -120,31 +176,6 @@ function triggerNotification(primaryText, secondaryText, tag) {
       icon: payload.icon,
       badge: payload.badge
     });
-  }
-}
-
-// Configurable Haptic Audio Synthesizer & Hardware Vibration
-function triggerHapticPing(duration = 0.15, freq = 880, vibrationPattern = [70]) {
-  initAudio();
-  try {
-    if (audioCtx) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    }
-  } catch (e) {}
-
-  if ("vibrate" in navigator) {
-    try {
-      navigator.vibrate(vibrationPattern);
-    } catch (e) {}
   }
 }
 
@@ -238,6 +269,7 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
+// Smooth Touch Sync & Swipe-To-Delete Implementation
 function attachCardInteractions(wrapper, item) {
   const card = wrapper.querySelector(".card");
   const trashIcon = wrapper.querySelector(".trash-can-icon");
@@ -253,10 +285,12 @@ function attachCardInteractions(wrapper, item) {
   let startX = 0;
   let startY = 0;
   let currentTranslateX = 0;
-  let isValidSwipe = false;
+  let isSwiping = false;
+  let isValidSwipeOrigin = false;
   let startTime = 0;
 
   function onPointerDown(e) {
+    initAudio();
     if (e.target.closest(".btn-complete")) return;
 
     const pageX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -267,21 +301,27 @@ function attachCardInteractions(wrapper, item) {
     startY = pageY;
     startTime = Date.now();
     currentTranslateX = 0;
+    isSwiping = false;
 
+    // Must initiate from the right half of the note
     const relativeX = pageX - rect.left;
-    isValidSwipe = relativeX >= rect.width * 0.55;
+    isValidSwipeOrigin = relativeX >= rect.width * 0.45;
 
     isHolding = false;
     card.classList.remove("holding");
 
-    holdTimer = setTimeout(() => {
-      isHolding = true;
-      card.classList.add("holding");
-      triggerHapticPing(0.12, 600, [50]);
-      openEditModal(item);
-    }, 500);
-
+    // Remove CSS transitions during direct finger tracking to prevent stutter
     card.style.transition = "none";
+    trashIcon.style.transition = "none";
+
+    holdTimer = setTimeout(() => {
+      if (!isSwiping) {
+        isHolding = true;
+        card.classList.add("holding");
+        triggerHaptic("medium");
+        openEditModal(item);
+      }
+    }, 500);
   }
 
   function onPointerMove(e) {
@@ -290,70 +330,91 @@ function attachCardInteractions(wrapper, item) {
     const deltaX = pageX - startX;
     const deltaY = pageY - startY;
 
+    // Movement cancels press-and-hold
     if (Math.hypot(deltaX, deltaY) > 8) {
       clearTimeout(holdTimer);
     }
 
-    if (isHolding || !isValidSwipe) return;
+    if (isHolding || !isValidSwipeOrigin) return;
 
-    if (deltaX < 0) {
+    // Detect intentional left drag
+    if (deltaX < -5 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      isSwiping = true;
+      if (e.cancelable) e.preventDefault(); // Prevent vertical scrolling while swiping
+      
       currentTranslateX = deltaX;
-      card.style.transform = `translateX(${deltaX}px)`;
 
-      const elapsed = Math.max(1, Date.now() - startTime);
-      const speed = Math.abs(deltaX) / elapsed;
-      const distanceRatio = Math.min(1.8, Math.abs(deltaX) / 130);
-      const velocityBonus = Math.min(0.5, speed * 0.4);
-      const totalScale = Math.max(0.7, distanceRatio + velocityBonus);
-      const rotationDeg = Math.min(18, Math.abs(deltaX) * 0.1);
+      // Sync physical note position directly to finger
+      requestAnimationFrame(() => {
+        card.style.transform = `translateX(${deltaX}px)`;
 
-      trashIcon.style.transform = `scale(${totalScale}) rotate(-${rotationDeg}deg)`;
+        const distance = Math.abs(deltaX);
+        const elapsed = Math.max(1, Date.now() - startTime);
+        const speed = distance / elapsed;
+        const scale = Math.min(2.0, Math.max(0.7, (distance / 120) + (speed * 0.2)));
+        const rotate = Math.min(18, distance * 0.08);
+
+        trashIcon.style.transform = `scale(${scale}) rotate(-${rotate}deg)`;
+      });
     }
   }
 
-  function onPointerUp(e) {
+  function onPointerUp() {
     clearTimeout(holdTimer);
     card.classList.remove("holding");
 
     if (isHolding) return;
 
-    const cardWidth = card.offsetWidth;
-    const swipeDistance = Math.abs(currentTranslateX);
-    const elapsed = Math.max(1, Date.now() - startTime);
-    const speed = swipeDistance / elapsed;
+    if (isSwiping) {
+      const cardWidth = card.offsetWidth;
+      const distance = Math.abs(currentTranslateX);
+      const elapsed = Math.max(1, Date.now() - startTime);
+      const speed = distance / elapsed;
 
-    if (isValidSwipe && (swipeDistance > cardWidth * 0.52 || (swipeDistance > 90 && speed > 0.65))) {
-      card.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)";
-      card.style.transform = `translateX(-${cardWidth + 40}px)`;
-      trashIcon.style.transform = `scale(2)`;
-      setTimeout(() => {
-        deleteWithAnimation(item.id, wrapper);
-      }, 160);
+      // Deletion threshold: 45% card width or swift drag past 80px
+      if (distance > cardWidth * 0.45 || (distance > 80 && speed > 0.55)) {
+        card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = `translateX(-${cardWidth + 20}px)`;
+        trashIcon.style.transition = "transform 0.2s ease-out";
+        trashIcon.style.transform = "scale(1.8)";
+        
+        setTimeout(() => {
+          deleteWithAnimation(item.id, wrapper);
+        }, 160);
+      } else {
+        // Snap back cleanly with finger release
+        card.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = "translateX(0px)";
+        trashIcon.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
+        trashIcon.style.transform = "scale(1) rotate(0deg)";
+      }
     } else {
-      card.style.transition = "transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)";
+      card.style.transition = "transform 0.2s ease";
       card.style.transform = "translateX(0px)";
-      trashIcon.style.transform = "scale(1)";
     }
+
+    isSwiping = false;
   }
 
-  card.addEventListener("touchstart", onPointerDown, { passive: true });
-  card.addEventListener("touchmove", onPointerMove, { passive: true });
+  // Touch Events
+  card.addEventListener("touchstart", onPointerDown, { passive: false });
+  card.addEventListener("touchmove", onPointerMove, { passive: false });
   card.addEventListener("touchend", onPointerUp);
   card.addEventListener("touchcancel", onPointerUp);
 
+  // Desktop Mouse Events for simulation
   card.addEventListener("mousedown", onPointerDown);
   window.addEventListener("mousemove", onPointerMove);
   window.addEventListener("mouseup", onPointerUp);
 }
 
-// Dedicated Delete Haptic Pulse
 function deleteWithAnimation(id, wrapper) {
-  triggerHapticPing(0.18, 420, [40, 30, 80]); // Low-pitch tactile thud + double vibration
+  triggerHaptic("delete");
   wrapper.classList.add("deleting");
   setTimeout(() => {
     reminders = reminders.filter(r => r.id !== id);
     persistAndSync();
-  }, 300);
+  }, 280);
 }
 
 function setupLabelSelector() {
@@ -361,7 +422,7 @@ function setupLabelSelector() {
   container.querySelectorAll(".label-pill").forEach(pill => {
     pill.addEventListener("click", () => {
       const label = pill.getAttribute("data-label");
-      triggerHapticPing(0.08, 700, [30]);
+      triggerHaptic("light");
       if (activeSelectedLabel === label) {
         activeSelectedLabel = null;
         pill.classList.remove("selected");
@@ -385,9 +446,8 @@ function resetLabelSelection(presetLabel = null) {
   });
 }
 
-// Plus Button Haptic Pulse on Open
 function openCreateModal() {
-  triggerHapticPing(0.1, 950, [40]); // Crisp high-pitch click
+  triggerHaptic("light");
   document.getElementById("modal-title").innerText = "NEW REMINDER";
   document.getElementById("btn-submit").innerText = "PIN TO LOCK SCREEN";
   document.getElementById("edit-reminder-id").value = "";
@@ -441,7 +501,7 @@ function closeModal(modalId) {
   el.classList.remove("active");
 }
 
-// Scheduled Ping Verification
+// Scheduled Ping Loop
 setInterval(() => {
   const now = Date.now();
   reminders.forEach(item => {
@@ -460,7 +520,7 @@ setInterval(() => {
 const customTimeRow = document.getElementById("custom-time-row");
 document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
   radio.addEventListener("change", (e) => {
-    triggerHapticPing(0.06, 680, [20]);
+    triggerHaptic("light");
     if (e.target.value === "custom") {
       customTimeRow.classList.remove("hidden");
     } else {
@@ -473,7 +533,7 @@ document.getElementById("btn-add").addEventListener("click", openCreateModal);
 document.getElementById("btn-close-modal").addEventListener("click", () => closeModal("splash-modal"));
 
 document.getElementById("btn-tips").addEventListener("click", () => {
-  triggerHapticPing(0.08, 720, [30]);
+  triggerHaptic("light");
   currentSlide = 0;
   updateCarousel();
   openModal("tips-modal");
@@ -481,9 +541,9 @@ document.getElementById("btn-tips").addEventListener("click", () => {
 
 document.getElementById("btn-close-tips").addEventListener("click", () => closeModal("tips-modal"));
 
-// About Section Haptic Pulse on Open
+// About Section Logo Touch
 document.getElementById("btn-logo").addEventListener("click", () => {
-  triggerHapticPing(0.12, 540, [50]); // Resonant bass pulse
+  triggerHaptic("medium");
   openModal("version-modal");
 });
 
@@ -519,7 +579,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       reminders[index].pingMinutes = finalMinutes;
       reminders[index].lastPing = Date.now();
     }
-    triggerHapticPing(0.16, 920, [50, 40]);
+    triggerHaptic("medium");
   } else {
     const newReminder = {
       id: "postr_" + Date.now(),
@@ -539,7 +599,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   closeModal("splash-modal");
 });
 
-// Carousel Logic
+// Carousel
 let currentSlide = 0;
 const totalSlides = 4;
 const track = document.querySelector(".carousel-slides");
@@ -558,7 +618,7 @@ dots.forEach(dot => {
   dot.addEventListener("click", (e) => {
     currentSlide = parseInt(e.target.dataset.index, 10);
     updateCarousel();
-    triggerHapticPing(0.06, 680, [25]);
+    triggerHaptic("light");
   });
 });
 
@@ -589,15 +649,18 @@ function handleSwipe(diffX) {
   if (diffX < -threshold && currentSlide < totalSlides - 1) {
     currentSlide++;
     updateCarousel();
-    triggerHapticPing(0.07, 720, [30]);
+    triggerHaptic("light");
   } else if (diffX > threshold && currentSlide > 0) {
     currentSlide--;
     updateCarousel();
-    triggerHapticPing(0.07, 720, [30]);
+    triggerHaptic("light");
   }
 }
 
-document.addEventListener("click", initAudio, { once: true });
+// Global First Touch Audio Unlocking
+window.addEventListener("touchstart", initAudio, { once: true, passive: true });
+window.addEventListener("click", initAudio, { once: true });
+
 setupDynamicAppIcon();
 setupLabelSelector();
 updateNotifyButton();
