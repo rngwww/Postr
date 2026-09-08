@@ -567,3 +567,8 @@ input[type="text"]:focus, textarea:focus {
     transform: translateY(0) scale(1);
   }
 }
+.tips-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
