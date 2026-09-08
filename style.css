@@ -159,6 +159,7 @@ body {
   overflow-y: auto;
   padding: 16px 20px 110px 20px;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .empty-view {
@@ -199,16 +200,17 @@ body {
   gap: 12px;
 }
 
-/* Swipe Wrapper & Underlay Container */
+/* Card Wrapper & Red Delete Underlay */
 .card-wrapper {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
   max-height: 240px;
+  background-color: transparent;
 }
 
 .card-wrapper.deleting {
+  transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
   max-height: 0 !important;
   margin-bottom: -12px !important;
   opacity: 0 !important;
@@ -223,7 +225,7 @@ body {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding-right: 28px;
+  padding-right: 30px;
   z-index: 1;
 }
 
@@ -233,10 +235,10 @@ body {
   align-items: center;
   justify-content: center;
   transform-origin: center center;
-  transition: transform 0.08s ease-out;
+  will-change: transform;
 }
 
-/* Interactive Card Layer */
+/* Swipeable Card Surface */
 .card {
   position: relative;
   z-index: 2;
@@ -248,14 +250,8 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  animation: cardSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
   touch-action: pan-y;
-  cursor: grab;
-}
-
-.card:active {
-  cursor: grabbing;
+  will-change: transform;
 }
 
 .card.holding {
@@ -309,7 +305,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Complete Checkmark */
+/* Checkmark Complete Button */
 .btn-complete {
   background: #f0f0f0;
   border: none;
@@ -323,7 +319,7 @@ body {
   align-items: center;
   justify-content: center;
   color: #000000;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
   margin-left: 12px;
   padding: 0;
   z-index: 3;
@@ -331,7 +327,7 @@ body {
 
 .btn-complete svg {
   stroke: #000000;
-  transition: stroke 0.25s ease;
+  transition: stroke 0.2s ease;
 }
 
 .btn-complete:hover {
@@ -347,7 +343,7 @@ body {
   transform: scale(0.85);
 }
 
-/* FAB */
+/* 360 Glowing FAB */
 .fab {
   position: absolute;
   right: 24px;
@@ -794,15 +790,4 @@ input[type="text"]:focus, textarea:focus {
   0% { transform: scale(1); }
   50% { transform: scale(1.08); }
   100% { transform: scale(1.02); }
-}
-
-@keyframes cardSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(18px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
