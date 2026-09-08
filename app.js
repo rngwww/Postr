@@ -27,11 +27,10 @@ function updateNotifyButton() {
     return;
   }
   if (Notification.permission === "granted") {
-    btn.innerText = "🔔✓";
-    btn.style.background = "#1f0505";
-    btn.style.color = "#ff3b30";
+    btn.innerText = "ðŸ””âœ“";
+    btn.style.background = "#ffffff"; btn.style.color = "#000000";
   } else {
-    btn.innerText = "🔔";
+    btn.innerText = "ðŸ””";
   }
 }
 
@@ -126,7 +125,7 @@ function render() {
           ${item.body ? `<p>${escapeHtml(item.body)}</p>` : ""}
           ${pingLabel ? `<div class="card-meta">${pingLabel}</div>` : ""}
         </div>
-        <button class="btn-complete" title="Mark Done" onclick="completeReminder('${item.id}')">✓</button>
+        <button class="btn-complete" title="Mark Done" onclick="completeReminder('${item.id}')">âœ“</button>
       `;
       cardList.appendChild(card);
     });

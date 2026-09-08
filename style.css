@@ -572,3 +572,20 @@ input[type="text"]:focus, textarea:focus {
   align-items: center;
   gap: 8px;
 }
+#btn-notify-perm {
+  background: #141414;
+  color: #ffffff;
+}
+
+#btn-notify-perm svg {
+  stroke: #ffffff;
+}
+
+#btn-notify-perm.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+#btn-notify-perm.active svg {
+  stroke: #000000;
+}
