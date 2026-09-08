@@ -8,11 +8,11 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "TRIGGER_NOTIFICATION") {
-    const { title, body, tag } = event.data;
+    const { title, body, tag, icon, badge } = event.data;
     self.registration.showNotification(title, {
       body: body,
-      icon: "manifest.json",
-      badge: "manifest.json",
+      icon: icon || "icon.svg",
+      badge: badge || "icon.svg",
       tag: tag || "postr_ping",
       renotify: true,
       requireInteraction: true,
