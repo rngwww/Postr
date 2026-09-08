@@ -22,9 +22,10 @@
 
     <!-- Top Navigation -->
     <nav class="top-nav">
-      <h1 class="logo">POSTR</h1>
+      <!-- Tappable Logo to show Version Sheet -->
+      <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
       <div class="nav-actions">
-        <!-- Strictly Black/White Notification Bell Icon -->
+        <!-- Notification Bell (Monochrome) -->
         <button id="btn-notify-perm" class="btn-icon" title="Enable Notifications" aria-label="Notifications">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -32,14 +33,13 @@
           </svg>
         </button>
 
-        <button id="btn-backtap" class="btn-pill" title="Simulate Back Tap Splash">TAP</button>
-
-        <!-- Red Accent Lightbulb Icon -->
+        <!-- Detailed Realistic Lightbulb (Monochrome Black & White) -->
         <button id="btn-tips" class="btn-icon" title="Tips & Guide" aria-label="Guide">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18h6"></path>
-            <path d="M10 22h4"></path>
-            <path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"></path>
+            <path d="M10 21h4"></path>
+            <path d="M12 2a7 7 0 0 0-7 7c0 2.6 1.3 4.2 2.6 5.8.7.9 1.4 2.2 1.4 3.2h6c0-1-.7-2.3-1.4-3.2C17.7 13.2 19 11.6 19 9a7 7 0 0 0-7-7z"></path>
+            <path d="M10 9l2 2 2-2"></path>
           </svg>
         </button>
       </div>
@@ -50,12 +50,12 @@
       <div id="empty-state" class="empty-view">
         <div class="empty-icon">:D</div>
         <h2>NO ACTIVE POSTS</h2>
-        <p>Tap + or use Back Tap to pin a persistent note.</p>
+        <p>Tap + to pin a persistent reminder.</p>
       </div>
       <div id="card-list" class="cards-list"></div>
     </main>
 
-    <!-- Centered Floating Action Button -->
+    <!-- 360° Omnidirectional Glowing Floating Action Button -->
     <button id="btn-add" class="fab" aria-label="Add Reminder">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -79,6 +79,34 @@
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
           <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="2"></textarea>
 
+          <!-- Pastel Label Picker -->
+          <div class="picker-section">
+            <label class="section-label">SELECT LABEL</label>
+            <div class="labels-container" id="label-selector">
+              <label class="label-pill" style="--pastel: #b2d8d8;">
+                <input type="radio" name="noteLabel" value="School" checked>
+                <span>School</span>
+              </label>
+              <label class="label-pill" style="--pastel: #d4b8e5;">
+                <input type="radio" name="noteLabel" value="Work">
+                <span>Work</span>
+              </label>
+              <label class="label-pill" style="--pastel: #f8c8dc;">
+                <input type="radio" name="noteLabel" value="Shopping">
+                <span>Shopping</span>
+              </label>
+              <label class="label-pill" style="--pastel: #fde49e;">
+                <input type="radio" name="noteLabel" value="Personal">
+                <span>Personal</span>
+              </label>
+              <label class="label-pill" style="--pastel: #b5ead7;">
+                <input type="radio" name="noteLabel" value="Tasks">
+                <span>Tasks</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Interval Section -->
           <div class="picker-section">
             <label class="section-label">REPEAT PING INTERVAL</label>
             <div class="segment-control">
@@ -103,15 +131,40 @@
       </div>
     </div>
 
-    <!-- Tips Carousel Modal -->
+    <!-- About & Version Modal -->
+    <div id="version-modal" class="modal-backdrop hidden">
+      <div class="hud-card version-card">
+        <div class="hud-header">
+          <span>ABOUT</span>
+          <button id="btn-close-version" class="btn-circle" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="version-content">
+          <h2 class="version-logo">POSTR</h2>
+          <div class="version-tag">VERSION 1.0</div>
+          <p class="version-desc">Minimalist, persistent lock screen reminder system designed for iOS & Web.</p>
+          <div class="version-specs">
+            <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED</strong></div>
+            <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
+            <div class="spec-row"><span>STATUS</span><strong>ACTIVE</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-Screen Tips Carousel Modal with Triple Tap Setup Guide -->
     <div id="tips-modal" class="modal-backdrop hidden">
       <div class="hud-card tips-card">
         <div class="hud-header">
           <div class="tips-header-left">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff3b30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18h6"></path>
-              <path d="M10 22h4"></path>
-              <path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"></path>
+              <path d="M10 21h4"></path>
+              <path d="M12 2a7 7 0 0 0-7 7c0 2.6 1.3 4.2 2.6 5.8.7.9 1.4 2.2 1.4 3.2h6c0-1-.7-2.3-1.4-3.2C17.7 13.2 19 11.6 19 9a7 7 0 0 0-7-7z"></path>
             </svg>
             <span>POSTR GUIDE</span>
           </div>
@@ -126,24 +179,28 @@
         <div class="carousel-viewport" id="carousel-track">
           <div class="carousel-slides">
             <div class="carousel-slide">
-              <div class="slide-badge">STEP 1 / 4</div>
-              <h3>NOTIFICATION DRAWER</h3>
-              <p>Active items remain posted to your native device notification bar and Dynamic Island until you click Done.</p>
+              <div class="slide-badge">SLIDE 1 / 4</div>
+              <h3>TRIPLE TAP SHORTCUT SETUP</h3>
+              <p>1. Open Apple's <strong>Shortcuts</strong> app on iPhone.<br>
+              2. Create a new shortcut, tap <strong>Add Action</strong>, search for <strong>Open URLs</strong>.<br>
+              3. Paste <code>https://rngwww.github.io/Postr/</code> and name it <strong>"Postr Quick Pin"</strong>.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">STEP 2 / 4</div>
-              <h3>CUSTOM TIMERS</h3>
-              <p>Configure alerts in custom minutes or hours. Your phone will chime and pop recurring banner notifications.</p>
+              <div class="slide-badge">SLIDE 2 / 4</div>
+              <h3>BIND TO BACK TAP</h3>
+              <p>1. Open iOS <strong>Settings</strong> &gt; <strong>Accessibility</strong> &gt; <strong>Touch</strong>.<br>
+              2. Scroll to the bottom and select <strong>Back Tap</strong>.<br>
+              3. Choose <strong>Triple Tap</strong>, scroll down to the <em>Shortcuts</em> category, and select <strong>Postr Quick Pin</strong>.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">STEP 3 / 4</div>
-              <h3>TRIPLE BACK TAP</h3>
-              <p>Trigger the high-contrast quick splash input instantly from anywhere using the TAP simulation button.</p>
+              <div class="slide-badge">SLIDE 3 / 4</div>
+              <h3>PASTEL LABELS & TIMERS</h3>
+              <p>Tag reminders with School, Work, Shopping, Personal, or Tasks labels. Set recurring audio pings in minutes or hours.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">STEP 4 / 4</div>
-              <h3>ENABLE NOTIFICATIONS</h3>
-              <p>Tap the bell icon in the navigation bar to authorize browser alerts and background chimes.</p>
+              <div class="slide-badge">SLIDE 4 / 4</div>
+              <h3>PERSISTENT DRAWER</h3>
+              <p>Tap the bell icon at the top right to enable lock screen notifications so pings sound even when your screen is locked.</p>
             </div>
           </div>
         </div>
