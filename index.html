@@ -12,6 +12,7 @@
 </head>
 <body>
   <div id="app-viewport">
+    <!-- Dynamic Island Simulator -->
     <header class="notch-bar">
       <div id="dynamic-island" class="island-pill">
         <span class="island-dot"></span>
@@ -19,15 +20,17 @@
       </div>
     </header>
 
+    <!-- Top Navigation -->
     <nav class="top-nav">
       <h1 class="logo">POSTR</h1>
       <div class="nav-actions">
-        <button id="btn-notify-perm" title="Enable Notifications">🔔</button>
-        <button id="btn-backtap" title="Simulate Back Tap Splash">TAP</button>
-        <button id="btn-tips" title="Tips & Guide">💡</button>
+        <button id="btn-notify-perm" class="btn-icon" title="Enable Notifications">🔔</button>
+        <button id="btn-backtap" class="btn-pill" title="Simulate Back Tap Splash">TAP</button>
+        <button id="btn-tips" class="btn-icon" title="Tips & Guide">💡</button>
       </div>
     </nav>
 
+    <!-- Content Feed -->
     <main id="reminder-container">
       <div id="empty-state" class="empty-view">
         <div class="empty-icon">◻</div>
@@ -37,6 +40,7 @@
       <div id="card-list" class="cards-list"></div>
     </main>
 
+    <!-- Live Activity Dock -->
     <section id="live-activity-bar" class="live-activity hidden">
       <div class="live-header">
         <span class="live-title">PINNED LIVE ACTIVITY</span>
@@ -45,6 +49,7 @@
       <div id="live-items" class="live-content"></div>
     </section>
 
+    <!-- Symmetrical FAB -->
     <button id="btn-add" class="fab" aria-label="Add Reminder">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -52,18 +57,18 @@
       </svg>
     </button>
 
-    <!-- Modals -->
+    <!-- Quick-Add Splash Modal -->
     <div id="splash-modal" class="modal-backdrop hidden">
       <div class="hud-card">
         <div class="hud-header">
           <span id="modal-title">QUICK PIN</span>
-          <button id="btn-close-modal" class="btn-text">✕</button>
+          <button id="btn-close-modal" class="btn-circle">✕</button>
         </div>
         <form id="reminder-form">
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
           <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="3"></textarea>
           <div class="picker-row">
-            <label>PING</label>
+            <label>PING INTERVAL</label>
             <div class="segment-control">
               <input type="radio" id="p0" name="ping" value="0" checked><label for="p0">Off</label>
               <input type="radio" id="p1" name="ping" value="1"><label for="p1">1m</label>
@@ -77,25 +82,46 @@
       </div>
     </div>
 
+    <!-- Swipeable Tips Carousel Modal -->
     <div id="tips-modal" class="modal-backdrop hidden">
-      <div class="hud-card">
+      <div class="hud-card tips-card">
         <div class="hud-header">
-          <span>POSTR CHEAT SHEET</span>
-          <button id="btn-close-tips" class="btn-text">✕</button>
+          <span>POSTR GUIDE</span>
+          <button id="btn-close-tips" class="btn-circle">✕</button>
         </div>
-        <div class="tips-body">
-          <div class="tip-block">
-            <h3>1. NOTIFICATIONS</h3>
-            <p>Tap the 🔔 button in the top bar to explicitly allow browser alerts.</p>
+        
+        <!-- Slide Track Container -->
+        <div class="carousel-viewport" id="carousel-track">
+          <div class="carousel-slides">
+            <div class="carousel-slide">
+              <div class="slide-badge">STEP 1 / 4</div>
+              <h3>PERSISTENT LOCK</h3>
+              <p>Sticky notes remain permanently visible across the Dynamic Island and Live Activity dock until explicitly completed.</p>
+            </div>
+            <div class="carousel-slide">
+              <div class="slide-badge">STEP 2 / 4</div>
+              <h3>REPEATING PINGS</h3>
+              <p>Choose 1m, 3m, 5m, or 10m intervals. The app re-triggers audio-haptic alerts and lock screen banners periodically.</p>
+            </div>
+            <div class="carousel-slide">
+              <div class="slide-badge">STEP 3 / 4</div>
+              <h3>TRIPLE BACK TAP</h3>
+              <p>Trigger the high-contrast quick splash input instantly from anywhere without opening the dashboard.</p>
+            </div>
+            <div class="carousel-slide">
+              <div class="slide-badge">STEP 4 / 4</div>
+              <h3>SYSTEM NOTIFICATIONS</h3>
+              <p>Tap the 🔔 icon in the top navigation bar to enable background Lock Screen banners and sound chimes.</p>
+            </div>
           </div>
-          <div class="tip-block">
-            <h3>2. PERSISTENT LOCK</h3>
-            <p>Notes stay in your dynamic island and bottom bar until you mark them complete.</p>
-          </div>
-          <div class="tip-block">
-            <h3>3. PING INTERVALS</h3>
-            <p>Set a timer (e.g. 1m). The app plays an audio chime and pops an OS notification on schedule.</p>
-          </div>
+        </div>
+
+        <!-- Carousel Pagination Dots -->
+        <div class="carousel-dots" id="carousel-dots">
+          <span class="dot active" data-index="0"></span>
+          <span class="dot" data-index="1"></span>
+          <span class="dot" data-index="2"></span>
+          <span class="dot" data-index="3"></span>
         </div>
       </div>
     </div>

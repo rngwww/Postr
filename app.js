@@ -2,11 +2,10 @@ const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
 
-// Register Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js")
     .then((reg) => { swRegistration = reg; })
-    .catch((err) => console.log("SW registration failed: ", err));
+    .catch((err) => console.log("SW error:", err));
 }
 
 function updateNotifyButton() {
@@ -17,7 +16,7 @@ function updateNotifyButton() {
   }
   if (Notification.permission === "granted") {
     btn.innerText = "🔔✓";
-    btn.style.borderColor = "#ff3b30";
+    btn.style.background = "#1f0505";
     btn.style.color = "#ff3b30";
   } else {
     btn.innerText = "🔔";
@@ -29,7 +28,7 @@ document.getElementById("btn-notify-perm").addEventListener("click", async () =>
     const perm = await Notification.requestPermission();
     updateNotifyButton();
     if (perm === "granted") {
-      triggerNotification("Postr Enabled", "Lock screen pings are now active.");
+      triggerNotification("Postr Enabled", "Lock screen pings are active.");
     }
   }
 });
@@ -149,7 +148,22 @@ function completeReminder(id) {
   }
 }
 
-// Scheduled ping loop (checks every 5 seconds)
+// Fade Out Helper for Modals
+function openModal(modalId) {
+  const el = document.getElementById(modalId);
+  el.classList.remove("hidden", "closing");
+}
+
+function closeModal(modalId) {
+  const el = document.getElementById(modalId);
+  el.classList.add("closing");
+  setTimeout(() => {
+    el.classList.add("hidden");
+    el.classList.remove("closing");
+  }, 260);
+}
+
+// Recurring Ping Loop
 setInterval(() => {
   const now = Date.now();
   reminders.forEach(item => {
@@ -164,31 +178,35 @@ setInterval(() => {
   });
 }, 5000);
 
+// Buttons & Modals
 document.getElementById("btn-add").addEventListener("click", () => {
   document.getElementById("modal-title").innerText = "NEW REMINDER";
-  document.getElementById("splash-modal").classList.remove("hidden");
+  openModal("splash-modal");
   document.getElementById("input-title").focus();
 });
 
 document.getElementById("btn-backtap").addEventListener("click", () => {
   document.getElementById("modal-title").innerText = "QUICK PIN (BACK TAP)";
-  document.getElementById("splash-modal").classList.remove("hidden");
+  openModal("splash-modal");
   document.getElementById("input-title").focus();
   triggerHapticPing();
 });
 
 document.getElementById("btn-close-modal").addEventListener("click", () => {
-  document.getElementById("splash-modal").classList.add("hidden");
+  closeModal("splash-modal");
 });
 
 document.getElementById("btn-tips").addEventListener("click", () => {
-  document.getElementById("tips-modal").classList.remove("hidden");
+  currentSlide = 0;
+  updateCarousel();
+  openModal("tips-modal");
 });
 
 document.getElementById("btn-close-tips").addEventListener("click", () => {
-  document.getElementById("tips-modal").classList.add("hidden");
+  closeModal("tips-modal");
 });
 
+// Form Submission
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const title = document.getElementById("input-title").value.trim();
@@ -213,8 +231,72 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
   document.getElementById("p0").checked = true;
-  document.getElementById("splash-modal").classList.add("hidden");
+  closeModal("splash-modal");
 });
+
+// --- Swipeable Tips Carousel Logic (Touch & Mouse Drag) ---
+let currentSlide = 0;
+const totalSlides = 4;
+const track = document.querySelector(".carousel-slides");
+const dots = document.querySelectorAll(".carousel-dots .dot");
+let startX = 0;
+let currentX = 0;
+let isDragging = false;
+
+function updateCarousel() {
+  track.style.transform = `translateX(-${currentSlide * 100}%)`;
+  dots.forEach((dot, index) => {
+    dot.classList.toggle("active", index === currentSlide);
+  });
+}
+
+dots.forEach(dot => {
+  dot.addEventListener("click", (e) => {
+    currentSlide = parseInt(e.target.dataset.index, 10);
+    updateCarousel();
+  });
+});
+
+const viewport = document.getElementById("carousel-track");
+
+// Touch Events
+viewport.addEventListener("touchstart", (e) => {
+  startX = e.touches[0].clientX;
+  isDragging = true;
+});
+
+viewport.addEventListener("touchend", (e) => {
+  if (!isDragging) return;
+  const diffX = e.changedTouches[0].clientX - startX;
+  handleSwipe(diffX);
+  isDragging = false;
+});
+
+// Mouse Events for Desktop Testing
+viewport.addEventListener("mousedown", (e) => {
+  startX = e.clientX;
+  isDragging = true;
+});
+
+viewport.addEventListener("mouseup", (e) => {
+  if (!isDragging) return;
+  const diffX = e.clientX - startX;
+  handleSwipe(diffX);
+  isDragging = false;
+});
+
+function handleSwipe(diffX) {
+  const threshold = 40; // minimum pixels to count as swipe
+  if (diffX < -threshold && currentSlide < totalSlides - 1) {
+    currentSlide++;
+    updateCarousel();
+    triggerHapticPing();
+  } else if (diffX > threshold && currentSlide > 0) {
+    currentSlide--;
+    updateCarousel();
+    triggerHapticPing();
+  }
+}
 
 updateNotifyButton();
 render();
