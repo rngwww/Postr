@@ -1,7 +1,16 @@
+const CURRENT_VERSION = "1.0";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
 let audioCtx = null;
+
+const PASTEL_MAP = {
+  School: "#b2d8d8",
+  Work: "#d4b8e5",
+  Shopping: "#f8c8dc",
+  Personal: "#fde49e",
+  Tasks: "#b5ead7"
+};
 
 function initAudio() {
   if (!audioCtx) {
@@ -105,7 +114,7 @@ function render() {
       const card = document.createElement("div");
       card.className = "card";
       card.setAttribute("data-id", item.id);
-      
+
       let pingLabel = "";
       if (item.pingMinutes > 0) {
         if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
@@ -115,11 +124,16 @@ function render() {
         }
       }
 
+      const labelColor = PASTEL_MAP[item.label] || "#e0e0e0";
+
       card.innerHTML = `
         <div class="card-content">
           <h3>${escapeHtml(item.title)}</h3>
           ${item.body ? `<p>${escapeHtml(item.body)}</p>` : ""}
-          ${pingLabel ? `<div class="card-meta">${pingLabel}</div>` : ""}
+          <div class="card-tags-row">
+            ${item.label ? `<span class="pastel-tag" style="background-color: ${labelColor};">${escapeHtml(item.label)}</span>` : ""}
+            ${pingLabel ? `<span class="card-meta">${pingLabel}</span>` : ""}
+          </div>
         </div>
         <button class="btn-complete" title="Mark Done" onclick="completeReminder('${item.id}')" aria-label="Mark Done">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -205,13 +219,6 @@ document.getElementById("btn-add").addEventListener("click", () => {
   document.getElementById("input-title").focus();
 });
 
-document.getElementById("btn-backtap").addEventListener("click", () => {
-  document.getElementById("modal-title").innerText = "QUICK PIN (BACK TAP)";
-  openModal("splash-modal");
-  document.getElementById("input-title").focus();
-  triggerHapticPing();
-});
-
 document.getElementById("btn-close-modal").addEventListener("click", () => {
   closeModal("splash-modal");
 });
@@ -226,6 +233,17 @@ document.getElementById("btn-close-tips").addEventListener("click", () => {
   closeModal("tips-modal");
 });
 
+// Logo Click -> Open Version Screen
+document.getElementById("btn-logo").addEventListener("click", () => {
+  openModal("version-modal");
+  triggerHapticPing();
+});
+
+document.getElementById("btn-close-version").addEventListener("click", () => {
+  closeModal("version-modal");
+});
+
+// Form Submit
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
   initAudio();
@@ -233,6 +251,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   const title = document.getElementById("input-title").value.trim();
   const body = document.getElementById("input-body").value.trim();
   const selectedPreset = document.querySelector('input[name="pingPreset"]:checked').value;
+  const selectedLabel = document.querySelector('input[name="noteLabel"]:checked').value;
 
   let finalMinutes = 0;
   if (selectedPreset === "custom") {
@@ -249,6 +268,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     id: "postr_" + Date.now(),
     title,
     body,
+    label: selectedLabel,
     pingMinutes: finalMinutes,
     createdAt: Date.now(),
     lastPing: Date.now()
@@ -265,6 +285,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   closeModal("splash-modal");
 });
 
+// Carousel Logic
 let currentSlide = 0;
 const totalSlides = 4;
 const track = document.querySelector(".carousel-slides");
