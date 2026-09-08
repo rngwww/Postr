@@ -1,4 +1,4 @@
-const CURRENT_VERSION = "1.0";
+const CURRENT_VERSION = "1.1";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
@@ -11,6 +11,14 @@ const PASTEL_MAP = {
   Personal: "#fde49e",
   Tasks: "#b5ead7"
 };
+
+// Sync version badge dynamically on launch
+function syncVersionDisplay() {
+  const badge = document.getElementById("app-version-badge");
+  if (badge) {
+    badge.innerText = `VERSION ${CURRENT_VERSION}`;
+  }
+}
 
 function initAudio() {
   if (!audioCtx) {
@@ -91,7 +99,7 @@ function triggerHapticPing() {
 function triggerIslandPulse() {
   const islandPill = document.getElementById("dynamic-island");
   islandPill.classList.remove("pulse");
-  void islandPill.offsetWidth; // Trigger reflow
+  void islandPill.offsetWidth;
   islandPill.classList.add("pulse");
 }
 
@@ -181,7 +189,6 @@ function completeReminder(id) {
   }
 }
 
-/* Modal Open & Close Transition Hooks */
 function openModal(modalId) {
   initAudio();
   const el = document.getElementById(modalId);
@@ -347,4 +354,5 @@ function handleSwipe(diffX) {
 
 document.addEventListener("click", initAudio, { once: true });
 updateNotifyButton();
+syncVersionDisplay();
 render();
