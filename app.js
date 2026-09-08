@@ -3,7 +3,6 @@ let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
 let audioCtx = null;
 
-// Initialize & unlock Web Audio on first touch
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -13,7 +12,6 @@ function initAudio() {
   }
 }
 
-// Service Worker Registration
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js")
     .then((reg) => { swRegistration = reg; })
@@ -27,10 +25,9 @@ function updateNotifyButton() {
     return;
   }
   if (Notification.permission === "granted") {
-    btn.innerText = "ðŸ””âœ“";
-    btn.style.background = "#ffffff"; btn.style.color = "#000000";
+    btn.classList.add("active");
   } else {
-    btn.innerText = "ðŸ””";
+    btn.classList.remove("active");
   }
 }
 
@@ -48,7 +45,6 @@ document.getElementById("btn-notify-perm").addEventListener("click", async () =>
 function triggerNotification(title, body, tag) {
   triggerHapticPing();
 
-  // Send wake message to Service Worker for background dispatch
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: "TRIGGER_NOTIFICATION",
@@ -68,7 +64,7 @@ function triggerHapticPing() {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 chime
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
       osc.connect(gain);
@@ -125,7 +121,11 @@ function render() {
           ${item.body ? `<p>${escapeHtml(item.body)}</p>` : ""}
           ${pingLabel ? `<div class="card-meta">${pingLabel}</div>` : ""}
         </div>
-        <button class="btn-complete" title="Mark Done" onclick="completeReminder('${item.id}')">âœ“</button>
+        <button class="btn-complete" title="Mark Done" onclick="completeReminder('${item.id}')" aria-label="Mark Done">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
       `;
       cardList.appendChild(card);
     });
@@ -174,7 +174,6 @@ function closeModal(modalId) {
   }, 260);
 }
 
-// Background scheduler loop (verifies active ping timestamps every 3s)
 setInterval(() => {
   const now = Date.now();
   reminders.forEach(item => {
@@ -189,7 +188,6 @@ setInterval(() => {
   });
 }, 3000);
 
-// Presets & Custom Interval UI toggle
 const customTimeRow = document.getElementById("custom-time-row");
 document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
   radio.addEventListener("change", (e) => {
@@ -228,7 +226,6 @@ document.getElementById("btn-close-tips").addEventListener("click", () => {
   closeModal("tips-modal");
 });
 
-// Create Form Submit
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
   initAudio();
@@ -261,7 +258,6 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   persistAndSync();
   triggerNotification(`Pinned: ${title}`, body || "Active reminder posted.", newReminder.id);
 
-  // Reset form
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
   document.getElementById("p0").checked = true;
@@ -269,7 +265,6 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   closeModal("splash-modal");
 });
 
-// Carousel Logic
 let currentSlide = 0;
 const totalSlides = 4;
 const track = document.querySelector(".carousel-slides");
