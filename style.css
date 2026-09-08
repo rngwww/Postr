@@ -1,0 +1,397 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, sans-serif;
+}
+
+body {
+  background-color: #000;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Clamped to standard iOS portrait aspect ratio */
+#app-viewport {
+  width: 100vw;
+  max-width: 414px;
+  height: 100vh;
+  max-height: 896px;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-left: 1px solid #1a1a1a;
+  border-right: 1px solid #1a1a1a;
+  overflow: hidden;
+}
+
+/* Top Notch & Simulated Dynamic Island */
+.notch-bar {
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.island-pill {
+  background-color: #0d0d0d;
+  border: 1px solid #222;
+  border-radius: 20px;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-pill.active {
+  border-color: #ff3b30;
+  background-color: #1a0505;
+}
+
+.island-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #555;
+  border-radius: 50%;
+}
+
+.island-pill.active .island-dot {
+  background-color: #ff3b30;
+}
+
+/* Nav Bar */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 2px solid #111;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #ff3b30;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-actions button {
+  background: transparent;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 4px 10px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.nav-actions button#btn-tips {
+  border-color: #ff3b30;
+}
+
+/* Content Area */
+#reminder-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.empty-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+  color: #666;
+  text-align: center;
+  gap: 8px;
+}
+
+.empty-icon {
+  font-size: 32px;
+}
+
+.empty-view h2 {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.empty-view p {
+  font-size: 12px;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Postit Card Component */
+.card {
+  background-color: #fff;
+  color: #000;
+  border: 2px solid #ff3b30;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 4px 0 #ff3b30;
+}
+
+.card-content h3 {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.card-content p {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #222;
+}
+
+.card-meta {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #ff3b30;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-complete {
+  background: transparent;
+  border: 2px solid #000;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.btn-complete:hover {
+  background-color: #ff3b30;
+  border-color: #ff3b30;
+  color: #fff;
+}
+
+/* Live Activity Simulation */
+.live-activity {
+  background-color: #000;
+  border-top: 2px solid #ff3b30;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live-activity.hidden {
+  display: none;
+}
+
+.live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.live-title {
+  color: #ff3b30;
+}
+
+.live-badge {
+  color: #fff;
+  background-color: #222;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  background-color: #0f0f0f;
+  padding: 6px 10px;
+  border-left: 2px solid #ff3b30;
+}
+
+.live-row button {
+  background: transparent;
+  border: 1px solid #ff3b30;
+  color: #ff3b30;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Floating Action Button */
+.fab {
+  position: absolute;
+  right: 20px;
+  bottom: 80px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #ff3b30;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 28px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+}
+
+/* Modals */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.hud-card {
+  width: 100%;
+  background-color: #000;
+  border: 2px solid #ff3b30;
+  padding: 20px;
+}
+
+.hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 900;
+  font-size: 16px;
+  color: #ff3b30;
+  margin-bottom: 16px;
+}
+
+.btn-text {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+input[type="text"], textarea {
+  background-color: #fff;
+  color: #000;
+  border: none;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  border-radius: 0;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.picker-row label {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.segment-control {
+  display: flex;
+  border: 1px solid #333;
+}
+
+.segment-control input {
+  display: none;
+}
+
+.segment-control label {
+  padding: 6px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.segment-control input:checked + label {
+  background-color: #ff3b30;
+  color: #000;
+  font-weight: 900;
+}
+
+.btn-primary {
+  margin-top: 8px;
+  padding: 14px;
+  background-color: #ff3b30;
+  color: #000;
+  border: none;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Tips Modal */
+.tips-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-block h3 {
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.tip-block p {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
