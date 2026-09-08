@@ -1,0 +1,48 @@
+name: Build Sideloadable IPA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build Archive
+        run: |
+          xcodebuild archive \
+            -project Postr.xcodeproj \
+            -scheme Postr \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Postr.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package Payload into IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Postr.xcarchive/Products/Applications/Postr.app Payload/
+          zip -qr Postr.ipa Payload
+          rm -rf Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Postr-Sideloadable
+          path: Postr.ipa
+          retention-days: 14

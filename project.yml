@@ -1,0 +1,56 @@
+name: Postr
+options:
+  bundleIdPrefix: com.postr
+  deploymentTarget:
+    iOS: "16.1"
+  xcodeVersion: "15.4"
+
+settings:
+  SWIFT_VERSION: "5.9"
+  IPHONEOS_DEPLOYMENT_TARGET: "16.1"
+  TARGETED_DEVICE_FAMILY: "1"
+
+targets:
+  Postr:
+    type: application
+    platform: iOS
+    sources:
+      - path: Postr
+    dependencies:
+      - target: PostrWidgets
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.postr.app
+      INFOPLIST_FILE: Postr/Info.plist
+      CODE_SIGN_ENTITLEMENTS: Postr/Postr.entitlements
+      UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+      CODE_SIGN_IDENTITY: ""
+      CODE_SIGNING_REQUIRED: "NO"
+      CODE_SIGNING_ALLOWED: "NO"
+
+  PostrWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PostrWidgets
+      - path: Postr/PostrModel.swift
+      - path: Postr/PostrIntents.swift
+      - path: Postr/LiveActivityController.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.postr.app.widgets
+      INFOPLIST_FILE: PostrWidgets/Info.plist
+      CODE_SIGN_ENTITLEMENTS: PostrWidgets/PostrWidgets.entitlements
+      UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+      CODE_SIGN_IDENTITY: ""
+      CODE_SIGNING_REQUIRED: "NO"
+      CODE_SIGNING_ALLOWED: "NO"
+
+schemes:
+  Postr:
+    build:
+      targets:
+        Postr: all
+        PostrWidgets: [run]
+    run:
+      config: Debug
+    archive:
+      config: Release
