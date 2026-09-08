@@ -12,7 +12,6 @@
 </head>
 <body>
   <div id="app-viewport">
-    <!-- iOS Status / Island Simulator -->
     <header class="notch-bar">
       <div id="dynamic-island" class="island-pill">
         <span class="island-dot"></span>
@@ -20,16 +19,15 @@
       </div>
     </header>
 
-    <!-- Main Navigation Bar -->
     <nav class="top-nav">
       <h1 class="logo">POSTR</h1>
       <div class="nav-actions">
+        <button id="btn-notify-perm" title="Enable Notifications">🔔</button>
         <button id="btn-backtap" title="Simulate Back Tap Splash">TAP</button>
         <button id="btn-tips" title="Tips & Guide">💡</button>
       </div>
     </nav>
 
-    <!-- Content Container -->
     <main id="reminder-container">
       <div id="empty-state" class="empty-view">
         <div class="empty-icon">◻</div>
@@ -39,7 +37,6 @@
       <div id="card-list" class="cards-list"></div>
     </main>
 
-    <!-- Persistent Live Activity HUD / Bar -->
     <section id="live-activity-bar" class="live-activity hidden">
       <div class="live-header">
         <span class="live-title">PINNED LIVE ACTIVITY</span>
@@ -48,10 +45,14 @@
       <div id="live-items" class="live-content"></div>
     </section>
 
-    <!-- Floating Action Button -->
-    <button id="btn-add" class="fab">+</button>
+    <button id="btn-add" class="fab" aria-label="Add Reminder">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
 
-    <!-- Quick Add Modal / Back Tap Splash HUD -->
+    <!-- Modals -->
     <div id="splash-modal" class="modal-backdrop hidden">
       <div class="hud-card">
         <div class="hud-header">
@@ -76,7 +77,6 @@
       </div>
     </div>
 
-    <!-- Tips Cheat Sheet Modal -->
     <div id="tips-modal" class="modal-backdrop hidden">
       <div class="hud-card">
         <div class="hud-header">
@@ -85,20 +85,16 @@
         </div>
         <div class="tips-body">
           <div class="tip-block">
-            <h3>1. PERSISTENT LOCK</h3>
-            <p>Notes stay pinned on your simulated lock screen and Dynamic Island until you dismiss them.</p>
+            <h3>1. NOTIFICATIONS</h3>
+            <p>Tap the 🔔 button in the top bar to explicitly allow browser alerts.</p>
           </div>
           <div class="tip-block">
-            <h3>2. REPEATING PINGS</h3>
-            <p>Audio-haptic notifications re-trigger periodically according to your selected interval.</p>
+            <h3>2. PERSISTENT LOCK</h3>
+            <p>Notes stay in your dynamic island and bottom bar until you mark them complete.</p>
           </div>
           <div class="tip-block">
-            <h3>3. TRIPLE BACK TAP</h3>
-            <p>Use the TAP button at the top to simulate triggering the instant Quick Pin splash HUD.</p>
-          </div>
-          <div class="tip-block">
-            <h3>4. PORTRAIT LOCK</h3>
-            <p>The interface is strictly locked to portrait proportions for focused use.</p>
+            <h3>3. PING INTERVALS</h3>
+            <p>Set a timer (e.g. 1m). The app plays an audio chime and pops an OS notification on schedule.</p>
           </div>
         </div>
       </div>

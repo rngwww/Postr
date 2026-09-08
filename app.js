@@ -1,15 +1,61 @@
-// Local persistence store
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let swRegistration = null;
 
-// Audio synthesizer for repeating ping alerts
+// Register Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js")
+    .then((reg) => { swRegistration = reg; })
+    .catch((err) => console.log("SW registration failed: ", err));
+}
+
+function updateNotifyButton() {
+  const btn = document.getElementById("btn-notify-perm");
+  if (!("Notification" in window)) {
+    btn.style.display = "none";
+    return;
+  }
+  if (Notification.permission === "granted") {
+    btn.innerText = "🔔✓";
+    btn.style.borderColor = "#ff3b30";
+    btn.style.color = "#ff3b30";
+  } else {
+    btn.innerText = "🔔";
+  }
+}
+
+document.getElementById("btn-notify-perm").addEventListener("click", async () => {
+  if ("Notification" in window) {
+    const perm = await Notification.requestPermission();
+    updateNotifyButton();
+    if (perm === "granted") {
+      triggerNotification("Postr Enabled", "Lock screen pings are now active.");
+    }
+  }
+});
+
+function triggerNotification(title, body) {
+  triggerHapticPing();
+  if ("Notification" in window && Notification.permission === "granted") {
+    if (swRegistration) {
+      swRegistration.showNotification(title, {
+        body: body,
+        icon: "manifest.json",
+        requireInteraction: true
+      });
+    } else {
+      new Notification(title, { body: body });
+    }
+  }
+}
+
 function triggerHapticPing() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
     gain.gain.setValueAtTime(0.3, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
     osc.connect(gain);
@@ -23,7 +69,6 @@ function triggerHapticPing() {
   }
 }
 
-// Save & Sync State
 function persistAndSync() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
   render();
@@ -54,9 +99,9 @@ function render() {
     liveCount.innerText = `${reminders.length} ITEMS`;
 
     reminders.forEach(item => {
-      // In-App Sticky Card
       const card = document.createElement("div");
       card.className = "card";
+      card.setAttribute("data-id", item.id);
       card.innerHTML = `
         <div class="card-content">
           <h3>${escapeHtml(item.title)}</h3>
@@ -67,7 +112,6 @@ function render() {
       `;
       cardList.appendChild(card);
 
-      // Lock Screen Live Activity Item
       const liveRow = document.createElement("div");
       liveRow.className = "live-row";
       liveRow.innerHTML = `
@@ -90,37 +134,36 @@ function escapeHtml(str) {
 }
 
 function completeReminder(id) {
-  reminders = reminders.filter(r => r.id !== id);
-  triggerHapticPing();
-  persistAndSync();
+  const cardElement = document.querySelector(`[data-id="${id}"]`);
+  if (cardElement) {
+    cardElement.classList.add("dismissing");
+    setTimeout(() => {
+      reminders = reminders.filter(r => r.id !== id);
+      triggerHapticPing();
+      persistAndSync();
+    }, 280);
+  } else {
+    reminders = reminders.filter(r => r.id !== id);
+    triggerHapticPing();
+    persistAndSync();
+  }
 }
 
-// Notification & Ping Scheduler
+// Scheduled ping loop (checks every 5 seconds)
 setInterval(() => {
   const now = Date.now();
-  let alerted = false;
   reminders.forEach(item => {
     if (item.ping > 0) {
       const intervalMs = item.ping * 60 * 1000;
       if (now - item.lastPing >= intervalMs) {
         item.lastPing = now;
-        alerted = true;
-        if (Notification.permission === "granted") {
-          new Notification("POSTR: " + item.title, {
-            body: item.body || "Sticky note is still active on lock screen.",
-            tag: item.id
-          });
-        }
+        triggerNotification(`POSTR: ${item.title}`, item.body || "Reminder still active.");
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
       }
     }
   });
-  if (alerted) {
-    triggerHapticPing();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
-  }
-}, 10000);
+}, 5000);
 
-// Event Handlers
 document.getElementById("btn-add").addEventListener("click", () => {
   document.getElementById("modal-title").innerText = "NEW REMINDER";
   document.getElementById("splash-modal").classList.remove("hidden");
@@ -165,21 +208,13 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
   reminders.unshift(newReminder);
   persistAndSync();
-  triggerHapticPing();
+  triggerNotification(`Pinned: ${title}`, body || "Added to active list.");
 
-  // Reset form
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
   document.getElementById("p0").checked = true;
   document.getElementById("splash-modal").classList.add("hidden");
 });
 
-// Request Notification Permission on first user interaction
-document.addEventListener("click", () => {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
-}, { once: true });
-
-// Initial Render
+updateNotifyButton();
 render();
