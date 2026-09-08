@@ -84,24 +84,22 @@ body {
   font-weight: 900;
   letter-spacing: -0.04em;
   color: #ff3b30;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+.logo:active {
+  transform: scale(0.96);
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.btn-icon, .btn-pill {
-  background: #141414;
-  border: none;
-  border-radius: 20px;
-  color: #ffffff;
-  padding: 6px 12px;
-  font-weight: 800;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-icon {
@@ -112,18 +110,22 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  background: #141414;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-icon:hover, .btn-pill:hover {
+.btn-icon:hover {
   background: #222222;
   transform: translateY(-1px);
 }
 
-.btn-icon:active, .btn-pill:active {
+.btn-icon:active {
   transform: scale(0.92);
 }
 
-/* Monochrome Notification Bell */
 #btn-notify-perm {
   background: #141414;
   color: #ffffff;
@@ -142,10 +144,14 @@ body {
   stroke: #000000;
 }
 
+#btn-tips svg {
+  stroke: #ffffff;
+}
+
 #reminder-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px 100px 20px;
+  padding: 16px 20px 110px 20px;
   scroll-behavior: smooth;
 }
 
@@ -225,8 +231,24 @@ body {
   color: #333333;
 }
 
-.card-meta {
+.card-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 8px;
+}
+
+.pastel-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 8px;
+  color: #111111;
+}
+
+.card-meta {
   font-size: 10px;
   font-weight: 800;
   color: #ff3b30;
@@ -268,6 +290,7 @@ body {
   transform: scale(0.92);
 }
 
+/* Floating Action Button: 360° Omnidirectional Uniform Glow */
 .fab {
   position: absolute;
   right: 24px;
@@ -279,7 +302,7 @@ body {
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 28px rgba(255, 59, 48, 0.45);
+  box-shadow: 0 0 28px 4px rgba(255, 59, 48, 0.6), 0 0 10px 2px rgba(255, 59, 48, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,8 +318,8 @@ body {
 }
 
 .fab:hover {
-  transform: scale(1.06) translateY(-2px);
-  box-shadow: 0 14px 34px rgba(255, 59, 48, 0.55);
+  transform: scale(1.06);
+  box-shadow: 0 0 36px 6px rgba(255, 59, 48, 0.75), 0 0 14px 4px rgba(255, 59, 48, 0.5);
 }
 
 .fab:active {
@@ -412,6 +435,39 @@ input[type="text"]:focus, textarea:focus {
   letter-spacing: 0.04em;
 }
 
+/* Pastel Label Picker Row */
+.labels-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.label-pill {
+  cursor: pointer;
+}
+
+.label-pill input {
+  display: none;
+}
+
+.label-pill span {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #1a1a1a;
+  color: #888888;
+  transition: all 0.2s ease;
+}
+
+.label-pill input:checked + span {
+  background-color: var(--pastel);
+  color: #111111;
+  font-weight: 800;
+  transform: scale(1.04);
+}
+
 .segment-control {
   display: flex;
   background: #1b1b1b;
@@ -492,13 +548,77 @@ input[type="text"]:focus, textarea:focus {
 
 .btn-primary:hover {
   background-color: #e03227;
-  transform: translateY(-1px);
 }
 
 .btn-primary:active {
   transform: scale(0.98);
 }
 
+/* Version Modal Card */
+.version-card {
+  text-align: center;
+}
+
+.version-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 16px 0;
+}
+
+.version-logo {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #ff3b30;
+}
+
+.version-tag {
+  font-size: 11px;
+  font-weight: 800;
+  background: #1e1e1e;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 10px;
+  letter-spacing: 0.08em;
+}
+
+.version-desc {
+  font-size: 13px;
+  color: #888888;
+  line-height: 1.4;
+  max-width: 260px;
+}
+
+.version-specs {
+  width: 100%;
+  background: #181818;
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.spec-row span {
+  color: #666666;
+  font-weight: 700;
+}
+
+.spec-row strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+/* Tips Carousel */
 .tips-card {
   padding-bottom: 20px;
 }
@@ -541,7 +661,7 @@ input[type="text"]:focus, textarea:focus {
 }
 
 .carousel-slide h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   color: #ffffff;
   margin-bottom: 8px;
@@ -551,7 +671,15 @@ input[type="text"]:focus, textarea:focus {
   font-size: 13px;
   color: #888888;
   line-height: 1.5;
-  max-width: 280px;
+  max-width: 300px;
+}
+
+.carousel-slide code {
+  background: #222222;
+  color: #ff3b30;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
 }
 
 .carousel-dots {
