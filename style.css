@@ -20,6 +20,15 @@ body {
   overflow: hidden;
 }
 
+/* Hidden Native Switch used to trigger Apple Taptic Motor without speaker audio */
+.hidden-taptic {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 #app-viewport {
   width: 100vw;
   max-width: 414px;
@@ -79,7 +88,7 @@ body {
   box-shadow: 0 0 10px rgba(255, 59, 48, 0.9);
 }
 
-/* Navigation */
+/* Top Nav */
 .top-nav {
   display: flex;
   justify-content: space-between;
@@ -158,6 +167,7 @@ body {
 #reminder-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px 20px 110px 20px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
@@ -198,15 +208,18 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
-/* Card Wrapper & Red Delete Underlay */
+/* Card Slot & Action Underlay */
 .card-wrapper {
   position: relative;
+  width: 100%;
   border-radius: 24px;
   overflow: hidden;
+  background-color: #ff3b30;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   max-height: 240px;
-  background-color: #ff3b30; /* Solid background prevents flickering gaps */
   transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
 }
 
@@ -219,13 +232,15 @@ body {
 
 .swipe-action-underlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background-color: #ff3b30;
-  border-radius: 24px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding-right: 30px;
+  padding-right: 28px;
   z-index: 1;
   pointer-events: none;
 }
@@ -236,13 +251,15 @@ body {
   align-items: center;
   justify-content: center;
   transform-origin: center center;
+  transform: scale(0.8);
   will-change: transform;
 }
 
-/* Pure Swipeable Card Surface (Zero conflicting CSS keyframe animations) */
+/* Pure Physical Floating Card Surface */
 .card {
   position: relative;
   z-index: 2;
+  width: 100%;
   background-color: #ffffff;
   color: #000000;
   border-radius: 24px;
@@ -250,16 +267,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   touch-action: pan-y;
   will-change: transform;
-  transform: translate3d(0, 0, 0);
+  transform: translate3d(0px, 0px, 0px);
 }
 
 .card.holding {
   transform: scale(0.96) !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  transition: transform 0.15s ease !important;
 }
 
 .card-content {
@@ -308,7 +323,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Complete Checkmark Button */
 .btn-complete {
   background: #f0f0f0;
   border: none;
@@ -325,7 +339,7 @@ body {
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
   margin-left: 12px;
   padding: 0;
-  z-index: 3;
+  z-index: 5;
 }
 
 .btn-complete svg {
@@ -503,7 +517,6 @@ input[type="text"]:focus, textarea:focus {
   letter-spacing: 0.04em;
 }
 
-/* Toggleable Pastel Label Buttons */
 .labels-container {
   display: flex;
   flex-wrap: wrap;
@@ -539,7 +552,6 @@ input[type="text"]:focus, textarea:focus {
   transform: scale(1.05);
 }
 
-/* Segmented Interval Control */
 .segment-control {
   display: flex;
   background: #1b1b1b;
@@ -788,7 +800,6 @@ input[type="text"]:focus, textarea:focus {
   border-radius: 6px;
 }
 
-/* Animations */
 @keyframes islandPulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.08); }
