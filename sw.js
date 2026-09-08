@@ -6,6 +6,22 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(clients.claim());
 });
 
+// Periodic background check triggered by client ping sync
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "TRIGGER_NOTIFICATION") {
+    const { title, body, tag } = event.data;
+    self.registration.showNotification(title, {
+      body: body,
+      icon: "manifest.json",
+      badge: "manifest.json",
+      tag: tag || "postr_ping",
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 200]
+    });
+  }
+});
+
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   e.waitUntil(

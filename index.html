@@ -30,7 +30,7 @@
       </div>
     </nav>
 
-    <!-- Content Feed -->
+    <!-- Content Feed (Activity bar removed from UI to free space) -->
     <main id="reminder-container">
       <div id="empty-state" class="empty-view">
         <div class="empty-icon">◻</div>
@@ -40,16 +40,7 @@
       <div id="card-list" class="cards-list"></div>
     </main>
 
-    <!-- Live Activity Dock -->
-    <section id="live-activity-bar" class="live-activity hidden">
-      <div class="live-header">
-        <span class="live-title">PINNED LIVE ACTIVITY</span>
-        <span id="live-count" class="live-badge">0 ITEMS</span>
-      </div>
-      <div id="live-items" class="live-content"></div>
-    </section>
-
-    <!-- Symmetrical FAB -->
+    <!-- Geometrically Centered Floating Action Button -->
     <button id="btn-add" class="fab" aria-label="Add Reminder">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -57,7 +48,7 @@
       </svg>
     </button>
 
-    <!-- Quick-Add Splash Modal -->
+    <!-- Quick Pin Modal with Custom Interval Inputs -->
     <div id="splash-modal" class="modal-backdrop hidden">
       <div class="hud-card">
         <div class="hud-header">
@@ -66,57 +57,66 @@
         </div>
         <form id="reminder-form">
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
-          <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="3"></textarea>
-          <div class="picker-row">
-            <label>PING INTERVAL</label>
+          <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="2"></textarea>
+
+          <div class="picker-section">
+            <label class="section-label">REPEAT PING INTERVAL</label>
             <div class="segment-control">
-              <input type="radio" id="p0" name="ping" value="0" checked><label for="p0">Off</label>
-              <input type="radio" id="p1" name="ping" value="1"><label for="p1">1m</label>
-              <input type="radio" id="p3" name="ping" value="3"><label for="p3">3m</label>
-              <input type="radio" id="p5" name="ping" value="5"><label for="p5">5m</label>
-              <input type="radio" id="p10" name="ping" value="10"><label for="p10">10m</label>
+              <input type="radio" id="p0" name="pingPreset" value="0" checked><label for="p0">Off</label>
+              <input type="radio" id="p1" name="pingPreset" value="1"><label for="p1">1m</label>
+              <input type="radio" id="p5" name="pingPreset" value="5"><label for="p5">5m</label>
+              <input type="radio" id="p10" name="pingPreset" value="10"><label for="p10">10m</label>
+              <input type="radio" id="pCustom" name="pingPreset" value="custom"><label for="pCustom">Custom</label>
+            </div>
+
+            <!-- Custom Interval Form Row -->
+            <div id="custom-time-row" class="custom-time-box hidden">
+              <input type="number" id="custom-val" placeholder="Qty" min="1" max="1000" value="15">
+              <select id="custom-unit">
+                <option value="m">Minutes</option>
+                <option value="h">Hours</option>
+              </select>
             </div>
           </div>
+
           <button type="submit" id="btn-submit" class="btn-primary">PIN TO LOCK SCREEN</button>
         </form>
       </div>
     </div>
 
-    <!-- Swipeable Tips Carousel Modal -->
+    <!-- Tips Carousel Modal -->
     <div id="tips-modal" class="modal-backdrop hidden">
       <div class="hud-card tips-card">
         <div class="hud-header">
           <span>POSTR GUIDE</span>
           <button id="btn-close-tips" class="btn-circle">✕</button>
         </div>
-        
-        <!-- Slide Track Container -->
+
         <div class="carousel-viewport" id="carousel-track">
           <div class="carousel-slides">
             <div class="carousel-slide">
               <div class="slide-badge">STEP 1 / 4</div>
-              <h3>PERSISTENT LOCK</h3>
-              <p>Sticky notes remain permanently visible across the Dynamic Island and Live Activity dock until explicitly completed.</p>
+              <h3>NOTIFICATION DRAWER</h3>
+              <p>Active items remain posted to your native device notification bar and Dynamic Island until you click Done.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">STEP 2 / 4</div>
-              <h3>REPEATING PINGS</h3>
-              <p>Choose 1m, 3m, 5m, or 10m intervals. The app re-triggers audio-haptic alerts and lock screen banners periodically.</p>
+              <h3>CUSTOM TIMERS</h3>
+              <p>Configure alerts in custom minutes or hours. Your phone will chime and pop recurring banner notifications.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">STEP 3 / 4</div>
               <h3>TRIPLE BACK TAP</h3>
-              <p>Trigger the high-contrast quick splash input instantly from anywhere without opening the dashboard.</p>
+              <p>Trigger the high-contrast quick splash input instantly from anywhere using the TAP simulation button.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">STEP 4 / 4</div>
-              <h3>SYSTEM NOTIFICATIONS</h3>
-              <p>Tap the 🔔 icon in the top navigation bar to enable background Lock Screen banners and sound chimes.</p>
+              <h3>ENABLE NOTIFICATIONS</h3>
+              <p>Make sure to tap the 🔔 bell icon once in the top bar to authorize browser and lock screen alerts.</p>
             </div>
           </div>
         </div>
 
-        <!-- Carousel Pagination Dots -->
         <div class="carousel-dots" id="carousel-dots">
           <span class="dot active" data-index="0"></span>
           <span class="dot" data-index="1"></span>
