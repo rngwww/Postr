@@ -1,4 +1,4 @@
-const CURRENT_VERSION = "1.6";
+const CURRENT_VERSION = "1.7";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
@@ -13,7 +13,6 @@ const PASTEL_MAP = {
   Tasks: "#b5ead7"
 };
 
-// Generates high-res PNG for iOS Homescreen
 function setupDynamicAppIcon() {
   try {
     const canvas = document.createElement("canvas");
@@ -58,7 +57,7 @@ function syncVersionDisplay() {
   }
 }
 
-// iOS Safari / WebKit Sound-Based Physical Haptic Engine
+// iOS Audio Engine
 function initAudio() {
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -71,7 +70,6 @@ function initAudio() {
   }
 }
 
-// Low-frequency sub-bass transducer pulse simulating native Taptic Engine taps
 function triggerHaptic(type = "light") {
   initAudio();
   if (!audioCtx) return;
@@ -82,7 +80,6 @@ function triggerHaptic(type = "light") {
     const gain = audioCtx.createGain();
 
     if (type === "light") {
-      // Crisp subtle tap (plus button / selection)
       osc.frequency.setValueAtTime(140, now);
       osc.frequency.exponentialRampToValueAtTime(40, now + 0.04);
       gain.gain.setValueAtTime(0.45, now);
@@ -92,7 +89,6 @@ function triggerHaptic(type = "light") {
       osc.start(now);
       osc.stop(now + 0.04);
     } else if (type === "medium") {
-      // Solid click (modal / about / hold edit)
       osc.frequency.setValueAtTime(120, now);
       osc.frequency.exponentialRampToValueAtTime(30, now + 0.07);
       gain.gain.setValueAtTime(0.65, now);
@@ -102,7 +98,6 @@ function triggerHaptic(type = "light") {
       osc.start(now);
       osc.stop(now + 0.07);
     } else if (type === "delete") {
-      // Double tactile thud (swipe delete / discard)
       osc.frequency.setValueAtTime(160, now);
       osc.frequency.exponentialRampToValueAtTime(25, now + 0.09);
       gain.gain.setValueAtTime(0.85, now);
@@ -269,7 +264,7 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
-// Smooth Touch Sync & Swipe-To-Delete Implementation
+// Direct 1:1 Touch Sync: Note follows finger continuously; deletes ONLY when finger releases on the left side
 function attachCardInteractions(wrapper, item) {
   const card = wrapper.querySelector(".card");
   const trashIcon = wrapper.querySelector(".trash-can-icon");
@@ -285,9 +280,7 @@ function attachCardInteractions(wrapper, item) {
   let startX = 0;
   let startY = 0;
   let currentTranslateX = 0;
-  let isSwiping = false;
-  let isValidSwipeOrigin = false;
-  let startTime = 0;
+  let isDraggingLeft = false;
 
   function onPointerDown(e) {
     initAudio();
@@ -295,27 +288,20 @@ function attachCardInteractions(wrapper, item) {
 
     const pageX = e.touches ? e.touches[0].clientX : e.clientX;
     const pageY = e.touches ? e.touches[0].clientY : e.clientY;
-    const rect = card.getBoundingClientRect();
 
     startX = pageX;
     startY = pageY;
-    startTime = Date.now();
     currentTranslateX = 0;
-    isSwiping = false;
-
-    // Must initiate from the right half of the note
-    const relativeX = pageX - rect.left;
-    isValidSwipeOrigin = relativeX >= rect.width * 0.45;
-
+    isDraggingLeft = false;
     isHolding = false;
-    card.classList.remove("holding");
 
-    // Remove CSS transitions during direct finger tracking to prevent stutter
+    card.classList.remove("holding");
     card.style.transition = "none";
     trashIcon.style.transition = "none";
 
+    // Start hold timer
     holdTimer = setTimeout(() => {
-      if (!isSwiping) {
+      if (!isDraggingLeft) {
         isHolding = true;
         card.classList.add("holding");
         triggerHaptic("medium");
@@ -330,32 +316,34 @@ function attachCardInteractions(wrapper, item) {
     const deltaX = pageX - startX;
     const deltaY = pageY - startY;
 
-    // Movement cancels press-and-hold
     if (Math.hypot(deltaX, deltaY) > 8) {
       clearTimeout(holdTimer);
     }
 
-    if (isHolding || !isValidSwipeOrigin) return;
+    if (isHolding) return;
 
-    // Detect intentional left drag
-    if (deltaX < -5 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      isSwiping = true;
-      if (e.cancelable) e.preventDefault(); // Prevent vertical scrolling while swiping
-      
-      currentTranslateX = deltaX;
+    // Direct 1:1 Leftwards tracking
+    if (deltaX < 0) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        isDraggingLeft = true;
+        if (e.cancelable) e.preventDefault();
 
-      // Sync physical note position directly to finger
-      requestAnimationFrame(() => {
-        card.style.transform = `translateX(${deltaX}px)`;
+        currentTranslateX = deltaX;
+        
+        // Exact hardware-accelerated follow
+        card.style.transform = `translate3d(${deltaX}px, 0, 0)`;
 
+        // Smoothly scale trashcan as note is pushed left
         const distance = Math.abs(deltaX);
-        const elapsed = Math.max(1, Date.now() - startTime);
-        const speed = distance / elapsed;
-        const scale = Math.min(2.0, Math.max(0.7, (distance / 120) + (speed * 0.2)));
+        const scale = Math.min(2.2, Math.max(0.7, distance / 90));
         const rotate = Math.min(18, distance * 0.08);
-
         trashIcon.style.transform = `scale(${scale}) rotate(-${rotate}deg)`;
-      });
+      }
+    } else if (isDraggingLeft) {
+      // Prevent right dragging beyond boundary
+      currentTranslateX = 0;
+      card.style.transform = `translate3d(0px, 0, 0)`;
+      trashIcon.style.transform = `scale(0.7) rotate(0deg)`;
     }
   }
 
@@ -365,44 +353,40 @@ function attachCardInteractions(wrapper, item) {
 
     if (isHolding) return;
 
-    if (isSwiping) {
+    if (isDraggingLeft) {
       const cardWidth = card.offsetWidth;
       const distance = Math.abs(currentTranslateX);
-      const elapsed = Math.max(1, Date.now() - startTime);
-      const speed = distance / elapsed;
 
-      // Deletion threshold: 45% card width or swift drag past 80px
-      if (distance > cardWidth * 0.45 || (distance > 80 && speed > 0.55)) {
-        card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
-        card.style.transform = `translateX(-${cardWidth + 20}px)`;
-        trashIcon.style.transition = "transform 0.2s ease-out";
+      // Delete ONLY upon finger release when dragged past the threshold (> 42% card width or > 130px)
+      if (distance > cardWidth * 0.42 || distance > 130) {
+        card.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = `translate3d(-${cardWidth + 40}px, 0, 0)`;
+        trashIcon.style.transition = "transform 0.22s ease-out";
         trashIcon.style.transform = "scale(1.8)";
         
         setTimeout(() => {
           deleteWithAnimation(item.id, wrapper);
-        }, 160);
+        }, 180);
       } else {
-        // Snap back cleanly with finger release
-        card.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
-        card.style.transform = "translateX(0px)";
-        trashIcon.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
+        // Finger released before reaching left side -> spring back to position
+        card.style.transition = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = `translate3d(0px, 0, 0)`;
+        trashIcon.style.transition = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
         trashIcon.style.transform = "scale(1) rotate(0deg)";
       }
     } else {
       card.style.transition = "transform 0.2s ease";
-      card.style.transform = "translateX(0px)";
+      card.style.transform = `translate3d(0px, 0, 0)`;
     }
 
-    isSwiping = false;
+    isDraggingLeft = false;
   }
 
-  // Touch Events
   card.addEventListener("touchstart", onPointerDown, { passive: false });
   card.addEventListener("touchmove", onPointerMove, { passive: false });
   card.addEventListener("touchend", onPointerUp);
   card.addEventListener("touchcancel", onPointerUp);
 
-  // Desktop Mouse Events for simulation
   card.addEventListener("mousedown", onPointerDown);
   window.addEventListener("mousemove", onPointerMove);
   window.addEventListener("mouseup", onPointerUp);
@@ -541,7 +525,6 @@ document.getElementById("btn-tips").addEventListener("click", () => {
 
 document.getElementById("btn-close-tips").addEventListener("click", () => closeModal("tips-modal"));
 
-// About Section Logo Touch
 document.getElementById("btn-logo").addEventListener("click", () => {
   triggerHaptic("medium");
   openModal("version-modal");
@@ -549,7 +532,6 @@ document.getElementById("btn-logo").addEventListener("click", () => {
 
 document.getElementById("btn-close-version").addEventListener("click", () => closeModal("version-modal"));
 
-// Form Submit
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
   initAudio();
@@ -657,7 +639,6 @@ function handleSwipe(diffX) {
   }
 }
 
-// Global First Touch Audio Unlocking
 window.addEventListener("touchstart", initAudio, { once: true, passive: true });
 window.addEventListener("click", initAudio, { once: true });
 
