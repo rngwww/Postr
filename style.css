@@ -77,6 +77,7 @@ body {
 }
 
 /* Hidden Native Switch used to trigger Apple Taptic Motor */
+.hidden-taptic-label,
 .hidden-taptic {
   position: fixed;
   bottom: 0;
@@ -270,8 +271,11 @@ body {
   overflow: hidden;
   background-color: #1a1a1a;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  max-height: 240px;
-  transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+  max-height: 320px;
+  transition: max-height 0.34s cubic-bezier(0.16, 1, 0.3, 1), 
+              margin-bottom 0.34s cubic-bezier(0.16, 1, 0.3, 1), 
+              opacity 0.28s ease,
+              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-wrapper.deleting {
@@ -279,7 +283,29 @@ body {
   max-height: 0 !important;
   margin-bottom: -12px !important;
   opacity: 0 !important;
+  transform: scale(0.92) translateX(-24px) !important;
   pointer-events: none;
+}
+
+.card-wrapper.deleting .card {
+  opacity: 0 !important;
+  transform: scale(0.92) translateX(-24px) !important;
+  transition: opacity 0.26s ease, transform 0.26s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card-wrapper.just-restored {
+  animation: cardRestoreEntrance 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardRestoreEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .swipe-action-underlay {
@@ -1454,6 +1480,63 @@ input[type="text"]:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 320px;
+  box-sizing: border-box;
+  transform-origin: center center;
+  will-change: transform, opacity, max-height;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.28s ease,
+              max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              margin 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              border-width 0.28s ease,
+              box-shadow 0.25s ease;
+  animation: trashCardEntrance 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes trashCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Note being restored - fades out with upward drift and collapses */
+.trash-item-card.restoring {
+  opacity: 0 !important;
+  transform: scale(0.92) translateY(-14px) !important;
+  max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: -10px !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+/* Note being permanently deleted - fades out with left slide and collapses */
+.trash-item-card.deleting {
+  opacity: 0 !important;
+  transform: scale(0.90) translateX(-24px) !important;
+  max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: -10px !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+/* Dynamic sibling reaction when an item is removed */
+.trash-item-card.sibling-slide {
+  transform: translateY(-4px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .trash-item-header {
@@ -1504,6 +1587,12 @@ input[type="text"]:focus, textarea:focus {
   font-weight: 800;
   cursor: pointer;
   letter-spacing: 0.02em;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-trash-restore:active {
+  transform: scale(0.92);
+  opacity: 0.8;
 }
 
 .btn-trash-delete {
@@ -1515,6 +1604,12 @@ input[type="text"]:focus, textarea:focus {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn-trash-delete:active {
+  transform: scale(0.92);
+  background: rgba(255, 59, 48, 0.15);
 }
 
 .trash-empty-state {
@@ -1523,6 +1618,22 @@ input[type="text"]:focus, textarea:focus {
   color: #555555;
   font-size: 13px;
   font-weight: 600;
+  transition: opacity 0.3s ease;
+}
+
+.trash-empty-state.fade-in {
+  animation: emptyStateFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes emptyStateFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .trash-footer {

@@ -151,21 +151,32 @@ function playTactilePulse(intensity = "light") {
   } catch (e) {}
 }
 
+// Hardware Apple Taptic Engine Activator for iOS WebKit
 function triggerSwitchHaptic() {
   try {
+    const label = document.getElementById("taptic-label");
+    if (label) {
+      label.click();
+      return;
+    }
     const trigger = document.getElementById("taptic-trigger");
     if (trigger) {
-      trigger.checked = !trigger.checked;
-      trigger.dispatchEvent(new Event("change", { bubbles: true }));
+      trigger.click();
     }
   } catch (e) {}
 }
 
+let lastHapticTimestamp = 0;
+
 function triggerHaptic(intensity = "light") {
-  // Method 1: Hardware Apple Taptic Engine via iOS 17.4+ Switch
+  const now = Date.now();
+  if (now - lastHapticTimestamp < 35) return;
+  lastHapticTimestamp = now;
+
+  // Method 1: Hardware Apple Taptic Engine via iOS 17.4+ Switch Label Click
   triggerSwitchHaptic();
 
-  // Method 2: Physical Audio-Tactile Speaker Impulse (Works across all iPhones)
+  // Method 2: Physical Audio-Tactile Speaker Impulse
   playTactilePulse(intensity);
 
   // Method 3: Standard Vibration API for supported hardware
@@ -184,17 +195,34 @@ function triggerHaptic(intensity = "light") {
 
 // Dedicated Delete Haptic: Distinctive double-latch pulse for deleting notes
 function triggerDeleteHaptic() {
-  triggerHaptic("heavy");
-  setTimeout(() => {
-    triggerHaptic("medium");
-  }, 55);
+  lastHapticTimestamp = Date.now();
+  triggerSwitchHaptic();
+  playTactilePulse("heavy");
 
   if ("vibrate" in navigator) {
     try {
       navigator.vibrate([35, 45, 20]);
     } catch (e) {}
   }
+
+  setTimeout(() => {
+    lastHapticTimestamp = Date.now();
+    triggerSwitchHaptic();
+    playTactilePulse("medium");
+  }, 65);
 }
+
+// Instantaneous Physical Haptic Response on Touch / Pointerdown for all interactive elements
+document.addEventListener("pointerdown", (e) => {
+  const target = e.target.closest("button, .filter-chip, .mode-tab, .ios-switch-label, .card-checklist-item, .fab");
+  if (target) {
+    if (target.classList.contains("btn-complete") || target.classList.contains("btn-trash-delete")) {
+      triggerDeleteHaptic();
+    } else {
+      triggerHaptic("light");
+    }
+  }
+}, { passive: true });
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js")
@@ -305,32 +333,69 @@ function moveToTrash(id, wrapper) {
       persistTrash();
       persistAndSync();
     }
-  }, 260);
+  }, 300);
 }
 
 function restoreFromTrash(id) {
-  triggerHaptic("medium");
   const index = trashedNotes.findIndex(t => t.id === id);
   if (index !== -1) {
     const [restoredNote] = trashedNotes.splice(index, 1);
     delete restoredNote.deletedAt;
+    restoredNote._justRestored = true;
     reminders.unshift(restoredNote);
     persistTrash();
     persistAndSync();
+    showToast("NOTE RESTORED");
   }
 }
 
 function permanentlyDeleteFromTrash(id) {
-  triggerDeleteHaptic();
   trashedNotes = trashedNotes.filter(t => t.id !== id);
   persistTrash();
 }
 
+function animateTrashCardRemoval(card, type, callback) {
+  if (card.classList.contains("restoring") || card.classList.contains("deleting")) return;
+  card.classList.add(type);
+
+  // Smoothly react on sibling cards below
+  const container = document.getElementById("trash-list");
+  if (container) {
+    const siblings = Array.from(container.querySelectorAll(".trash-item-card:not(.restoring):not(.deleting)"));
+    const idx = siblings.indexOf(card);
+    if (idx !== -1) {
+      siblings.slice(idx + 1).forEach(sib => {
+        sib.classList.add("sibling-slide");
+        setTimeout(() => sib.classList.remove("sibling-slide"), 260);
+      });
+    }
+  }
+
+  setTimeout(() => {
+    callback();
+  }, 290);
+}
+
 function emptyEntireTrash() {
   triggerDeleteHaptic();
-  trashedNotes = [];
-  persistTrash();
-  showToast("TRASH EMPTIED");
+  const container = document.getElementById("trash-list");
+  const cards = container ? Array.from(container.querySelectorAll(".trash-item-card")) : [];
+  if (cards.length > 0) {
+    cards.forEach((c, idx) => {
+      setTimeout(() => {
+        c.classList.add("deleting");
+      }, idx * 40);
+    });
+    setTimeout(() => {
+      trashedNotes = [];
+      persistTrash();
+      showToast("TRASH EMPTIED");
+    }, cards.length * 40 + 260);
+  } else {
+    trashedNotes = [];
+    persistTrash();
+    showToast("TRASH EMPTIED");
+  }
 }
 
 function formatRemainingTime(deletedAt) {
@@ -354,15 +419,22 @@ function renderTrashList() {
   container.innerHTML = "";
 
   if (trashedNotes.length === 0) {
-    if (emptyState) emptyState.style.display = "block";
+    if (emptyState) {
+      emptyState.style.display = "block";
+      emptyState.classList.add("fade-in");
+    }
     if (emptyBtn) emptyBtn.classList.add("hidden");
   } else {
-    if (emptyState) emptyState.style.display = "none";
+    if (emptyState) {
+      emptyState.style.display = "none";
+      emptyState.classList.remove("fade-in");
+    }
     if (emptyBtn) emptyBtn.classList.remove("hidden");
 
-    trashedNotes.forEach(item => {
+    trashedNotes.forEach((item, index) => {
       const card = document.createElement("div");
       card.className = "trash-item-card";
+      card.style.animationDelay = `${index * 45}ms`;
       card.innerHTML = `
         <div class="trash-item-header">
           <h4>${escapeHtml(item.title)}</h4>
@@ -375,12 +447,20 @@ function renderTrashList() {
         </div>
       `;
 
-      card.querySelector(".btn-trash-restore").addEventListener("click", () => {
-        restoreFromTrash(item.id);
+      card.querySelector(".btn-trash-restore").addEventListener("click", (e) => {
+        e.stopPropagation();
+        triggerHaptic("medium");
+        animateTrashCardRemoval(card, "restoring", () => {
+          restoreFromTrash(item.id);
+        });
       });
 
-      card.querySelector(".btn-trash-delete").addEventListener("click", () => {
-        permanentlyDeleteFromTrash(item.id);
+      card.querySelector(".btn-trash-delete").addEventListener("click", (e) => {
+        e.stopPropagation();
+        triggerDeleteHaptic();
+        animateTrashCardRemoval(card, "deleting", () => {
+          permanentlyDeleteFromTrash(item.id);
+        });
       });
 
       container.appendChild(card);
@@ -477,8 +557,12 @@ function render() {
     if (emptyState) emptyState.style.display = "none";
 
     filtered.forEach(item => {
+      const isJustRestored = Boolean(item._justRestored);
+      if (isJustRestored) {
+        delete item._justRestored;
+      }
       const wrapper = document.createElement("div");
-      wrapper.className = `card-wrapper ${item.pinned ? "is-pinned" : ""}`;
+      wrapper.className = `card-wrapper ${item.pinned ? "is-pinned" : ""} ${isJustRestored ? "just-restored" : ""}`;
       wrapper.setAttribute("data-id", item.id);
 
       let pingLabel = "";
@@ -613,7 +697,6 @@ function attachCardInteractions(wrapper, item) {
 
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
-    triggerDeleteHaptic();
     moveToTrash(item.id, wrapper);
   });
 
@@ -1623,14 +1706,15 @@ function handleSwipe(diffX) {
 function updateViewportHeight() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isStandalone = Boolean(window.navigator.standalone) || 
-    window.matchMedia("(display-mode: standalone)").matches;
+  const isStandalone = Boolean(window.navigator && window.navigator.standalone) || 
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
 
   let actualHeight;
   if (isIOS && isStandalone) {
     // In iOS PWA standalone mode with black-translucent,
     // window.screen.height is the true edge-to-edge physical screen height (e.g. 852px on iPhone 14 Pro)
-    actualHeight = Math.max(window.screen.height, window.innerHeight);
+    const screenH = window.screen ? window.screen.height : 0;
+    actualHeight = Math.max(screenH, window.innerHeight || 0);
   } else if (window.visualViewport) {
     actualHeight = window.visualViewport.height;
   } else {
