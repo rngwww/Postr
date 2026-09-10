@@ -850,6 +850,58 @@ if (btnClearDue) {
   });
 }
 
+// Checklist Tool & Smart Enter Continuation
+const btnInsertChecklist = document.getElementById("btn-insert-checklist");
+const inputBody = document.getElementById("input-body");
+
+if (btnInsertChecklist && inputBody) {
+  btnInsertChecklist.addEventListener("click", () => {
+    triggerHaptic("light");
+    const text = inputBody.value;
+    const start = inputBody.selectionStart !== undefined ? inputBody.selectionStart : text.length;
+    const end = inputBody.selectionEnd !== undefined ? inputBody.selectionEnd : text.length;
+
+    const before = text.slice(0, start);
+    const after = text.slice(end);
+
+    let insertText = "- [ ] ";
+    if (before.length > 0 && !before.endsWith("\n")) {
+      insertText = "\n- [ ] ";
+    }
+
+    inputBody.value = before + insertText + after;
+    const nextCursor = start + insertText.length;
+    inputBody.focus();
+    inputBody.setSelectionRange(nextCursor, nextCursor);
+  });
+
+  inputBody.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const cursor = inputBody.selectionStart;
+      const text = inputBody.value;
+      const lineStart = text.lastIndexOf("\n", cursor - 1) + 1;
+      const currentLine = text.slice(lineStart, cursor);
+      const match = currentLine.match(/^(\s*(-?\s*\[[ xX]\])\s*)/);
+
+      if (match) {
+        e.preventDefault();
+        const contentAfter = currentLine.slice(match[1].length).trim();
+        if (contentAfter.length === 0) {
+          // Empty checklist item -> clear prefix and exit list
+          inputBody.value = text.slice(0, lineStart) + text.slice(cursor);
+          inputBody.setSelectionRange(lineStart, lineStart);
+        } else {
+          // Continue checklist on new line
+          const nextPrefix = "\n- [ ] ";
+          inputBody.value = text.slice(0, cursor) + nextPrefix + text.slice(cursor);
+          const nextCursor = cursor + nextPrefix.length;
+          inputBody.setSelectionRange(nextCursor, nextCursor);
+        }
+      }
+    }
+  });
+}
+
 // Search & Filter Controls
 const searchInput = document.getElementById("search-input");
 const btnClearSearch = document.getElementById("btn-clear-search");
