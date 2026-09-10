@@ -65,6 +65,38 @@ function syncVersionDisplay() {
 
 // High-Fidelity Audio-Tactile & Hardware Taptic Engine
 let audioCtx = null;
+let hasAudioSessionUnlocked = false;
+
+function unlockAudioPlayback() {
+  if (hasAudioSessionUnlocked) return;
+  hasAudioSessionUnlocked = true;
+
+  if (typeof navigator !== "undefined" && "audioSession" in navigator) {
+    try {
+      navigator.audioSession.type = "playback";
+    } catch (e) {}
+  }
+
+  try {
+    const sampleRate = 22050;
+    const arrayBuffer = new ArrayBuffer(10);
+    const dataView = new DataView(arrayBuffer);
+    dataView.setUint32(0, sampleRate, true);
+    dataView.setUint32(4, sampleRate, true);
+    dataView.setUint16(8, 1, true);
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))).slice(0, 13);
+    const silentSrc = `data:audio/wav;base64,UklGRisAAABXQVZFZm10IBAAAAABAAEA${b64}AgAZGF0YQcAAACAgICAgICAAAA=`;
+
+    const audio = document.createElement("audio");
+    audio.setAttribute("x-webkit-airplay", "deny");
+    audio.preload = "auto";
+    audio.loop = true;
+    audio.src = silentSrc;
+    audio.load();
+    const p = audio.play();
+    if (p) p.catch(() => {});
+  } catch (e) {}
+}
 
 function getAudioContext() {
   try {
@@ -81,72 +113,107 @@ function getAudioContext() {
   return audioCtx;
 }
 
-// Pre-warm audio context on user interaction for zero latency
-window.addEventListener("touchstart", () => {
-  getAudioContext();
-}, { once: true, passive: true });
-window.addEventListener("click", () => {
-  getAudioContext();
-}, { once: true, passive: true });
+// Pre-warm audio and unlock playback on any user interaction
+["touchstart", "pointerdown", "mousedown", "click"].forEach(evt => {
+  window.addEventListener(evt, () => {
+    unlockAudioPlayback();
+    getAudioContext();
+  }, { passive: true });
+});
 
+// Move floating taptic harness under user touch
+function moveTapticHarness(x, y) {
+  const harness = document.getElementById("taptic-harness");
+  if (harness) {
+    harness.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  }
+}
+
+window.addEventListener("touchstart", (e) => {
+  if (e.touches && e.touches[0]) {
+    moveTapticHarness(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: true });
+
+window.addEventListener("touchmove", (e) => {
+  if (e.touches && e.touches[0]) {
+    moveTapticHarness(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: true });
+
+// Dual-Impulse Physical Tactile Resonator
 function playTactilePulse(intensity = "light") {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
 
-    osc.type = "sine";
+    const masterGain = ctx.createGain();
+    masterGain.connect(ctx.destination);
 
     if (intensity === "heavy" || intensity === "delete") {
-      // 55Hz dropping to 26Hz with rapid 28ms decay pushes speaker cone to produce a physical thump
-      osc.frequency.setValueAtTime(55, now);
-      osc.frequency.exponentialRampToValueAtTime(26, now + 0.028);
+      // 1. Solenoid impact transient
+      const clickOsc = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      clickOsc.type = "triangle";
+      clickOsc.frequency.setValueAtTime(160, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(40, now + 0.008);
+      clickGain.gain.setValueAtTime(0.9, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.008);
+      clickOsc.connect(clickGain);
+      clickGain.connect(masterGain);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.01);
 
-      gain.gain.setValueAtTime(0.85, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.03);
-    } else if (intensity === "selection") {
-      // Crisp 140Hz tick for switches and selection
-      osc.frequency.setValueAtTime(140, now);
-      osc.frequency.exponentialRampToValueAtTime(70, now + 0.012);
-
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.014);
+      // 2. Physical sub-bass speaker cone displacement
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = "sine";
+      subOsc.frequency.setValueAtTime(58, now);
+      subOsc.frequency.exponentialRampToValueAtTime(24, now + 0.032);
+      subGain.gain.setValueAtTime(1.0, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+      subOsc.connect(subGain);
+      subGain.connect(masterGain);
+      subOsc.start(now);
+      subOsc.stop(now + 0.035);
     } else if (intensity === "medium") {
-      // Snappy 80Hz pulse for card swipes and taps
-      osc.frequency.setValueAtTime(80, now);
-      osc.frequency.exponentialRampToValueAtTime(40, now + 0.02);
-
-      gain.gain.setValueAtTime(0.65, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.022);
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = "sine";
+      subOsc.frequency.setValueAtTime(85, now);
+      subOsc.frequency.exponentialRampToValueAtTime(35, now + 0.022);
+      subGain.gain.setValueAtTime(0.75, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+      subOsc.connect(subGain);
+      subGain.connect(masterGain);
+      subOsc.start(now);
+      subOsc.stop(now + 0.025);
+    } else if (intensity === "selection") {
+      const clickOsc = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      clickOsc.type = "sine";
+      clickOsc.frequency.setValueAtTime(180, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(80, now + 0.012);
+      clickGain.gain.setValueAtTime(0.55, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+      clickOsc.connect(clickGain);
+      clickGain.connect(masterGain);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.015);
     } else {
-      // Light subtle tap
-      osc.frequency.setValueAtTime(95, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.015);
-
-      gain.gain.setValueAtTime(0.45, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.017);
+      // Light
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = "sine";
+      subOsc.frequency.setValueAtTime(105, now);
+      subOsc.frequency.exponentialRampToValueAtTime(45, now + 0.016);
+      subGain.gain.setValueAtTime(0.6, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+      subOsc.connect(subGain);
+      subGain.connect(masterGain);
+      subOsc.start(now);
+      subOsc.stop(now + 0.018);
     }
   } catch (e) {}
 }
@@ -154,15 +221,42 @@ function playTactilePulse(intensity = "light") {
 // Hardware Apple Taptic Engine Activator for iOS WebKit
 function triggerSwitchHaptic() {
   try {
-    const label = document.getElementById("taptic-label");
-    if (label) {
-      label.click();
-      return;
-    }
     const trigger = document.getElementById("taptic-trigger");
     if (trigger) {
       trigger.click();
+      return;
     }
+    const harness = document.getElementById("taptic-harness");
+    if (harness) {
+      harness.click();
+    }
+  } catch (e) {}
+}
+
+// Direct-Tap Hardware Switch Overlay Injector for Interactive Elements
+function attachHapticTrigger(element) {
+  if (!element || element.querySelector(".haptic-switch-overlay")) return;
+
+  const switchEl = document.createElement("input");
+  switchEl.type = "checkbox";
+  switchEl.setAttribute("switch", "");
+  switchEl.className = "haptic-switch-overlay";
+  switchEl.setAttribute("aria-hidden", "true");
+  switchEl.tabIndex = -1;
+
+  if (getComputedStyle(element).position === "static") {
+    element.style.position = "relative";
+  }
+
+  element.appendChild(switchEl);
+}
+
+function applyHapticOverlays(root = document) {
+  try {
+    const elements = root.querySelectorAll(
+      "button, .filter-chip, .label-pill, .color-dot, .action-sheet-btn, .ios-menu-item, .card-checklist-item, .fab, .segment-control label, .btn-clear-time"
+    );
+    elements.forEach(attachHapticTrigger);
   } catch (e) {}
 }
 
@@ -173,13 +267,13 @@ function triggerHaptic(intensity = "light") {
   if (now - lastHapticTimestamp < 35) return;
   lastHapticTimestamp = now;
 
-  // Method 1: Hardware Apple Taptic Engine via iOS 17.4+ Switch Label Click
+  // Layer 1: Hardware Apple Taptic Engine via iOS WebKit Switch
   triggerSwitchHaptic();
 
-  // Method 2: Physical Audio-Tactile Speaker Impulse
+  // Layer 2: Audio-Tactile Speaker Displacement (Active in Silent Mode)
   playTactilePulse(intensity);
 
-  // Method 3: Standard Vibration API for supported hardware
+  // Layer 3: Web Vibration API for supported hardware (Android)
   if ("vibrate" in navigator) {
     try {
       if (intensity === "heavy") {
@@ -465,6 +559,7 @@ function renderTrashList() {
 
       container.appendChild(card);
     });
+    applyHapticOverlays(container);
   }
 }
 
@@ -636,6 +731,7 @@ function render() {
       cardList.appendChild(wrapper);
       attachCardInteractions(wrapper, item);
     });
+    applyHapticOverlays(cardList);
   }
 }
 
@@ -1167,6 +1263,7 @@ function openEditModal(item) {
 function openModal(modalId) {
   const el = document.getElementById(modalId);
   if (!el) return;
+  applyHapticOverlays(el);
   el.classList.remove("modal-closing");
   el.classList.add("active");
 }
@@ -1353,6 +1450,7 @@ function showIosMenu({ title = "Options", items = [] }) {
     });
     menuItemsContainer.appendChild(btn);
   });
+  applyHapticOverlays(menuItemsContainer);
 
   backdrop.classList.remove("menu-closing");
   backdrop.classList.add("active");
@@ -1918,3 +2016,4 @@ syncVersionDisplay();
 updateTrashBadge();
 updateAppBadge();
 render();
+applyHapticOverlays();

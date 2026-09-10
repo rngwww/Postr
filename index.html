@@ -17,9 +17,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Hidden iOS Hardware Taptic Engine Switch -->
-  <label for="taptic-trigger" id="taptic-label" class="hidden-taptic-label" aria-hidden="true">
-    <input type="checkbox" id="taptic-trigger" switch class="hidden-taptic" aria-hidden="true" tabindex="-1">
+  <!-- Floating iOS Hardware Taptic Engine Switch Harness -->
+  <label for="taptic-trigger" id="taptic-harness" class="taptic-harness" aria-hidden="true">
+    <input type="checkbox" id="taptic-trigger" switch class="taptic-switch-input" aria-hidden="true" tabindex="-1">
   </label>
 
   <div id="app-viewport">
@@ -184,7 +184,7 @@
           <div class="picker-section pin-section">
             <label class="toggle-control">
               <span class="section-label">PIN NOTE TO TOP</span>
-              <input type="checkbox" id="input-pin-note" class="ios-switch">
+              <input type="checkbox" id="input-pin-note" switch class="ios-switch">
               <span class="switch-slider"></span>
             </label>
           </div>
@@ -193,7 +193,7 @@
           <div class="picker-section due-section">
             <label class="toggle-control">
               <span class="section-label">SPECIFIC DUE TIME</span>
-              <input type="checkbox" id="toggle-due-time" class="ios-switch">
+              <input type="checkbox" id="toggle-due-time" switch class="ios-switch">
               <span class="switch-slider"></span>
             </label>
             <div id="due-time-controls" class="due-time-box disabled">
