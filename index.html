@@ -16,7 +16,9 @@
 </head>
 <body>
   <!-- Hidden iOS Hardware Taptic Engine Hack -->
-  <input type="checkbox" id="taptic-trigger" class="hidden-taptic" aria-hidden="true" tabindex="-1">
+  <label id="taptic-label" for="taptic-trigger" class="hidden-taptic" aria-hidden="true" tabindex="-1">
+    <input type="checkbox" id="taptic-trigger" switch class="hidden-taptic" aria-hidden="true" tabindex="-1">
+  </label>
 
   <div id="app-viewport">
     <!-- Dynamic Island Simulator -->
@@ -147,12 +149,12 @@
         </div>
         <div class="version-content">
           <h2 class="version-logo">POSTR</h2>
-          <div class="version-tag" id="app-version-badge">VERSION 1.9</div>
+          <div class="version-tag" id="app-version-badge">VERSION 2.0</div>
           <p class="version-desc">Minimalist, persistent lock screen reminder system designed for iOS & Web.</p>
           <div class="version-specs">
-            <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED</strong></div>
+            <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED / ORANGE</strong></div>
             <div class="spec-row"><span>HAPTICS</span><strong>IPHONE TAPTIC ENGINE (MUTED)</strong></div>
-            <div class="spec-row"><span>GESTURES</span><strong>1:1 SMOOTH CARD SYNC</strong></div>
+            <div class="spec-row"><span>GESTURES</span><strong>SWIPE RIGHT (EDIT) / SWIPE LEFT (DELETE)</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
             <div class="spec-row"><span>STATUS</span><strong>ACTIVE</strong></div>
           </div>
@@ -199,8 +201,8 @@
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 3 / 4</div>
               <h3>GESTURES & CONTROLS</h3>
-              <p><strong>Press & Hold:</strong> Hold any note to bring up the edit sheet.<br>
-              <strong>Swipe Left:</strong> Slide the card left with your finger. Releasing on the left deletes it.</p>
+              <p><strong>Swipe Right:</strong> Slide card right until orange icon expands to edit.<br>
+              <strong>Swipe Left:</strong> Slide card left until red trash expands to delete.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 4 / 4</div>

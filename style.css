@@ -22,10 +22,12 @@ body {
 
 /* Hidden Native Switch used to trigger Apple Taptic Motor without speaker audio */
 .hidden-taptic {
-  position: absolute;
+  position: fixed;
   top: -9999px;
   left: -9999px;
-  opacity: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0.001;
   pointer-events: none;
 }
 
@@ -211,19 +213,20 @@ body {
   width: 100%;
 }
 
-/* Card Slot & Action Underlay */
+/* Card Slot & Action Underlays */
 .card-wrapper {
   position: relative;
   width: 100%;
   border-radius: 24px;
   overflow: hidden;
-  background-color: #ff3b30;
+  background-color: #1a1a1a;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   max-height: 240px;
   transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
 }
 
 .card-wrapper.deleting {
+  background-color: #ff3b30 !important;
   max-height: 0 !important;
   margin-bottom: -12px !important;
   opacity: 0 !important;
@@ -236,16 +239,28 @@ body {
   right: 0;
   bottom: 0;
   left: 0;
-  background-color: #ff3b30;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  padding-right: 28px;
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
 }
 
-.trash-can-icon {
+.swipe-action-underlay.underlay-delete {
+  background-color: #ff3b30;
+  justify-content: flex-end;
+  padding-right: 28px;
+}
+
+.swipe-action-underlay.underlay-edit {
+  background-color: #ff9500;
+  justify-content: flex-start;
+  padding-left: 28px;
+}
+
+.trash-can-icon,
+.edit-action-icon {
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -270,11 +285,6 @@ body {
   touch-action: pan-y;
   will-change: transform;
   transform: translate3d(0px, 0px, 0px);
-}
-
-.card.holding {
-  transform: scale(0.96) !important;
-  transition: transform 0.15s ease !important;
 }
 
 .card-content {

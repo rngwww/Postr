@@ -1,4 +1,4 @@
-const CURRENT_VERSION = "1.9";
+const CURRENT_VERSION = "2.0";
 const STORAGE_KEY = "postr_notes_db";
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let swRegistration = null;
@@ -58,17 +58,28 @@ function syncVersionDisplay() {
 }
 
 // Native Hardware Taptic Trigger (Zero Speaker Audio)
-function triggerHaptic() {
+function triggerHaptic(intensity = "light") {
   // Method 1: Programmatically dispatching a native click on a hidden input switch triggers Apple's Taptic motor
-  const trigger = document.getElementById("taptic-trigger");
-  if (trigger) {
-    trigger.click();
-  }
+  try {
+    const label = document.getElementById("taptic-label");
+    const trigger = document.getElementById("taptic-trigger");
+    if (label) {
+      label.click();
+    } else if (trigger) {
+      trigger.click();
+    }
+  } catch (e) {}
 
   // Method 2: Standard API fallback
   if ("vibrate" in navigator) {
     try {
-      navigator.vibrate(25);
+      if (intensity === "medium") {
+        navigator.vibrate([15, 30, 15]);
+      } else if (intensity === "heavy") {
+        navigator.vibrate(40);
+      } else {
+        navigator.vibrate(12);
+      }
     } catch (e) {}
   }
 }
@@ -176,7 +187,19 @@ function render() {
       const labelColor = PASTEL_MAP[item.label] || "#e0e0e0";
 
       wrapper.innerHTML = `
-        <div class="swipe-action-underlay">
+        <div class="swipe-action-underlay underlay-edit">
+          <div class="edit-action-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"></path>
+              <path d="M2 6h4"></path>
+              <path d="M2 10h4"></path>
+              <path d="M2 14h4"></path>
+              <path d="M2 18h4"></path>
+              <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l5.013-5.01z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="swipe-action-underlay underlay-delete">
           <div class="trash-can-icon">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
@@ -223,95 +246,124 @@ function escapeHtml(str) {
 function attachCardInteractions(wrapper, item) {
   const card = wrapper.querySelector(".card");
   const trashIcon = wrapper.querySelector(".trash-can-icon");
+  const editIcon = wrapper.querySelector(".edit-action-icon");
+  const underlayDelete = wrapper.querySelector(".underlay-delete");
+  const underlayEdit = wrapper.querySelector(".underlay-edit");
   const btnDone = wrapper.querySelector(".btn-complete");
 
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
+    triggerHaptic("medium");
     deleteWithAnimation(item.id, wrapper);
   });
 
-  let holdTimer = null;
-  let isHolding = false;
   let startX = 0;
   let startY = 0;
   let currentOffsetX = 0;
-  let isSwipingLeft = false;
+  let swipeDirection = null; // 'left' | 'right' | null
+  let hasThresholdCrossed = false;
+  let isDragging = false;
 
-  function onTouchStart(e) {
+  function onPointerStart(e) {
     if (e.target.closest(".btn-complete")) return;
 
-    const touch = e.touches[0];
-    startX = touch.clientX;
-    startY = touch.clientY;
+    const point = e.touches ? e.touches[0] : e;
+    startX = point.clientX;
+    startY = point.clientY;
     currentOffsetX = 0;
-    isSwipingLeft = false;
-    isHolding = false;
+    swipeDirection = null;
+    hasThresholdCrossed = false;
+    isDragging = true;
 
-    card.classList.remove("holding");
     card.style.transition = "none";
     trashIcon.style.transition = "none";
-
-    holdTimer = setTimeout(() => {
-      if (!isSwipingLeft) {
-        isHolding = true;
-        card.classList.add("holding");
-        triggerHaptic();
-        openEditModal(item);
-      }
-    }, 500);
+    editIcon.style.transition = "none";
   }
 
-  function onTouchMove(e) {
-    if (isHolding) return;
+  function onPointerMove(e) {
+    if (!isDragging) return;
 
-    const touch = e.touches[0];
-    const diffX = touch.clientX - startX;
-    const diffY = touch.clientY - startY;
+    const point = e.touches ? e.touches[0] : e;
+    const diffX = point.clientX - startX;
+    const diffY = point.clientY - startY;
 
-    // Determine swipe intent
-    if (!isSwipingLeft) {
-      if (diffX < -6 && Math.abs(diffX) > Math.abs(diffY)) {
-        isSwipingLeft = true;
-        clearTimeout(holdTimer);
+    if (!swipeDirection) {
+      if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          swipeDirection = "left";
+          underlayDelete.style.opacity = "1";
+          underlayEdit.style.opacity = "0";
+        } else {
+          swipeDirection = "right";
+          underlayDelete.style.opacity = "0";
+          underlayEdit.style.opacity = "1";
+        }
       } else if (Math.abs(diffY) > 8) {
-        clearTimeout(holdTimer);
-        return; // Allow natural vertical list scrolling
+        isDragging = false;
+        return; // Allow vertical scrolling
       }
     }
 
-    if (isSwipingLeft) {
-      // Prevent browser from stealing horizontal swipe
+    if (swipeDirection === "left") {
       if (e.cancelable) e.preventDefault();
-
       if (diffX <= 0) {
         currentOffsetX = diffX;
         card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
 
-        // Scale trash icon up as card is pushed away
         const dist = Math.abs(diffX);
         const scale = Math.min(2.2, Math.max(0.75, dist / 80));
         const rotate = Math.min(16, dist * 0.08);
         trashIcon.style.transform = `scale(${scale}) rotate(-${rotate}deg)`;
+
+        const threshold = Math.min(card.offsetWidth * 0.42, 130);
+        if (dist >= threshold && !hasThresholdCrossed) {
+          hasThresholdCrossed = true;
+          triggerHaptic("light");
+        } else if (dist < threshold && hasThresholdCrossed) {
+          hasThresholdCrossed = false;
+        }
       } else {
         currentOffsetX = 0;
-        card.style.transform = `translate3d(0px, 0px, 0px)`;
-        trashIcon.style.transform = `scale(0.8) rotate(0deg)`;
+        card.style.transform = "translate3d(0px, 0px, 0px)";
+        trashIcon.style.transform = "scale(0.8) rotate(0deg)";
+      }
+    } else if (swipeDirection === "right") {
+      if (e.cancelable) e.preventDefault();
+      if (diffX >= 0) {
+        currentOffsetX = diffX;
+        card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
+
+        const dist = diffX;
+        const scale = Math.min(2.2, Math.max(0.75, dist / 80));
+        const rotate = Math.min(16, dist * 0.08);
+        editIcon.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
+
+        const threshold = Math.min(card.offsetWidth * 0.42, 130);
+        if (dist >= threshold && !hasThresholdCrossed) {
+          hasThresholdCrossed = true;
+          triggerHaptic("light");
+        } else if (dist < threshold && hasThresholdCrossed) {
+          hasThresholdCrossed = false;
+        }
+      } else {
+        currentOffsetX = 0;
+        card.style.transform = "translate3d(0px, 0px, 0px)";
+        editIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
     }
   }
 
-  function onTouchEnd() {
-    clearTimeout(holdTimer);
-    card.classList.remove("holding");
+  function onPointerEnd() {
+    if (!isDragging) return;
+    isDragging = false;
 
-    if (isHolding) return;
-
-    if (isSwipingLeft) {
+    if (swipeDirection === "left") {
       const cardWidth = card.offsetWidth;
       const dist = Math.abs(currentOffsetX);
+      const threshold = Math.min(cardWidth * 0.42, 130);
 
-      // Delete ONLY upon release when dragged far enough left
-      if (dist >= Math.min(cardWidth * 0.42, 130)) {
+      if (dist >= threshold) {
+        triggerHaptic("medium");
         card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = `translate3d(-${cardWidth + 40}px, 0px, 0px)`;
         trashIcon.style.transition = "transform 0.2s ease";
@@ -321,21 +373,51 @@ function attachCardInteractions(wrapper, item) {
           deleteWithAnimation(item.id, wrapper);
         }, 160);
       } else {
-        // Did not release on the left edge -> Spring card back smoothly
         card.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
-        card.style.transform = `translate3d(0px, 0px, 0px)`;
+        card.style.transform = "translate3d(0px, 0px, 0px)";
         trashIcon.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
-        trashIcon.style.transform = `scale(0.8) rotate(0deg)`;
+        trashIcon.style.transform = "scale(0.8) rotate(0deg)";
+      }
+    } else if (swipeDirection === "right") {
+      const cardWidth = card.offsetWidth;
+      const dist = currentOffsetX;
+      const threshold = Math.min(cardWidth * 0.42, 130);
+
+      if (dist >= threshold) {
+        triggerHaptic("medium");
+        card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = "translate3d(0px, 0px, 0px)";
+        editIcon.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
+        editIcon.style.transform = "scale(0.8) rotate(0deg)";
+
+        setTimeout(() => {
+          openEditModal(item);
+        }, 160);
+      } else {
+        card.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transform = "translate3d(0px, 0px, 0px)";
+        editIcon.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
+        editIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
     }
 
-    isSwipingLeft = false;
+    swipeDirection = null;
+    hasThresholdCrossed = false;
   }
 
-  card.addEventListener("touchstart", onTouchStart, { passive: false });
-  card.addEventListener("touchmove", onTouchMove, { passive: false });
-  card.addEventListener("touchend", onTouchEnd, { passive: false });
-  card.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  card.addEventListener("touchstart", onPointerStart, { passive: false });
+  card.addEventListener("touchmove", onPointerMove, { passive: false });
+  card.addEventListener("touchend", onPointerEnd, { passive: false });
+  card.addEventListener("touchcancel", onPointerEnd, { passive: false });
+
+  // Mouse support for desktop / browser testing
+  card.addEventListener("mousedown", onPointerStart);
+  window.addEventListener("mousemove", (e) => {
+    if (isDragging) onPointerMove(e);
+  });
+  window.addEventListener("mouseup", () => {
+    if (isDragging) onPointerEnd();
+  });
 }
 
 function deleteWithAnimation(id, wrapper) {
@@ -459,23 +541,32 @@ document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
 });
 
 document.getElementById("btn-add").addEventListener("click", openCreateModal);
-document.getElementById("btn-close-modal").addEventListener("click", () => closeModal("splash-modal"));
+document.getElementById("btn-close-modal").addEventListener("click", () => {
+  triggerHaptic("light");
+  closeModal("splash-modal");
+});
 
 document.getElementById("btn-tips").addEventListener("click", () => {
-  triggerHaptic();
+  triggerHaptic("light");
   currentSlide = 0;
   updateCarousel();
   openModal("tips-modal");
 });
 
-document.getElementById("btn-close-tips").addEventListener("click", () => closeModal("tips-modal"));
+document.getElementById("btn-close-tips").addEventListener("click", () => {
+  triggerHaptic("light");
+  closeModal("tips-modal");
+});
 
 document.getElementById("btn-logo").addEventListener("click", () => {
-  triggerHaptic();
+  triggerHaptic("light");
   openModal("version-modal");
 });
 
-document.getElementById("btn-close-version").addEventListener("click", () => closeModal("version-modal"));
+document.getElementById("btn-close-version").addEventListener("click", () => {
+  triggerHaptic("light");
+  closeModal("version-modal");
+});
 
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -505,7 +596,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       reminders[index].pingMinutes = finalMinutes;
       reminders[index].lastPing = Date.now();
     }
-    triggerHaptic();
+    triggerHaptic("medium");
   } else {
     const newReminder = {
       id: "postr_" + Date.now(),
@@ -517,6 +608,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       lastPing: Date.now()
     };
     reminders.unshift(newReminder);
+    triggerHaptic("medium");
     const alertHeading = newReminder.label ? `[${newReminder.label}] ${title}` : title;
     triggerNotification(alertHeading, body || "Added to active reminders.", newReminder.id);
   }
