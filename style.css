@@ -392,8 +392,8 @@ body {
 /* 360 Glowing FAB */
 .fab {
   position: absolute;
-  right: max(20px, calc(16px + env(safe-area-inset-right, 0px)));
-  bottom: max(16px, calc(8px + env(safe-area-inset-bottom, 0px)));
+  right: max(18px, env(safe-area-inset-right, 18px));
+  bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 18px));
   width: 58px;
   height: 58px;
   border-radius: 50%;
@@ -445,12 +445,18 @@ body {
   opacity: 0;
   pointer-events: none;
   visibility: hidden;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.24s ease;
 }
 
 .modal-backdrop.active {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
+}
+
+.modal-backdrop.modal-closing {
+  opacity: 0;
+  pointer-events: none;
   visibility: visible;
 }
 
@@ -465,14 +471,19 @@ body {
   border-radius: 32px;
   padding: 24px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
-  transform: scale(0.92) translateY(12px);
+  transform: scale(0.93) translateY(14px);
   opacity: 0;
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-backdrop.active .hud-card {
   transform: scale(1) translateY(0);
   opacity: 1;
+}
+
+.modal-backdrop.modal-closing .hud-card {
+  transform: scale(0.93) translateY(12px);
+  opacity: 0;
 }
 
 .hud-header {
@@ -535,48 +546,6 @@ input[type="text"], textarea {
 input[type="text"]:focus, textarea:focus {
   background-color: #242424;
   box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.5);
-}
-
-.note-body-wrapper {
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-}
-
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: 6px;
-  margin-bottom: 2px;
-}
-
-.btn-tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #1c1c1c;
-  border: 1px solid #2e2e2e;
-  border-radius: 12px;
-  color: #cccccc;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.btn-tool:hover {
-  background: #262626;
-  border-color: #ff3b30;
-  color: #ffffff;
-}
-
-.btn-tool:active {
-  transform: scale(0.95);
-  background: #220606;
-  border-color: #ff3b30;
 }
 
 .picker-section {
@@ -1113,11 +1082,22 @@ input[type="text"]:focus, textarea:focus {
   transform: translateX(20px);
 }
 
-/* Due Date Box */
+/* Due Date Box & Toggle */
+.due-section {
+  gap: 8px;
+}
+
 .due-time-box {
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+}
+
+.due-time-box.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+  filter: grayscale(1);
 }
 
 .input-datetime {
@@ -1141,60 +1121,6 @@ input[type="text"]:focus, textarea:focus {
   padding: 10px 14px;
   font-size: 12px;
   cursor: pointer;
-}
-
-/* Interactive Checklist Inside Note Card */
-.checklist-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  pointer-events: auto;
-}
-
-.checklist-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1.4;
-  color: #111111;
-  user-select: none;
-  padding: 3px 0;
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.checklist-item:active {
-  transform: scale(0.97);
-}
-
-.checklist-item.checked span {
-  text-decoration: line-through;
-  color: #888888;
-  opacity: 0.7;
-}
-
-.custom-checkbox {
-  width: 19px;
-  height: 19px;
-  border-radius: 6px;
-  border: 2px solid #555555;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 900;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.checklist-item.checked .custom-checkbox {
-  background-color: #ff3b30;
-  border-color: #ff3b30;
-  color: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 59, 48, 0.4);
 }
 
 /* Trash HUD Modal Styles */

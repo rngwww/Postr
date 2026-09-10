@@ -110,18 +110,7 @@
           <input type="hidden" id="edit-reminder-id" value="">
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
           
-          <div class="note-body-wrapper">
-            <textarea id="input-body" placeholder="Notes, steps, or instructions (optional)" rows="3"></textarea>
-            <div class="editor-toolbar">
-              <button type="button" id="btn-insert-checklist" class="btn-tool" title="Insert Checklist Item">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#ff3b30" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 11 12 14 22 4"></polyline>
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                </svg>
-                <span>+ CHECKLIST ITEM</span>
-              </button>
-            </div>
-          </div>
+          <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="3"></textarea>
 
           <!-- Toggleable Pastel Labels -->
           <div class="picker-section">
@@ -154,12 +143,16 @@
             </label>
           </div>
 
-          <!-- Exact Due Date/Time (Optional) -->
-          <div class="picker-section">
-            <label class="section-label">SPECIFIC DUE TIME (OPTIONAL)</label>
-            <div class="due-time-box">
-              <input type="datetime-local" id="input-due-time" class="input-datetime">
-              <button type="button" id="btn-clear-due-time" class="btn-clear-time" title="Clear time">✕</button>
+          <!-- Specific Due Time Toggle & Settings -->
+          <div class="picker-section due-section">
+            <label class="toggle-control">
+              <span class="section-label">SPECIFIC DUE TIME</span>
+              <input type="checkbox" id="toggle-due-time" class="ios-switch">
+              <span class="switch-slider"></span>
+            </label>
+            <div id="due-time-controls" class="due-time-box disabled">
+              <input type="datetime-local" id="input-due-time" class="input-datetime" disabled>
+              <button type="button" id="btn-clear-due-time" class="btn-clear-time" title="Clear time" disabled>✕</button>
             </div>
           </div>
 
@@ -298,9 +291,9 @@
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 3 / 6</div>
-              <h3>INTERACTIVE CHECKLISTS</h3>
-              <p>Format any line in your note body with <code>- [ ]</code> or <code>[ ]</code>.<br>
-              Postr automatically converts them into interactive checkboxes that you can tap to complete with tactile haptic feedback.</p>
+              <h3>SPECIFIC DUE TIME</h3>
+              <p>Toggle <strong>Specific Due Time</strong> in the note creator to set an exact alert date & time.<br>
+              When disabled, time settings are cleanly greyed out. When active, Postr alerts your lock screen right on schedule.</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 4 / 6</div>

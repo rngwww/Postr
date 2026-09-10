@@ -281,51 +281,9 @@ function renderTrashList() {
   }
 }
 
-function renderNoteBody(bodyText, noteId) {
+function renderNoteBody(bodyText) {
   if (!bodyText) return "";
-  const lines = bodyText.split("\n");
-  const hasChecklist = lines.some(line => /^\s*(-?\s*\[[ xX]\])/.test(line));
-
-  if (!hasChecklist) {
-    return `<p>${escapeHtml(bodyText)}</p>`;
-  }
-
-  let html = `<div class="checklist-container">`;
-  lines.forEach((line, index) => {
-    const match = line.match(/^\s*(-?\s*)\[([ xX])\]\s*(.*)$/);
-    if (match) {
-      const isChecked = match[2].toLowerCase() === "x";
-      const text = match[3];
-      html += `
-        <div class="checklist-item ${isChecked ? "checked" : ""}" data-note-id="${noteId}" data-line-index="${index}">
-          <div class="custom-checkbox">${isChecked ? "✓" : ""}</div>
-          <span>${escapeHtml(text)}</span>
-        </div>
-      `;
-    } else if (line.trim().length > 0) {
-      html += `<p style="margin-top: 4px;">${escapeHtml(line)}</p>`;
-    }
-  });
-  html += `</div>`;
-  return html;
-}
-
-function toggleChecklistItem(noteId, lineIndex) {
-  const note = reminders.find(r => r.id === noteId);
-  if (!note || !note.body) return;
-
-  const lines = note.body.split("\n");
-  if (lines[lineIndex] !== undefined) {
-    const match = lines[lineIndex].match(/^(\s*-?\s*\[)([ xX])(\]\s*.*)$/);
-    if (match) {
-      const currentVal = match[2].toLowerCase();
-      const newVal = currentVal === "x" ? " " : "x";
-      lines[lineIndex] = `${match[1]}${newVal}${match[3]}`;
-      note.body = lines.join("\n");
-      triggerHaptic("light");
-      persistAndSync();
-    }
-  }
+  return `<p>${escapeHtml(bodyText)}</p>`;
 }
 
 function formatDueTime(isoString) {
@@ -484,14 +442,6 @@ function attachCardInteractions(wrapper, item) {
     });
   }
 
-  wrapper.querySelectorAll(".checklist-item").forEach(chk => {
-    chk.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const lineIndex = parseInt(chk.dataset.lineIndex, 10);
-      toggleChecklistItem(item.id, lineIndex);
-    });
-  });
-
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
     moveToTrash(item.id, wrapper);
@@ -505,7 +455,7 @@ function attachCardInteractions(wrapper, item) {
   let isDragging = false;
 
   function onPointerStart(e) {
-    if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle") || e.target.closest(".checklist-item")) return;
+    if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle")) return;
 
     const point = e.touches ? e.touches[0] : e;
     startX = point.clientX;
@@ -697,7 +647,19 @@ function openCreateModal() {
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
   document.getElementById("input-pin-note").checked = false;
-  document.getElementById("input-due-time").value = "";
+
+  const toggleDue = document.getElementById("toggle-due-time");
+  const dueControls = document.getElementById("due-time-controls");
+  const inputDue = document.getElementById("input-due-time");
+  const btnClearDue = document.getElementById("btn-clear-due-time");
+  if (toggleDue && dueControls && inputDue) {
+    toggleDue.checked = false;
+    dueControls.classList.add("disabled");
+    inputDue.disabled = true;
+    inputDue.value = "";
+    if (btnClearDue) btnClearDue.disabled = true;
+  }
+
   document.getElementById("p0").checked = true;
   document.getElementById("custom-time-row").classList.add("hidden");
   resetLabelSelection(null);
@@ -713,7 +675,26 @@ function openEditModal(item) {
   document.getElementById("input-title").value = item.title;
   document.getElementById("input-body").value = item.body || "";
   document.getElementById("input-pin-note").checked = !!item.pinned;
-  document.getElementById("input-due-time").value = item.dueTime || "";
+
+  const toggleDue = document.getElementById("toggle-due-time");
+  const dueControls = document.getElementById("due-time-controls");
+  const inputDue = document.getElementById("input-due-time");
+  const btnClearDue = document.getElementById("btn-clear-due-time");
+  if (toggleDue && dueControls && inputDue) {
+    if (item.dueTime) {
+      toggleDue.checked = true;
+      dueControls.classList.remove("disabled");
+      inputDue.disabled = false;
+      inputDue.value = item.dueTime;
+      if (btnClearDue) btnClearDue.disabled = false;
+    } else {
+      toggleDue.checked = false;
+      dueControls.classList.add("disabled");
+      inputDue.disabled = true;
+      inputDue.value = "";
+      if (btnClearDue) btnClearDue.disabled = true;
+    }
+  }
 
   resetLabelSelection(item.label || null);
 
@@ -739,12 +720,20 @@ function openEditModal(item) {
 
 function openModal(modalId) {
   const el = document.getElementById(modalId);
+  if (!el) return;
+  el.classList.remove("modal-closing");
   el.classList.add("active");
 }
 
 function closeModal(modalId) {
   const el = document.getElementById(modalId);
+  if (!el || !el.classList.contains("active")) return;
+  triggerHaptic("light");
+  el.classList.add("modal-closing");
   el.classList.remove("active");
+  setTimeout(() => {
+    el.classList.remove("modal-closing");
+  }, 240);
 }
 
 // Background Ping & Due Date Interval Loop
@@ -841,64 +830,37 @@ document.getElementById("btn-empty-trash").addEventListener("click", () => {
   }
 });
 
-// Clear Due Time Button
+// Due Time Toggle & Clear Controls
+const toggleDueTime = document.getElementById("toggle-due-time");
+const dueTimeControls = document.getElementById("due-time-controls");
+const inputDueTime = document.getElementById("input-due-time");
 const btnClearDue = document.getElementById("btn-clear-due-time");
-if (btnClearDue) {
-  btnClearDue.addEventListener("click", () => {
-    document.getElementById("input-due-time").value = "";
-    triggerHaptic("light");
+
+if (toggleDueTime && dueTimeControls && inputDueTime) {
+  toggleDueTime.addEventListener("change", () => {
+    triggerHaptic("selection");
+    if (toggleDueTime.checked) {
+      dueTimeControls.classList.remove("disabled");
+      inputDueTime.disabled = false;
+      if (btnClearDue) btnClearDue.disabled = false;
+      if (!inputDueTime.value) {
+        const d = new Date(Date.now() + 3600000);
+        d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+        const pad = n => String(n).padStart(2, "0");
+        inputDueTime.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+    } else {
+      dueTimeControls.classList.add("disabled");
+      inputDueTime.disabled = true;
+      if (btnClearDue) btnClearDue.disabled = true;
+    }
   });
 }
 
-// Checklist Tool & Smart Enter Continuation
-const btnInsertChecklist = document.getElementById("btn-insert-checklist");
-const inputBody = document.getElementById("input-body");
-
-if (btnInsertChecklist && inputBody) {
-  btnInsertChecklist.addEventListener("click", () => {
+if (btnClearDue && inputDueTime) {
+  btnClearDue.addEventListener("click", () => {
+    inputDueTime.value = "";
     triggerHaptic("light");
-    const text = inputBody.value;
-    const start = inputBody.selectionStart !== undefined ? inputBody.selectionStart : text.length;
-    const end = inputBody.selectionEnd !== undefined ? inputBody.selectionEnd : text.length;
-
-    const before = text.slice(0, start);
-    const after = text.slice(end);
-
-    let insertText = "- [ ] ";
-    if (before.length > 0 && !before.endsWith("\n")) {
-      insertText = "\n- [ ] ";
-    }
-
-    inputBody.value = before + insertText + after;
-    const nextCursor = start + insertText.length;
-    inputBody.focus();
-    inputBody.setSelectionRange(nextCursor, nextCursor);
-  });
-
-  inputBody.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const cursor = inputBody.selectionStart;
-      const text = inputBody.value;
-      const lineStart = text.lastIndexOf("\n", cursor - 1) + 1;
-      const currentLine = text.slice(lineStart, cursor);
-      const match = currentLine.match(/^(\s*(-?\s*\[[ xX]\])\s*)/);
-
-      if (match) {
-        e.preventDefault();
-        const contentAfter = currentLine.slice(match[1].length).trim();
-        if (contentAfter.length === 0) {
-          // Empty checklist item -> clear prefix and exit list
-          inputBody.value = text.slice(0, lineStart) + text.slice(cursor);
-          inputBody.setSelectionRange(lineStart, lineStart);
-        } else {
-          // Continue checklist on new line
-          const nextPrefix = "\n- [ ] ";
-          inputBody.value = text.slice(0, cursor) + nextPrefix + text.slice(cursor);
-          const nextCursor = cursor + nextPrefix.length;
-          inputBody.setSelectionRange(nextCursor, nextCursor);
-        }
-      }
-    }
   });
 }
 
@@ -1006,7 +968,10 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   const title = document.getElementById("input-title").value.trim();
   const body = document.getElementById("input-body").value.trim();
   const isPinned = document.getElementById("input-pin-note").checked;
-  const dueTimeVal = document.getElementById("input-due-time").value || null;
+  const toggleDue = document.getElementById("toggle-due-time");
+  const isDueActive = toggleDue ? toggleDue.checked : false;
+  const rawDueVal = document.getElementById("input-due-time") ? document.getElementById("input-due-time").value : "";
+  const dueTimeVal = (isDueActive && rawDueVal) ? rawDueVal : null;
   const selectedPreset = document.querySelector('input[name="pingPreset"]:checked').value;
 
   let finalMinutes = 0;
