@@ -31,7 +31,14 @@
 
     <!-- Top Navigation -->
     <nav class="top-nav">
-      <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
+      <div class="logo-area">
+        <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
+        <div id="mobile-island-indicator" class="mobile-island-indicator" title="Status">
+          <span class="indicator-dot"></span>
+          <span id="mobile-island-text">IDLE</span>
+        </div>
+      </div>
+      <div class="nav-actions">
         <!-- Trash Bin -->
         <button id="btn-trash" class="btn-icon" title="Recently Deleted" aria-label="Trash">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

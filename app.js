@@ -148,9 +148,17 @@ function triggerNotification(primaryText, secondaryText, tag) {
 
 function triggerIslandPulse() {
   const islandPill = document.getElementById("dynamic-island");
-  islandPill.classList.remove("pulse");
-  void islandPill.offsetWidth;
-  islandPill.classList.add("pulse");
+  if (islandPill) {
+    islandPill.classList.remove("pulse");
+    void islandPill.offsetWidth;
+    islandPill.classList.add("pulse");
+  }
+  const mobilePill = document.getElementById("mobile-island-indicator");
+  if (mobilePill) {
+    mobilePill.classList.remove("pulse");
+    void mobilePill.offsetWidth;
+    mobilePill.classList.add("pulse");
+  }
 }
 
 function updateAppBadge() {
@@ -805,9 +813,16 @@ if (categoryFilters) {
     chip.addEventListener("click", () => {
       const filter = chip.getAttribute("data-filter");
       triggerHaptic("light");
-      activeFilterCategory = filter;
-      categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
+      if (activeFilterCategory === filter && filter !== "all") {
+        activeFilterCategory = "all";
+        categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+        const allChip = categoryFilters.querySelector('[data-filter="all"]');
+        if (allChip) allChip.classList.add("active");
+      } else {
+        activeFilterCategory = filter;
+        categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+      }
       render();
     });
   });
@@ -981,6 +996,78 @@ function handleSwipe(diffX) {
   }
 }
 
+// Dynamic Device Detection & Adaptive Viewport
+function initDeviceProfile() {
+  const w = window.screen.width;
+  const h = window.screen.height;
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  const isMobile = isIOS || /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) || window.innerWidth <= 768;
+
+  const minDim = Math.min(w, h);
+  const maxDim = Math.max(w, h);
+
+  let deviceModel = "generic";
+  let hasDynamicIsland = false;
+
+  if (isIOS) {
+    if (minDim === 393 && maxDim === 852) {
+      deviceModel = "iphone-14-pro"; // iPhone 14 Pro, 15, 15 Pro
+      hasDynamicIsland = true;
+    } else if (minDim === 430 && maxDim === 932) {
+      deviceModel = "iphone-14-pro-max"; // iPhone 14 Pro Max, 15 Plus, 15 Pro Max
+      hasDynamicIsland = true;
+    } else if (minDim === 402 && maxDim === 874) {
+      deviceModel = "iphone-16-pro"; // iPhone 16 Pro
+      hasDynamicIsland = true;
+    } else if (minDim === 440 && maxDim === 956) {
+      deviceModel = "iphone-16-pro-max"; // iPhone 16 Pro Max
+      hasDynamicIsland = true;
+    } else if (minDim === 390 && maxDim === 844) {
+      deviceModel = "iphone-14"; // iPhone 12, 13, 13 Pro, 14
+    } else if (minDim === 375 && maxDim === 812) {
+      deviceModel = "iphone-x"; // iPhone X, XS, 11 Pro, 12/13 mini
+    } else if (minDim === 414 && maxDim === 896) {
+      deviceModel = "iphone-11"; // iPhone XR, 11, XS Max, 11 Pro Max
+    } else if (minDim === 375 && maxDim === 667) {
+      deviceModel = "iphone-se"; // iPhone SE 2/3, 7, 8
+    } else {
+      deviceModel = "iphone-other";
+      if (maxDim >= 852) hasDynamicIsland = true;
+    }
+  }
+
+  const root = document.documentElement;
+  root.setAttribute("data-device", deviceModel);
+  root.setAttribute("data-is-ios", isIOS ? "true" : "false");
+  root.setAttribute("data-is-standalone", isStandalone ? "true" : "false");
+  root.setAttribute("data-is-mobile", isMobile ? "true" : "false");
+  root.setAttribute("data-has-dynamic-island", hasDynamicIsland ? "true" : "false");
+
+  if (isMobile) {
+    document.body.classList.add("is-mobile-device");
+  } else {
+    document.body.classList.remove("is-mobile-device");
+  }
+
+  if (hasDynamicIsland) {
+    document.body.classList.add("has-physical-island");
+  } else {
+    document.body.classList.remove("has-physical-island");
+  }
+
+  // Update dynamic CSS height variable for 100% viewport accuracy on iOS Safari
+  const actualHeight = window.innerHeight;
+  root.style.setProperty("--real-vh", `${actualHeight}px`);
+  root.style.setProperty("--app-height", `${actualHeight}px`);
+}
+
+window.addEventListener("resize", initDeviceProfile);
+window.addEventListener("orientationchange", initDeviceProfile);
+window.addEventListener("pageshow", initDeviceProfile);
+
+initDeviceProfile();
 setupDynamicAppIcon();
 setupLabelSelector();
 updateNotifyButton();
