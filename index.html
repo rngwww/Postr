@@ -6,6 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Postr">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
   
   <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg">
   <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg">
@@ -226,44 +228,39 @@
     <!-- Trash / Recently Deleted Modal -->
     <div id="trash-modal" class="modal-backdrop">
       <div class="hud-card trash-hud-card">
-        <!-- iOS Navigation Bar -->
-        <div class="ios-trash-nav">
-          <div class="ios-trash-nav-title-group">
-            <h2 class="ios-trash-nav-title">Recently Deleted</h2>
-            <span class="ios-trash-retention-pill">24h Auto-Purge</span>
+        <div class="hud-header">
+          <div class="trash-header-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff3b30" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>RECENTLY DELETED</span>
           </div>
-          <button id="btn-close-trash" class="ios-trash-close-btn" aria-label="Close">
-            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
+          <button id="btn-close-trash" class="btn-circle" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
-
-        <!-- iOS Secondary Notice Footnote -->
-        <p class="ios-trash-notice">Notes are stored here for 24 hours after deleting before being permanently removed.</p>
-
-        <!-- Trashed Notes List Container -->
-        <div id="trash-list" class="ios-trash-list"></div>
-
-        <!-- iOS Native Empty State -->
-        <div id="trash-empty-state" class="ios-trash-empty-state">
-          <div class="ios-trash-empty-icon-bubble">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#636366" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </div>
-          <h3 class="ios-trash-empty-heading">No Recently Deleted</h3>
-          <p class="ios-trash-empty-subheading">Notes you swipe left or trash will appear here for 24 hours before permanent deletion.</p>
+        
+        <!-- 24H Retention Warning Banner -->
+        <div class="trash-notice-banner">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Notes in the trash are stored for 24 hours after deleting before being permanently removed.</span>
         </div>
 
-        <!-- iOS Bottom Toolbar -->
-        <div id="trash-toolbar" class="ios-trash-toolbar hidden">
-          <button type="button" id="btn-empty-trash" class="ios-trash-toolbar-btn destructive">Delete All</button>
-          <button type="button" id="btn-recover-all" class="ios-trash-toolbar-btn recover">Recover All</button>
+        <div id="trash-list" class="trash-list"></div>
+
+        <div id="trash-empty-state" class="trash-empty-state">
+          <span>Trash is empty</span>
+        </div>
+
+        <div class="trash-footer">
+          <button id="btn-empty-trash" class="btn-danger-text hidden">EMPTY TRASH NOW</button>
         </div>
       </div>
     </div>
