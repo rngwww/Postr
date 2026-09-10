@@ -224,6 +224,22 @@ function emptyEntireTrash() {
   triggerHaptic("heavy");
   trashedNotes = [];
   persistTrash();
+  showToast("TRASH EMPTIED");
+}
+
+function recoverAllFromTrash() {
+  if (trashedNotes.length === 0) return;
+  triggerHaptic("success");
+  const count = trashedNotes.length;
+  while (trashedNotes.length > 0) {
+    const item = trashedNotes.pop();
+    delete item.deletedAt;
+    notes.unshift(item);
+  }
+  persistNotes();
+  persistTrash();
+  renderNotes();
+  showToast(`${count} NOTE${count > 1 ? "S" : ""} RESTORED`);
 }
 
 function formatRemainingTime(deletedAt) {
@@ -240,44 +256,86 @@ function formatRemainingTime(deletedAt) {
 function renderTrashList() {
   const container = document.getElementById("trash-list");
   const emptyState = document.getElementById("trash-empty-state");
-  const emptyBtn = document.getElementById("btn-empty-trash");
+  const toolbar = document.getElementById("trash-toolbar");
   if (!container) return;
 
   cleanupExpiredTrash();
   container.innerHTML = "";
 
   if (trashedNotes.length === 0) {
-    emptyState.style.display = "block";
-    emptyBtn.classList.add("hidden");
+    if (emptyState) emptyState.style.display = "flex";
+    if (toolbar) toolbar.classList.add("hidden");
   } else {
-    emptyState.style.display = "none";
-    emptyBtn.classList.remove("hidden");
+    if (emptyState) emptyState.style.display = "none";
+    if (toolbar) toolbar.classList.remove("hidden");
+
+    const groupCard = document.createElement("div");
+    groupCard.className = "ios-trash-group-card";
 
     trashedNotes.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "trash-item-card";
-      card.innerHTML = `
-        <div class="trash-item-header">
-          <h4>${escapeHtml(item.title)}</h4>
-          <span class="trash-expiry-badge">${formatRemainingTime(item.deletedAt)}</span>
+      const row = document.createElement("div");
+      row.className = "ios-trash-row";
+
+      const isChecklist = item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0);
+      const iconSvg = isChecklist
+        ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#ff3b30" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`
+        : `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#ff3b30" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+
+      let previewText = "";
+      if (isChecklist && item.checklistItems && item.checklistItems.length > 0) {
+        previewText = item.checklistItems.map(ci => (ci.done ? "✓ " : "○ ") + ci.text).join(" • ");
+      } else if (item.body) {
+        previewText = item.body;
+      }
+
+      row.innerHTML = `
+        <div class="ios-trash-row-icon">
+          ${iconSvg}
         </div>
-        ${item.body ? `<div class="trash-item-body">${escapeHtml(item.body)}</div>` : ""}
-        <div class="trash-item-actions">
-          <button type="button" class="btn-trash-restore" data-id="${item.id}">RESTORE</button>
-          <button type="button" class="btn-trash-delete" data-id="${item.id}">DELETE NOW</button>
+        <div class="ios-trash-row-content">
+          <div class="ios-trash-row-top">
+            <h4 class="ios-trash-row-title">${escapeHtml(item.title || "Untitled")}</h4>
+            <span class="ios-trash-expiry-pill">
+              <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              ${formatRemainingTime(item.deletedAt)}
+            </span>
+          </div>
+          ${previewText ? `<p class="ios-trash-row-snippet">${escapeHtml(previewText)}</p>` : ""}
+        </div>
+        <div class="ios-trash-row-actions">
+          <button type="button" class="btn-trash-restore-ios" data-id="${item.id}" title="Recover Note" aria-label="Recover Note">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span>Put Back</span>
+          </button>
+          <button type="button" class="btn-trash-delete-ios" data-id="${item.id}" title="Delete Permanently" aria-label="Delete Permanently">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
         </div>
       `;
 
-      card.querySelector(".btn-trash-restore").addEventListener("click", () => {
+      row.querySelector(".btn-trash-restore-ios").addEventListener("click", (e) => {
+        e.stopPropagation();
         restoreFromTrash(item.id);
       });
 
-      card.querySelector(".btn-trash-delete").addEventListener("click", () => {
+      row.querySelector(".btn-trash-delete-ios").addEventListener("click", (e) => {
+        e.stopPropagation();
         permanentlyDeleteFromTrash(item.id);
       });
 
-      container.appendChild(card);
+      groupCard.appendChild(row);
     });
+
+    container.appendChild(groupCard);
   }
 }
 
@@ -907,22 +965,40 @@ document.getElementById("btn-close-version").addEventListener("click", () => {
 });
 
 // Trash Modal Controls
-document.getElementById("btn-trash").addEventListener("click", () => {
-  triggerHaptic("light");
-  renderTrashList();
-  openModal("trash-modal");
-});
+const btnTrash = document.getElementById("btn-trash");
+if (btnTrash) {
+  btnTrash.addEventListener("click", () => {
+    triggerHaptic("light");
+    renderTrashList();
+    openModal("trash-modal");
+  });
+}
 
-document.getElementById("btn-close-trash").addEventListener("click", () => {
-  triggerHaptic("light");
-  closeModal("trash-modal");
-});
+const btnCloseTrash = document.getElementById("btn-close-trash");
+if (btnCloseTrash) {
+  btnCloseTrash.addEventListener("click", () => {
+    triggerHaptic("light");
+    closeModal("trash-modal");
+  });
+}
 
-document.getElementById("btn-empty-trash").addEventListener("click", () => {
-  if (confirm("Permanently empty all notes in the trash?")) {
-    emptyEntireTrash();
-  }
-});
+const btnEmptyTrash = document.getElementById("btn-empty-trash");
+if (btnEmptyTrash) {
+  btnEmptyTrash.addEventListener("click", () => {
+    if (trashedNotes.length === 0) return;
+    if (confirm("Permanently delete all notes in Recently Deleted? This action cannot be undone.")) {
+      emptyEntireTrash();
+    }
+  });
+}
+
+const btnRecoverAll = document.getElementById("btn-recover-all");
+if (btnRecoverAll) {
+  btnRecoverAll.addEventListener("click", () => {
+    if (trashedNotes.length === 0) return;
+    recoverAllFromTrash();
+  });
+}
 
 // Due Time Toggle & Clear Controls
 const toggleDueTime = document.getElementById("toggle-due-time");

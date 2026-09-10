@@ -1,4 +1,6 @@
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -7,7 +9,37 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro Rounded", "SF Pro", system-ui, sans-serif !important;
+}
+
+html,
+body,
+input,
+textarea,
+button,
+select,
+option,
+optgroup,
+label,
+p,
+span,
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+b,
+em,
+i,
+small,
+a,
+code,
+pre,
+dialog {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "SF Pro Rounded", "SF Pro", system-ui, sans-serif !important;
 }
 
 html {
@@ -1333,148 +1365,292 @@ input[type="text"]:focus, textarea:focus {
   cursor: pointer;
 }
 
-/* Trash HUD Modal Styles */
+/* iOS Native Trash / Recently Deleted Modal Styles */
 .trash-hud-card {
-  max-height: 80vh;
+  background: #1c1c1e !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 28px !important;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.9), 0 0 0 0.5px rgba(255, 255, 255, 0.08) !important;
+  padding: 20px 20px 18px 20px !important;
+  max-width: 420px;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  max-height: min(84vh, 620px);
 }
 
-.trash-header-title {
+.ios-trash-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ios-trash-nav-title-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
 }
 
-.trash-notice-banner {
-  background: rgba(255, 59, 48, 0.08);
-  border: 1px solid rgba(255, 59, 48, 0.25);
-  border-radius: 14px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 14px;
-  color: #ff857d;
-  font-size: 11px;
-  line-height: 1.4;
-  font-weight: 600;
-}
-
-.trash-notice-banner svg {
-  flex-shrink: 0;
-  margin-top: 1px;
-  color: #ff3b30;
-}
-
-.trash-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 45vh;
-  padding-right: 4px;
-}
-
-.trash-item-card {
-  background: #121212;
-  border: 1px solid #202020;
-  border-radius: 16px;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.trash-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.trash-item-header h4 {
-  font-size: 14px;
+.ios-trash-nav-title {
+  font-size: 19px;
   font-weight: 700;
   color: #ffffff;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.ios-trash-retention-pill {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.ios-trash-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.ios-trash-close-btn:active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  transform: scale(0.94);
+}
+
+.ios-trash-notice {
+  font-size: 12.5px;
+  color: #8e8e93;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.ios-trash-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 50vh;
+  margin-bottom: 4px;
+}
+
+.ios-trash-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ios-trash-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.ios-trash-group-card {
+  background: #252528;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ios-trash-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s ease;
+}
+
+.ios-trash-row:last-child {
+  border-bottom: none;
+}
+
+.ios-trash-row:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ios-trash-row-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 59, 48, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ios-trash-row-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ios-trash-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ios-trash-row-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   letter-spacing: -0.01em;
 }
 
-.trash-expiry-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: #ff9500;
-  background: rgba(255, 149, 0, 0.12);
+.ios-trash-expiry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #ff9f0a;
+  background: rgba(255, 159, 10, 0.14);
   padding: 2px 7px;
   border-radius: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.trash-item-body {
+.ios-trash-row-snippet {
   font-size: 12px;
-  color: #888888;
+  color: #8e8e93;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.35;
 }
 
-.trash-item-actions {
+.ios-trash-row-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-.btn-trash-restore {
-  background: #ffffff;
-  color: #000000;
+.btn-trash-restore-ios {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
   border: none;
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-  letter-spacing: 0.02em;
-}
-
-.btn-trash-delete {
-  background: transparent;
-  color: #ff3b30;
-  border: 1px solid rgba(255, 59, 48, 0.35);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.trash-empty-state {
-  text-align: center;
-  padding: 30px 10px;
-  color: #555555;
-  font-size: 13px;
+  color: #ffffff;
+  padding: 6px 11px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.trash-footer {
-  margin-top: 14px;
+.btn-trash-restore-ios:active {
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(0.96);
+}
+
+.btn-trash-delete-ios {
+  width: 28px;
+  height: 28px;
+  border-radius: 12px;
+  background: rgba(255, 69, 58, 0.12);
+  border: none;
+  color: #ff453a;
   display: flex;
+  align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.btn-danger-text {
+.btn-trash-delete-ios:active {
+  background: rgba(255, 69, 58, 0.25);
+  transform: scale(0.94);
+}
+
+.ios-trash-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 38px 16px 28px 16px;
+  text-align: center;
+}
+
+.ios-trash-empty-icon-bubble {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.ios-trash-empty-heading {
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.ios-trash-empty-subheading {
+  font-size: 13px;
+  color: #8e8e93;
+  line-height: 1.4;
+  max-width: 260px;
+}
+
+.ios-trash-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  margin-top: 12px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.ios-trash-toolbar.hidden {
+  display: none !important;
+}
+
+.ios-trash-toolbar-btn {
   background: none;
   border: none;
-  color: #ff3b30;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: opacity 0.15s ease;
+}
+
+.ios-trash-toolbar-btn:active {
+  opacity: 0.6;
+}
+
+.ios-trash-toolbar-btn.destructive {
+  color: #ff453a;
+}
+
+.ios-trash-toolbar-btn.recover {
+  color: #0a84ff;
 }
 
 /* Backup Actions */
