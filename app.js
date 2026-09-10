@@ -63,29 +63,135 @@ function syncVersionDisplay() {
   }
 }
 
-// Native Hardware Taptic Trigger (Zero Speaker Audio)
-function triggerHaptic(intensity = "light") {
-  // Method 1: Programmatically dispatching a native click on a hidden input switch triggers Apple's Taptic motor
+// High-Fidelity Audio-Tactile & Hardware Taptic Engine
+let audioCtx = null;
+
+function getAudioContext() {
   try {
-    const label = document.getElementById("taptic-label");
-    const trigger = document.getElementById("taptic-trigger");
-    if (label) {
-      label.click();
-    } else if (trigger) {
-      trigger.click();
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
     }
   } catch (e) {}
+  return audioCtx;
+}
 
-  // Method 2: Standard API fallback
+// Pre-warm audio context on user interaction for zero latency
+window.addEventListener("touchstart", () => {
+  getAudioContext();
+}, { once: true, passive: true });
+window.addEventListener("click", () => {
+  getAudioContext();
+}, { once: true, passive: true });
+
+function playTactilePulse(intensity = "light") {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+
+    if (intensity === "heavy" || intensity === "delete") {
+      // 55Hz dropping to 26Hz with rapid 28ms decay pushes speaker cone to produce a physical thump
+      osc.frequency.setValueAtTime(55, now);
+      osc.frequency.exponentialRampToValueAtTime(26, now + 0.028);
+
+      gain.gain.setValueAtTime(0.85, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.03);
+    } else if (intensity === "selection") {
+      // Crisp 140Hz tick for switches and selection
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.012);
+
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.014);
+    } else if (intensity === "medium") {
+      // Snappy 80Hz pulse for card swipes and taps
+      osc.frequency.setValueAtTime(80, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.02);
+
+      gain.gain.setValueAtTime(0.65, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.022);
+    } else {
+      // Light subtle tap
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.015);
+
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.017);
+    }
+  } catch (e) {}
+}
+
+function triggerSwitchHaptic() {
+  try {
+    const trigger = document.getElementById("taptic-trigger");
+    if (trigger) {
+      trigger.checked = !trigger.checked;
+      trigger.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  } catch (e) {}
+}
+
+function triggerHaptic(intensity = "light") {
+  // Method 1: Hardware Apple Taptic Engine via iOS 17.4+ Switch
+  triggerSwitchHaptic();
+
+  // Method 2: Physical Audio-Tactile Speaker Impulse (Works across all iPhones)
+  playTactilePulse(intensity);
+
+  // Method 3: Standard Vibration API for supported hardware
   if ("vibrate" in navigator) {
     try {
-      if (intensity === "medium") {
-        navigator.vibrate([15, 30, 15]);
-      } else if (intensity === "heavy") {
-        navigator.vibrate(40);
+      if (intensity === "heavy") {
+        navigator.vibrate(35);
+      } else if (intensity === "medium") {
+        navigator.vibrate(20);
       } else {
-        navigator.vibrate(12);
+        navigator.vibrate(10);
       }
+    } catch (e) {}
+  }
+}
+
+// Dedicated Delete Haptic: Distinctive double-latch pulse for deleting notes
+function triggerDeleteHaptic() {
+  triggerHaptic("heavy");
+  setTimeout(() => {
+    triggerHaptic("medium");
+  }, 55);
+
+  if ("vibrate" in navigator) {
+    try {
+      navigator.vibrate([35, 45, 20]);
     } catch (e) {}
   }
 }
@@ -187,7 +293,7 @@ function updateTrashBadge() {
 }
 
 function moveToTrash(id, wrapper) {
-  triggerHaptic("medium");
+  triggerDeleteHaptic();
   wrapper.classList.add("deleting");
 
   setTimeout(() => {
@@ -215,13 +321,13 @@ function restoreFromTrash(id) {
 }
 
 function permanentlyDeleteFromTrash(id) {
-  triggerHaptic("medium");
+  triggerDeleteHaptic();
   trashedNotes = trashedNotes.filter(t => t.id !== id);
   persistTrash();
 }
 
 function emptyEntireTrash() {
-  triggerHaptic("heavy");
+  triggerDeleteHaptic();
   trashedNotes = [];
   persistTrash();
   showToast("TRASH EMPTIED");
@@ -564,6 +670,7 @@ function attachCardInteractions(wrapper, item) {
 
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
+    triggerDeleteHaptic();
     moveToTrash(item.id, wrapper);
   });
 
@@ -645,7 +752,7 @@ function attachCardInteractions(wrapper, item) {
         const threshold = Math.min(card.offsetWidth * 0.42, 130);
         if (dist >= threshold && !hasThresholdCrossed) {
           hasThresholdCrossed = true;
-          triggerHaptic("light");
+          triggerHaptic("medium");
         } else if (dist < threshold && hasThresholdCrossed) {
           hasThresholdCrossed = false;
         }
@@ -694,7 +801,7 @@ function attachCardInteractions(wrapper, item) {
       const threshold = Math.min(cardWidth * 0.42, 130);
 
       if (dist >= threshold) {
-        triggerHaptic("medium");
+        triggerDeleteHaptic();
         card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = `translate3d(-${cardWidth + 40}px, 0px, 0px)`;
         trashIcon.style.transition = "transform 0.2s ease";
@@ -1333,7 +1440,7 @@ function openChecklistBuilderIosMenu() {
         action: () => {
           checklistRowsContainer.innerHTML = "";
           createBuilderRow("", false, true);
-          triggerHaptic("heavy");
+          triggerDeleteHaptic();
         }
       }
     ]
@@ -1579,8 +1686,7 @@ function handleSwipe(diffX) {
 
 // Universal Responsive Viewport Height Calculation for All iPhones
 function updateViewportHeight() {
-  const actualHeight = window.innerHeight;
-  document.documentElement.style.setProperty("--app-height", `${actualHeight}px`);
+  const actualHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.documentElement.style.setProperty("--real-vh", `${actualHeight}px`);
 }
 
