@@ -333,6 +333,38 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.card-actions-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  z-index: 5;
+}
+
+.btn-pin-toggle {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888888;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-pin-toggle.active {
+  background: #fff3e0;
+  color: #ff9500;
+}
+
+.btn-pin-toggle:active {
+  transform: scale(0.85);
+}
+
 .btn-complete {
   background: #f0f0f0;
   border: none;
@@ -347,7 +379,7 @@ body {
   justify-content: center;
   color: #000000;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
-  margin-left: 12px;
+  margin-left: 0;
   padding: 0;
   z-index: 5;
 }
@@ -814,4 +846,460 @@ input[type="text"]:focus, textarea:focus {
   0% { transform: scale(1); }
   50% { transform: scale(1.08); }
   100% { transform: scale(1.02); }
+}
+
+/* Standalone PWA and Edge-to-Edge iPhone Viewport */
+@media (display-mode: standalone), (max-width: 500px) {
+  body {
+    align-items: stretch;
+  }
+  #app-viewport {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Nav Trash Button & Badge */
+#btn-trash {
+  position: relative;
+}
+
+.trash-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background-color: #ff3b30;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.6);
+}
+
+.trash-badge.hidden {
+  display: none;
+}
+
+/* Controls Bar (Search & Filter Pills) */
+.controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 10px 20px;
+  z-index: 5;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #121212;
+  border: 1px solid #1f1f1f;
+  border-radius: 14px;
+  padding: 8px 12px;
+  gap: 8px;
+  color: #888888;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.search-box:focus-within {
+  border-color: #333333;
+  background: #161616;
+  color: #ffffff;
+}
+
+.search-box input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.search-box input::placeholder {
+  color: #666666;
+  font-size: 13px;
+}
+
+.btn-clear {
+  background: #2a2a2a;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  color: #aaaaaa;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-clear.hidden {
+  display: none;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.filter-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #222222;
+  background: #111111;
+  color: #777777;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-chip.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.filter-chip[data-filter]:not([data-filter="all"]).active {
+  background: var(--tag-color, #ffffff);
+  color: #000000;
+  border-color: var(--tag-color, #ffffff);
+}
+
+/* Pinned Note Styling */
+.card-wrapper.is-pinned .card {
+  border: 1px solid rgba(255, 149, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 149, 0, 0.1);
+}
+
+.pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #fff3e0;
+  color: #d96b00;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pin-section {
+  padding-top: 4px;
+}
+
+.toggle-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ios-switch {
+  display: none;
+}
+
+.switch-slider {
+  width: 44px;
+  height: 24px;
+  background-color: #222222;
+  border-radius: 20px;
+  position: relative;
+  transition: background-color 0.25s ease;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-switch:checked + .switch-slider {
+  background-color: #ff9500;
+}
+
+.ios-switch:checked + .switch-slider::before {
+  transform: translateX(20px);
+}
+
+/* Due Date Box */
+.due-time-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-datetime {
+  flex: 1;
+  background: #141414 !important;
+  border: 1px solid #282828 !important;
+  border-radius: 14px !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 14px !important;
+  outline: none !important;
+  color-scheme: dark;
+}
+
+.btn-clear-time {
+  background: #222222;
+  border: none;
+  border-radius: 12px;
+  color: #aaaaaa;
+  padding: 10px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Interactive Checklist Inside Note Card */
+.checklist-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  pointer-events: auto;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #222222;
+  user-select: none;
+}
+
+.checklist-item.checked span {
+  text-decoration: line-through;
+  color: #999999;
+}
+
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid #666666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.checklist-item.checked .custom-checkbox {
+  background-color: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+/* Trash HUD Modal Styles */
+.trash-hud-card {
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.trash-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.trash-notice-banner {
+  background: rgba(255, 59, 48, 0.08);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: #ff857d;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.trash-notice-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #ff3b30;
+}
+
+.trash-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 45vh;
+  padding-right: 4px;
+}
+
+.trash-item-card {
+  background: #121212;
+  border: 1px solid #202020;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trash-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.trash-item-header h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.trash-expiry-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.trash-item-body {
+  font-size: 12px;
+  color: #888888;
+  line-height: 1.35;
+}
+
+.trash-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-trash-restore {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.btn-trash-delete {
+  background: transparent;
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trash-empty-state {
+  text-align: center;
+  padding: 30px 10px;
+  color: #555555;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trash-footer {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-danger-text {
+  background: none;
+  border: none;
+  color: #ff3b30;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 6px 12px;
+}
+
+/* Backup Actions */
+.backup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.btn-secondary {
+  flex: 1;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: center;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:active {
+  background: #222222;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -32,7 +32,15 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
       <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
-      <div class="nav-actions">
+        <!-- Trash Bin -->
+        <button id="btn-trash" class="btn-icon" title="Recently Deleted" aria-label="Trash">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          <span id="trash-badge" class="trash-badge hidden">0</span>
+        </button>
+
         <!-- Notification Bell -->
         <button id="btn-notify-perm" class="btn-icon" title="Enable Notifications" aria-label="Notifications">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,6 +60,29 @@
         </button>
       </div>
     </nav>
+
+    <!-- Search & Filter Controls -->
+    <section class="controls-bar">
+      <!-- Search Input -->
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search notes..." autocomplete="off">
+        <button id="btn-clear-search" class="btn-clear hidden" aria-label="Clear search">✕</button>
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div class="filter-pills" id="category-filters">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="School" style="--tag-color: #b2d8d8;">School</button>
+        <button class="filter-chip" data-filter="Work" style="--tag-color: #d4b8e5;">Work</button>
+        <button class="filter-chip" data-filter="Shopping" style="--tag-color: #f8c8dc;">Shopping</button>
+        <button class="filter-chip" data-filter="Personal" style="--tag-color: #fde49e;">Personal</button>
+        <button class="filter-chip" data-filter="Tasks" style="--tag-color: #b5ead7;">Tasks</button>
+      </div>
+    </section>
 
     <!-- Content Feed -->
     <main id="reminder-container">
@@ -110,6 +141,24 @@
             </div>
           </div>
 
+          <!-- Pin to Top Toggle -->
+          <div class="picker-section pin-section">
+            <label class="toggle-control">
+              <span class="section-label">PIN NOTE TO TOP</span>
+              <input type="checkbox" id="input-pin-note" class="ios-switch">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Exact Due Date/Time (Optional) -->
+          <div class="picker-section">
+            <label class="section-label">SPECIFIC DUE TIME (OPTIONAL)</label>
+            <div class="due-time-box">
+              <input type="datetime-local" id="input-due-time" class="input-datetime">
+              <button type="button" id="btn-clear-due-time" class="btn-clear-time" title="Clear time">✕</button>
+            </div>
+          </div>
+
           <!-- Interval Section -->
           <div class="picker-section">
             <label class="section-label">REPEAT PING INTERVAL</label>
@@ -135,6 +184,46 @@
       </div>
     </div>
 
+    <!-- Trash / Recently Deleted Modal -->
+    <div id="trash-modal" class="modal-backdrop">
+      <div class="hud-card trash-hud-card">
+        <div class="hud-header">
+          <div class="trash-header-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ff3b30" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>RECENTLY DELETED</span>
+          </div>
+          <button id="btn-close-trash" class="btn-circle" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- 24H Retention Warning Banner -->
+        <div class="trash-notice-banner">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Notes in the trash are stored for 24 hours after deleting before being permanently removed.</span>
+        </div>
+
+        <div id="trash-list" class="trash-list"></div>
+
+        <div id="trash-empty-state" class="trash-empty-state">
+          <span>Trash is empty</span>
+        </div>
+
+        <div class="trash-footer">
+          <button id="btn-empty-trash" class="btn-danger-text hidden">EMPTY TRASH NOW</button>
+        </div>
+      </div>
+    </div>
+
     <!-- About & Version Modal -->
     <div id="version-modal" class="modal-backdrop">
       <div class="hud-card version-card">
@@ -149,14 +238,22 @@
         </div>
         <div class="version-content">
           <h2 class="version-logo">POSTR</h2>
-          <div class="version-tag" id="app-version-badge">VERSION 2.0</div>
+          <div class="version-tag" id="app-version-badge">VERSION 2.1</div>
           <p class="version-desc">Minimalist, persistent lock screen reminder system designed for iOS & Web.</p>
           <div class="version-specs">
             <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED / ORANGE</strong></div>
             <div class="spec-row"><span>HAPTICS</span><strong>IPHONE TAPTIC ENGINE (MUTED)</strong></div>
             <div class="spec-row"><span>GESTURES</span><strong>SWIPE RIGHT (EDIT) / SWIPE LEFT (DELETE)</strong></div>
+            <div class="spec-row"><span>TRASH RETENTION</span><strong>24 HOURS AUTO-EXPIRING</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
             <div class="spec-row"><span>STATUS</span><strong>ACTIVE</strong></div>
+          </div>
+          <div class="backup-actions">
+            <button type="button" id="btn-export-backup" class="btn-secondary">EXPORT BACKUP (JSON)</button>
+            <label class="btn-secondary file-upload-label">
+              <span>IMPORT BACKUP</span>
+              <input type="file" id="file-import-backup" accept=".json" style="display: none;">
+            </label>
           </div>
         </div>
       </div>
