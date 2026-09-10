@@ -21,23 +21,9 @@
   </label>
 
   <div id="app-viewport">
-    <!-- Dynamic Island Simulator -->
-    <header class="notch-bar">
-      <div id="dynamic-island" class="island-pill">
-        <span class="island-dot"></span>
-        <span id="island-text">POSTR IDLE</span>
-      </div>
-    </header>
-
     <!-- Top Navigation -->
     <nav class="top-nav">
-      <div class="logo-area">
-        <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
-        <div id="mobile-island-indicator" class="mobile-island-indicator" title="Status">
-          <span class="indicator-dot"></span>
-          <span id="mobile-island-text">IDLE</span>
-        </div>
-      </div>
+      <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
       <div class="nav-actions">
         <!-- Trash Bin -->
         <button id="btn-trash" class="btn-icon" title="Recently Deleted" aria-label="Trash">
@@ -80,9 +66,8 @@
         <button id="btn-clear-search" class="btn-clear hidden" aria-label="Clear search">✕</button>
       </div>
 
-      <!-- Quick Filter Pills -->
+      <!-- Quick Filter Pills (unselected = all) -->
       <div class="filter-pills" id="category-filters">
-        <button class="filter-chip active" data-filter="all">All</button>
         <button class="filter-chip" data-filter="School" style="--tag-color: #b2d8d8;">School</button>
         <button class="filter-chip" data-filter="Work" style="--tag-color: #d4b8e5;">Work</button>
         <button class="filter-chip" data-filter="Shopping" style="--tag-color: #f8c8dc;">Shopping</button>
@@ -253,7 +238,6 @@
             <div class="spec-row"><span>GESTURES</span><strong>SWIPE RIGHT (EDIT) / SWIPE LEFT (DELETE)</strong></div>
             <div class="spec-row"><span>TRASH RETENTION</span><strong>24 HOURS AUTO-EXPIRING</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
-            <div class="spec-row"><span>STATUS</span><strong>ACTIVE</strong></div>
           </div>
           <div class="backup-actions">
             <button type="button" id="btn-export-backup" class="btn-secondary">EXPORT BACKUP (JSON)</button>
@@ -289,29 +273,40 @@
         <div class="carousel-viewport" id="carousel-track">
           <div class="carousel-slides">
             <div class="carousel-slide">
-              <div class="slide-badge">SLIDE 1 / 4</div>
-              <h3>TRIPLE TAP SHORTCUT SETUP</h3>
-              <p>1. Open Apple's <strong>Shortcuts</strong> app on iPhone.<br>
-              2. Create a new shortcut, tap <strong>Add Action</strong>, search for <strong>Open URLs</strong>.<br>
-              3. Paste <code>https://rngwww.github.io/Postr/</code> and name it <strong>"Postr Quick Pin"</strong>.</p>
+              <div class="slide-badge">SLIDE 1 / 6</div>
+              <h3>SWIPE ACTIONS</h3>
+              <p><strong>Swipe Right (Orange):</strong> Pull card right until notebook icon expands to edit contents, category, or due times.<br>
+              <strong>Swipe Left (Red):</strong> Pull card left until trash icon expands to move note to the 24-hour Trash Bin.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">SLIDE 2 / 4</div>
-              <h3>BIND TO BACK TAP</h3>
-              <p>1. Open iOS <strong>Settings</strong> &gt; <strong>Accessibility</strong> &gt; <strong>Touch</strong>.<br>
-              2. Scroll to the bottom and select <strong>Back Tap</strong>.<br>
-              3. Choose <strong>Triple Tap</strong>, scroll down to the <em>Shortcuts</em> category, and select <strong>Postr Quick Pin</strong>.</p>
+              <div class="slide-badge">SLIDE 2 / 6</div>
+              <h3>24-HOUR TRASH & RESTORE</h3>
+              <p>Deleted notes are stored in the Trash Bin for <strong>24 hours</strong> before permanent removal.<br>
+              Tap the <strong>Trash</strong> icon in the header to view countdown timers, restore notes back to your feed, or empty the bin.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">SLIDE 3 / 4</div>
-              <h3>GESTURES & CONTROLS</h3>
-              <p><strong>Swipe Right:</strong> Slide card right until orange icon expands to edit.<br>
-              <strong>Swipe Left:</strong> Slide card left until red trash expands to delete.</p>
+              <div class="slide-badge">SLIDE 3 / 6</div>
+              <h3>INTERACTIVE CHECKLISTS</h3>
+              <p>Format any line in your note body with <code>- [ ]</code> or <code>[ ]</code>.<br>
+              Postr automatically converts them into interactive checkboxes that you can tap to complete with tactile haptic feedback.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">SLIDE 4 / 4</div>
-              <h3>PERSISTENT DRAWER</h3>
-              <p>Tap the bell icon at the top right to enable lock screen notifications so pings sound even when your screen is locked.</p>
+              <div class="slide-badge">SLIDE 4 / 6</div>
+              <h3>PIN TO TOP & CATEGORIES</h3>
+              <p><strong>Pin Note:</strong> Tap the 📌 icon to stick critical notes to the very top of your feed.<br>
+              <strong>Categories:</strong> Tap a category pill to filter. Tap the active category again to unselect it and view all notes.</p>
+            </div>
+            <div class="carousel-slide">
+              <div class="slide-badge">SLIDE 5 / 6</div>
+              <h3>DUE DATES & REPEAT PINGS</h3>
+              <p><strong>Specific Due Time:</strong> Set an exact alarm time to receive lock screen notifications when due.<br>
+              <strong>Repeat Interval:</strong> Choose 1m, 5m, 1h, or custom intervals to keep sticky reminders active.</p>
+            </div>
+            <div class="carousel-slide">
+              <div class="slide-badge">SLIDE 6 / 6</div>
+              <h3>DATA BACKUP & BACK TAP</h3>
+              <p><strong>Backup & Restore:</strong> Tap the POSTR logo to export or import complete JSON backups.<br>
+              <strong>Triple Tap Pin:</strong> Set up an Apple Shortcut to <code>Open URLs</code> with Postr's link, and bind it to <strong>Back Tap</strong> in iPhone Accessibility settings.</p>
             </div>
           </div>
         </div>
@@ -321,6 +316,8 @@
           <span class="dot" data-index="1"></span>
           <span class="dot" data-index="2"></span>
           <span class="dot" data-index="3"></span>
+          <span class="dot" data-index="4"></span>
+          <span class="dot" data-index="5"></span>
         </div>
       </div>
     </div>

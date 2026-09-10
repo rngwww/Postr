@@ -7,7 +7,7 @@ let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let trashedNotes = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY) || "[]");
 let swRegistration = null;
 let activeSelectedLabel = null;
-let activeFilterCategory = "all";
+let activeFilterCategory = null;
 let searchQuery = "";
 
 const PASTEL_MAP = {
@@ -146,20 +146,6 @@ function triggerNotification(primaryText, secondaryText, tag) {
   }
 }
 
-function triggerIslandPulse() {
-  const islandPill = document.getElementById("dynamic-island");
-  if (islandPill) {
-    islandPill.classList.remove("pulse");
-    void islandPill.offsetWidth;
-    islandPill.classList.add("pulse");
-  }
-  const mobilePill = document.getElementById("mobile-island-indicator");
-  if (mobilePill) {
-    mobilePill.classList.remove("pulse");
-    void mobilePill.offsetWidth;
-    mobilePill.classList.add("pulse");
-  }
-}
 
 function updateAppBadge() {
   if ("setAppBadge" in navigator) {
@@ -359,7 +345,7 @@ function formatDueTime(isoString) {
 
 function getFilteredReminders() {
   return reminders.filter(item => {
-    if (activeFilterCategory !== "all" && item.label !== activeFilterCategory) {
+    if (activeFilterCategory && item.label !== activeFilterCategory) {
       return false;
     }
     if (searchQuery) {
@@ -379,10 +365,92 @@ function getFilteredReminders() {
   });
 }
 
+function render() {
+  const cardList = document.getElementById("card-list");
+  const emptyState = document.getElementById("empty-state");
+  if (!cardList) return;
+
+  const filtered = getFilteredReminders();
+  cardList.innerHTML = "";
+
+  if (filtered.length === 0) {
+    if (emptyState) emptyState.style.display = "flex";
+  } else {
+    if (emptyState) emptyState.style.display = "none";
+
+    filtered.forEach(item => {
+      const wrapper = document.createElement("div");
+      wrapper.className = `card-wrapper ${item.pinned ? "is-pinned" : ""}`;
+      wrapper.setAttribute("data-id", item.id);
+
+      let pingLabel = "";
+      if (item.pingMinutes > 0) {
+        if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
+          pingLabel = `PING: EVERY ${item.pingMinutes / 60}H`;
+        } else {
+          pingLabel = `PING: EVERY ${item.pingMinutes}M`;
+        }
+      }
+
+      const dueLabel = item.dueTime ? formatDueTime(item.dueTime) : "";
+      const labelColor = PASTEL_MAP[item.label] || "#e0e0e0";
+
+      wrapper.innerHTML = `
+        <div class="swipe-action-underlay underlay-edit">
+          <div class="edit-action-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"></path>
+              <path d="M2 6h4"></path>
+              <path d="M2 10h4"></path>
+              <path d="M2 14h4"></path>
+              <path d="M2 18h4"></path>
+              <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l5.013-5.01z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="swipe-action-underlay underlay-delete">
+          <div class="trash-can-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-content">
+            <div class="card-title-row">
+              <h3>${escapeHtml(item.title)}</h3>
+              <button class="btn-pin-toggle ${item.pinned ? "active" : ""}" title="${item.pinned ? "Unpin note" : "Pin note to top"}" aria-label="Pin">
+                ${item.pinned ? "📌" : "📍"}
+              </button>
+            </div>
+            ${renderNoteBody(item.body, item.id)}
+            <div class="card-tags-row">
+              ${item.pinned ? `<span class="pin-badge">📌 PINNED</span>` : ""}
+              ${item.label ? `<span class="pastel-tag" style="background-color: ${labelColor};">${escapeHtml(item.label)}</span>` : ""}
+              ${dueLabel ? `<span class="card-due-tag">⏰ DUE: ${dueLabel}</span>` : ""}
+              ${pingLabel ? `<span class="card-meta">${pingLabel}</span>` : ""}
+            </div>
+          </div>
+          <button class="btn-complete" title="Move to Trash" aria-label="Move to Trash">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      `;
+
+      cardList.appendChild(wrapper);
+      attachCardInteractions(wrapper, item);
+    });
+  }
+}
+
 function persistAndSync() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
   render();
-  triggerIslandPulse();
   updateAppBadge();
   updateTrashBadge();
 }
@@ -813,11 +881,9 @@ if (categoryFilters) {
     chip.addEventListener("click", () => {
       const filter = chip.getAttribute("data-filter");
       triggerHaptic("light");
-      if (activeFilterCategory === filter && filter !== "all") {
-        activeFilterCategory = "all";
-        categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-        const allChip = categoryFilters.querySelector('[data-filter="all"]');
-        if (allChip) allChip.classList.add("active");
+      if (activeFilterCategory === filter) {
+        activeFilterCategory = null;
+        chip.classList.remove("active");
       } else {
         activeFilterCategory = filter;
         categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
@@ -932,6 +998,10 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     triggerHaptic("medium");
     const alertHeading = newReminder.label ? `[${newReminder.label}] ${title}` : title;
     triggerNotification(alertHeading, body || "Added to active reminders.", newReminder.id);
+    activeFilterCategory = null;
+    if (categoryFilters) {
+      categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    }
   }
 
   persistAndSync();
@@ -940,7 +1010,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
 // Tips Carousel
 let currentSlide = 0;
-const totalSlides = 4;
+const totalSlides = 6;
 const track = document.querySelector(".carousel-slides");
 const dots = document.querySelectorAll(".carousel-dots .dot");
 let startX = 0;
@@ -996,78 +1066,18 @@ function handleSwipe(diffX) {
   }
 }
 
-// Dynamic Device Detection & Adaptive Viewport
-function initDeviceProfile() {
-  const w = window.screen.width;
-  const h = window.screen.height;
-  const ua = navigator.userAgent || "";
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-  const isMobile = isIOS || /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) || window.innerWidth <= 768;
-
-  const minDim = Math.min(w, h);
-  const maxDim = Math.max(w, h);
-
-  let deviceModel = "generic";
-  let hasDynamicIsland = false;
-
-  if (isIOS) {
-    if (minDim === 393 && maxDim === 852) {
-      deviceModel = "iphone-14-pro"; // iPhone 14 Pro, 15, 15 Pro
-      hasDynamicIsland = true;
-    } else if (minDim === 430 && maxDim === 932) {
-      deviceModel = "iphone-14-pro-max"; // iPhone 14 Pro Max, 15 Plus, 15 Pro Max
-      hasDynamicIsland = true;
-    } else if (minDim === 402 && maxDim === 874) {
-      deviceModel = "iphone-16-pro"; // iPhone 16 Pro
-      hasDynamicIsland = true;
-    } else if (minDim === 440 && maxDim === 956) {
-      deviceModel = "iphone-16-pro-max"; // iPhone 16 Pro Max
-      hasDynamicIsland = true;
-    } else if (minDim === 390 && maxDim === 844) {
-      deviceModel = "iphone-14"; // iPhone 12, 13, 13 Pro, 14
-    } else if (minDim === 375 && maxDim === 812) {
-      deviceModel = "iphone-x"; // iPhone X, XS, 11 Pro, 12/13 mini
-    } else if (minDim === 414 && maxDim === 896) {
-      deviceModel = "iphone-11"; // iPhone XR, 11, XS Max, 11 Pro Max
-    } else if (minDim === 375 && maxDim === 667) {
-      deviceModel = "iphone-se"; // iPhone SE 2/3, 7, 8
-    } else {
-      deviceModel = "iphone-other";
-      if (maxDim >= 852) hasDynamicIsland = true;
-    }
-  }
-
-  const root = document.documentElement;
-  root.setAttribute("data-device", deviceModel);
-  root.setAttribute("data-is-ios", isIOS ? "true" : "false");
-  root.setAttribute("data-is-standalone", isStandalone ? "true" : "false");
-  root.setAttribute("data-is-mobile", isMobile ? "true" : "false");
-  root.setAttribute("data-has-dynamic-island", hasDynamicIsland ? "true" : "false");
-
-  if (isMobile) {
-    document.body.classList.add("is-mobile-device");
-  } else {
-    document.body.classList.remove("is-mobile-device");
-  }
-
-  if (hasDynamicIsland) {
-    document.body.classList.add("has-physical-island");
-  } else {
-    document.body.classList.remove("has-physical-island");
-  }
-
-  // Update dynamic CSS height variable for 100% viewport accuracy on iOS Safari
+// Universal Responsive Viewport Height Calculation for All iPhones
+function updateViewportHeight() {
   const actualHeight = window.innerHeight;
-  root.style.setProperty("--real-vh", `${actualHeight}px`);
-  root.style.setProperty("--app-height", `${actualHeight}px`);
+  document.documentElement.style.setProperty("--app-height", `${actualHeight}px`);
+  document.documentElement.style.setProperty("--real-vh", `${actualHeight}px`);
 }
 
-window.addEventListener("resize", initDeviceProfile);
-window.addEventListener("orientationchange", initDeviceProfile);
-window.addEventListener("pageshow", initDeviceProfile);
+window.addEventListener("resize", updateViewportHeight);
+window.addEventListener("orientationchange", updateViewportHeight);
+window.addEventListener("pageshow", updateViewportHeight);
 
-initDeviceProfile();
+updateViewportHeight();
 setupDynamicAppIcon();
 setupLabelSelector();
 updateNotifyButton();
