@@ -17,11 +17,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Floating iOS Hardware Taptic Engine Switch Harness -->
-  <label for="taptic-trigger" id="taptic-harness" class="taptic-harness" aria-hidden="true">
-    <input type="checkbox" id="taptic-trigger" switch class="taptic-switch-input" aria-hidden="true" tabindex="-1">
-  </label>
-
   <div id="app-viewport">
     <!-- Top Navigation -->
     <nav class="top-nav">
@@ -184,7 +179,7 @@
           <div class="picker-section pin-section">
             <label class="toggle-control">
               <span class="section-label">PIN NOTE TO TOP</span>
-              <input type="checkbox" id="input-pin-note" switch class="ios-switch">
+              <input type="checkbox" id="input-pin-note" class="ios-switch">
               <span class="switch-slider"></span>
             </label>
           </div>
@@ -193,7 +188,7 @@
           <div class="picker-section due-section">
             <label class="toggle-control">
               <span class="section-label">SPECIFIC DUE TIME</span>
-              <input type="checkbox" id="toggle-due-time" switch class="ios-switch">
+              <input type="checkbox" id="toggle-due-time" class="ios-switch">
               <span class="switch-slider"></span>
             </label>
             <div id="due-time-controls" class="due-time-box disabled">
@@ -285,7 +280,6 @@
           <p class="version-desc">Minimalist, persistent lock screen reminder system designed for iOS & Web.</p>
           <div class="version-specs">
             <div class="spec-row"><span>PALETTE</span><strong>BLACK / WHITE / RED / ORANGE</strong></div>
-            <div class="spec-row"><span>HAPTICS</span><strong>IPHONE TAPTIC ENGINE (MUTED)</strong></div>
             <div class="spec-row"><span>GESTURES</span><strong>SWIPE RIGHT (EDIT) / SWIPE LEFT (DELETE)</strong></div>
             <div class="spec-row"><span>TRASH RETENTION</span><strong>24 HOURS AUTO-EXPIRING</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
