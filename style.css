@@ -308,6 +308,32 @@ body {
   }
 }
 
+/* Drag & Drop Reordering Mode */
+.card-wrapper.is-dragging {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.85), 0 0 0 1.5px rgba(255, 59, 48, 0.45) !important;
+  transform: scale(1.035) rotate(0.8deg);
+  opacity: 0.96 !important;
+  will-change: transform, top, left;
+  transition: transform 0.12s ease-out, box-shadow 0.2s ease !important;
+}
+
+.card-placeholder {
+  width: 100%;
+  border-radius: 24px;
+  border: 2px dashed rgba(255, 59, 48, 0.45);
+  background: rgba(255, 59, 48, 0.05);
+  box-sizing: border-box;
+  pointer-events: none;
+  transition: height 0.22s cubic-bezier(0.16, 1, 0.3, 1), margin 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cards-list.is-reordering .card-wrapper:not(.is-dragging) {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .swipe-action-underlay {
   position: absolute;
   top: 0;

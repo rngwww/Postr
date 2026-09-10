@@ -539,7 +539,7 @@ function getFilteredReminders() {
   }).sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
-    return (b.createdAt || 0) - (a.createdAt || 0);
+    return reminders.indexOf(a) - reminders.indexOf(b);
   });
 }
 
@@ -656,6 +656,45 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
+function reorderRemindersArrayFromDOM(draggedItem) {
+  const cardList = document.getElementById("card-list");
+  if (!cardList) return;
+
+  const currentDomWrappers = Array.from(cardList.querySelectorAll(".card-wrapper"));
+  const currentDomIds = currentDomWrappers.map(w => w.dataset.id).filter(Boolean);
+  if (currentDomIds.length <= 1) return;
+
+  const idToItem = new Map(reminders.map(r => [r.id, r]));
+  const visibleItems = currentDomIds.map(id => idToItem.get(id)).filter(Boolean);
+
+  if (draggedItem) {
+    const draggedIdx = visibleItems.findIndex(it => it.id === draggedItem.id);
+    if (draggedIdx !== -1) {
+      if (draggedItem.pinned) {
+        const hasUnpinnedAbove = visibleItems.slice(0, draggedIdx).some(it => !it.pinned);
+        if (hasUnpinnedAbove) {
+          draggedItem.pinned = false;
+        }
+      } else {
+        const hasPinnedBelow = visibleItems.slice(draggedIdx + 1).some(it => it.pinned);
+        if (hasPinnedBelow) {
+          draggedItem.pinned = true;
+        }
+      }
+    }
+  }
+
+  let visibleIdx = 0;
+  reminders = reminders.map(r => {
+    if (currentDomIds.includes(r.id)) {
+      return visibleItems[visibleIdx++];
+    }
+    return r;
+  });
+
+  persistAndSync();
+}
+
 // 1:1 Smooth Physical Card Swipe Sync
 function attachCardInteractions(wrapper, item) {
   const card = wrapper.querySelector(".card");
@@ -703,10 +742,15 @@ function attachCardInteractions(wrapper, item) {
   let startX = 0;
   let startY = 0;
   let currentOffsetX = 0;
+  let currentOffsetY = 0;
   let swipeDirection = null; // 'left' | 'right' | null
   let hasThresholdCrossed = false;
   let isDragging = false;
+  let isReordering = false;
   let longPressTimer = null;
+  let placeholder = null;
+  let initialRect = null;
+  let lastHoveredSibling = null;
 
   function onPointerStart(e) {
     if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle") || e.target.closest(".btn-card-menu") || e.target.closest(".card-checklist-item")) return;
@@ -715,22 +759,50 @@ function attachCardInteractions(wrapper, item) {
     startX = point.clientX;
     startY = point.clientY;
     currentOffsetX = 0;
+    currentOffsetY = 0;
     swipeDirection = null;
     hasThresholdCrossed = false;
     isDragging = true;
+    isReordering = false;
 
     if (longPressTimer) clearTimeout(longPressTimer);
     longPressTimer = setTimeout(() => {
-      if (isDragging && !hasThresholdCrossed && Math.abs(currentOffsetX) < 10) {
-        isDragging = false;
-        triggerHaptic("medium");
-        openCardIosMenu(item, wrapper);
+      if (isDragging && !swipeDirection && Math.abs(currentOffsetX) < 10 && Math.abs(currentOffsetY) < 10) {
+        startReorder();
       }
-    }, 520);
+    }, 340);
 
     card.style.transition = "none";
     trashIcon.style.transition = "none";
     editIcon.style.transition = "none";
+  }
+
+  function startReorder() {
+    isReordering = true;
+    triggerHaptic("heavy");
+
+    const cardList = document.getElementById("card-list");
+    if (!cardList) return;
+
+    initialRect = wrapper.getBoundingClientRect();
+
+    // Create ghost placeholder at current position
+    placeholder = document.createElement("div");
+    placeholder.className = "card-placeholder";
+    placeholder.style.height = `${initialRect.height}px`;
+    placeholder.style.marginBottom = "12px";
+    placeholder.setAttribute("data-placeholder-for", item.id);
+    wrapper.parentNode.insertBefore(placeholder, wrapper);
+
+    // Elevate and fix position of dragged card
+    wrapper.style.position = "fixed";
+    wrapper.style.left = `${initialRect.left}px`;
+    wrapper.style.top = `${initialRect.top}px`;
+    wrapper.style.width = `${initialRect.width}px`;
+    wrapper.style.height = `${initialRect.height}px`;
+    wrapper.style.margin = "0";
+    wrapper.classList.add("is-dragging");
+    cardList.classList.add("is-reordering");
   }
 
   function onPointerMove(e) {
@@ -739,14 +811,64 @@ function attachCardInteractions(wrapper, item) {
     const point = e.touches ? e.touches[0] : e;
     const diffX = point.clientX - startX;
     const diffY = point.clientY - startY;
+    currentOffsetX = diffX;
+    currentOffsetY = diffY;
 
     if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-      if (longPressTimer) {
+      if (longPressTimer && !isReordering) {
         clearTimeout(longPressTimer);
         longPressTimer = null;
       }
     }
 
+    if (isReordering) {
+      if (e.cancelable) e.preventDefault();
+      const currentY = point.clientY;
+      const targetTop = initialRect.top + diffY;
+      wrapper.style.top = `${targetTop}px`;
+
+      // Auto-scroll container when near viewport boundary
+      const container = document.getElementById("reminder-container");
+      if (container) {
+        const cRect = container.getBoundingClientRect();
+        if (currentY < cRect.top + 70) {
+          container.scrollTop -= 8;
+        } else if (currentY > cRect.bottom - 70) {
+          container.scrollTop += 8;
+        }
+      }
+
+      // Check position relative to sibling cards in the feed
+      const cardList = document.getElementById("card-list");
+      if (cardList && placeholder) {
+        const siblings = Array.from(cardList.querySelectorAll(".card-wrapper:not(.is-dragging)"));
+        const draggedCenterY = targetTop + (initialRect.height / 2);
+
+        for (const sib of siblings) {
+          const sRect = sib.getBoundingClientRect();
+          const sibCenterY = sRect.top + (sRect.height / 2);
+
+          if (draggedCenterY < sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING)) {
+            cardList.insertBefore(placeholder, sib);
+            if (lastHoveredSibling !== sib) {
+              lastHoveredSibling = sib;
+              triggerHaptic("selection");
+            }
+            break;
+          } else if (draggedCenterY > sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+            cardList.insertBefore(placeholder, sib.nextSibling);
+            if (lastHoveredSibling !== sib) {
+              lastHoveredSibling = sib;
+              triggerHaptic("selection");
+            }
+            break;
+          }
+        }
+      }
+      return;
+    }
+
+    // Normal horizontal swipe gesture detection
     if (!swipeDirection) {
       if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
         if (diffX < 0) {
@@ -760,16 +882,14 @@ function attachCardInteractions(wrapper, item) {
         }
       } else if (Math.abs(diffY) > 8) {
         isDragging = false;
-        return; // Allow vertical scrolling
+        return;
       }
     }
 
     if (swipeDirection === "left") {
       if (e.cancelable) e.preventDefault();
       if (diffX <= 0) {
-        currentOffsetX = diffX;
         card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
-
         const dist = Math.abs(diffX);
         const scale = Math.min(2.2, Math.max(0.75, dist / 80));
         const rotate = Math.min(16, dist * 0.08);
@@ -783,16 +903,13 @@ function attachCardInteractions(wrapper, item) {
           hasThresholdCrossed = false;
         }
       } else {
-        currentOffsetX = 0;
         card.style.transform = "translate3d(0px, 0px, 0px)";
         trashIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
     } else if (swipeDirection === "right") {
       if (e.cancelable) e.preventDefault();
       if (diffX >= 0) {
-        currentOffsetX = diffX;
         card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
-
         const dist = diffX;
         const scale = Math.min(2.2, Math.max(0.75, dist / 80));
         const rotate = Math.min(16, dist * 0.08);
@@ -806,7 +923,6 @@ function attachCardInteractions(wrapper, item) {
           hasThresholdCrossed = false;
         }
       } else {
-        currentOffsetX = 0;
         card.style.transform = "translate3d(0px, 0px, 0px)";
         editIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
@@ -820,6 +936,34 @@ function attachCardInteractions(wrapper, item) {
     }
     if (!isDragging) return;
     isDragging = false;
+
+    if (isReordering) {
+      isReordering = false;
+      const cardList = document.getElementById("card-list");
+      if (cardList) cardList.classList.remove("is-reordering");
+
+      if (placeholder && placeholder.parentNode) {
+        const targetRect = placeholder.getBoundingClientRect();
+        wrapper.style.transition = "top 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease";
+        wrapper.style.top = `${targetRect.top}px`;
+        wrapper.style.transform = "scale(1) rotate(0deg)";
+        wrapper.style.boxShadow = "none";
+
+        setTimeout(() => {
+          triggerHaptic("light");
+          if (placeholder && placeholder.parentNode) {
+            placeholder.parentNode.insertBefore(wrapper, placeholder);
+            placeholder.remove();
+            placeholder = null;
+          }
+          cleanupReorderStyles();
+          reorderRemindersArrayFromDOM(item);
+        }, 180);
+      } else {
+        cleanupReorderStyles();
+      }
+      return;
+    }
 
     if (swipeDirection === "left") {
       const cardWidth = card.offsetWidth;
@@ -867,6 +1011,23 @@ function attachCardInteractions(wrapper, item) {
 
     swipeDirection = null;
     hasThresholdCrossed = false;
+  }
+
+  function cleanupReorderStyles() {
+    wrapper.classList.remove("is-dragging");
+    wrapper.style.position = "";
+    wrapper.style.left = "";
+    wrapper.style.top = "";
+    wrapper.style.width = "";
+    wrapper.style.height = "";
+    wrapper.style.margin = "";
+    wrapper.style.transition = "";
+    wrapper.style.transform = "";
+    wrapper.style.boxShadow = "";
+    if (placeholder && placeholder.parentNode) {
+      placeholder.remove();
+      placeholder = null;
+    }
   }
 
   card.addEventListener("touchstart", onPointerStart, { passive: false });
