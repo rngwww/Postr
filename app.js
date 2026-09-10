@@ -377,9 +377,9 @@ function render() {
       let pingLabel = "";
       if (item.pingMinutes > 0) {
         if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
-          pingLabel = `PING: EVERY ${item.pingMinutes / 60}H`;
+          pingLabel = `ALARM: EVERY ${item.pingMinutes / 60}H`;
         } else {
-          pingLabel = `PING: EVERY ${item.pingMinutes}M`;
+          pingLabel = `ALARM: EVERY ${item.pingMinutes}M`;
         }
       }
 
