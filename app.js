@@ -98,15 +98,20 @@ document.getElementById("btn-notify-perm").addEventListener("click", async () =>
   }
 });
 
-function triggerNotification(primaryText, secondaryText, tag) {
-  triggerHaptic();
-
+function triggerNotification(primaryText, secondaryText, tag, options = {}) {
   const payload = {
     title: primaryText,
     body: secondaryText || "",
     tag: tag || "postr_ping_" + Date.now(),
     icon: "icon.svg",
-    badge: "icon.svg"
+    badge: "icon.svg",
+    data: {
+      reminderId: options.reminderId || null
+    },
+    actions: options.actions || [
+      { action: "snooze_15", title: "⏱ Snooze 15m" },
+      { action: "mark_done", title: "✓ Done" }
+    ]
   };
 
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -115,12 +120,14 @@ function triggerNotification(primaryText, secondaryText, tag) {
       ...payload
     });
   } else if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(payload.title, {
-      body: payload.body,
-      tag: payload.tag,
-      icon: payload.icon,
-      badge: payload.badge
-    });
+    try {
+      new Notification(payload.title, {
+        body: payload.body,
+        tag: payload.tag,
+        icon: payload.icon,
+        badge: payload.badge
+      });
+    } catch (e) {}
   }
 }
 
@@ -338,10 +345,14 @@ function renderCardBody(item) {
 
     return `
       <div class="card-checklist">
-        <div class="checklist-progress-bar">
-          <div class="progress-fill" style="width: ${percent}%;"></div>
+        <div class="card-checklist-progress">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+          </div>
+          <div class="progress-pill-row">
+            <span class="progress-pill">${completed} OF ${total} DONE • ${percent}%</span>
+          </div>
         </div>
-        <div class="checklist-progress-text">${completed} OF ${total} COMPLETED (${percent}%)</div>
         <div class="card-checklist-items">
           ${itemsHtml}
         </div>
@@ -364,6 +375,51 @@ function formatDueTime(isoString) {
   } catch (e) {
     return "";
   }
+}
+
+function getDueStatus(isoString) {
+  if (!isoString) return { isOverdue: false, label: "", overdueAgo: "" };
+  const targetTs = new Date(isoString).getTime();
+  if (isNaN(targetTs)) return { isOverdue: false, label: "", overdueAgo: "" };
+  const now = Date.now();
+  const isOverdue = now > targetTs;
+  const label = formatDueTime(isoString);
+  let overdueAgo = "";
+  if (isOverdue) {
+    const diffMins = Math.floor((now - targetTs) / 60000);
+    if (diffMins < 1) overdueAgo = "Just now";
+    else if (diffMins < 60) overdueAgo = `${diffMins}m ago`;
+    else if (diffMins < 1440) overdueAgo = `${Math.floor(diffMins / 60)}h ago`;
+    else overdueAgo = `${Math.floor(diffMins / 1440)}d ago`;
+  }
+  return { isOverdue, label, overdueAgo };
+}
+
+function formatChecklistNotificationBody(item) {
+  const items = item.checklistItems || [];
+  const pending = items.filter(i => !i.done);
+  if (pending.length === 0) {
+    return item.body || "All checklist items completed.";
+  }
+  const topPending = pending.slice(0, 3).map(i => `□ ${i.text}`).join("\n");
+  const remaining = pending.length - 3;
+  if (remaining > 0) {
+    return `${topPending}\n(+${remaining} more item${remaining === 1 ? "" : "s"})`;
+  }
+  return topPending;
+}
+
+function snoozeReminderById(reminderId, minutes) {
+  const item = reminders.find(r => r.id === reminderId);
+  if (!item) return;
+  const now = Date.now();
+  const baseTs = item.dueTime ? Math.max(now, new Date(item.dueTime).getTime()) : now;
+  const newDue = new Date(baseTs + minutes * 60 * 1000);
+  item.dueTime = newDue.toISOString();
+  item.dueTimeTriggered = false;
+  persistAndSync();
+  renderReminders();
+  showToast(`Snoozed for ${minutes}m`);
 }
 
 function getFilteredReminders() {
@@ -419,7 +475,7 @@ function render() {
         }
       }
 
-      const dueLabel = item.dueTime ? formatDueTime(item.dueTime) : "";
+      const dueStatus = getDueStatus(item.dueTime);
       const labelColor = PASTEL_MAP[item.label] || "#e0e0e0";
 
       wrapper.innerHTML = `
@@ -457,7 +513,11 @@ function render() {
             <div class="card-tags-row">
               ${item.pinned ? `<span class="pin-badge">📌 PINNED</span>` : ""}
               ${item.label ? `<span class="pastel-tag" style="background-color: ${labelColor};">${escapeHtml(item.label)}</span>` : ""}
-              ${dueLabel ? `<span class="card-due-tag">⏰ DUE: ${dueLabel}</span>` : ""}
+              ${item.dueTime ? (
+                dueStatus.isOverdue
+                  ? `<span class="card-due-tag is-overdue" title="Overdue by ${dueStatus.overdueAgo}">🔥 OVERDUE • ${dueStatus.overdueAgo}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}" title="Snooze 15 minutes">+15m</button>`
+                  : `<span class="card-due-tag">⏰ DUE: ${dueStatus.label}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}" title="Snooze 15 minutes">+15m</button>`
+              ) : ""}
               ${pingLabel ? `<span class="card-meta">${pingLabel}</span>` : ""}
             </div>
           </div>
@@ -483,6 +543,8 @@ function render() {
     });
     applyHapticOverlays(cardList);
   }
+  updateTrashBadge();
+  updateAppBadge();
 }
 
 function persistAndSync() {
@@ -568,13 +630,33 @@ function attachCardInteractions(wrapper, item) {
     });
   }
 
+  const btnSnooze = wrapper.querySelector(".btn-card-snooze");
+  if (btnSnooze) {
+    btnSnooze.addEventListener("click", (e) => {
+      e.stopPropagation();
+      snoozeReminderById(item.id, 15);
+    });
+  }
+
   wrapper.querySelectorAll(".card-checklist-item").forEach(itemEl => {
     itemEl.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = parseInt(itemEl.dataset.itemIndex, 10);
       if (item.checklistItems && item.checklistItems[idx]) {
         item.checklistItems[idx].done = !item.checklistItems[idx].done;
-        triggerHaptic("selection");
+        itemEl.classList.toggle("completed", item.checklistItems[idx].done);
+
+        const items = item.checklistItems || [];
+        const total = items.length;
+        const completed = items.filter(i => i.done).length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const fillEl = wrapper.querySelector(".progress-bar-fill") || wrapper.querySelector(".progress-fill");
+        if (fillEl) fillEl.style.width = `${percent}%`;
+
+        const pillEl = wrapper.querySelector(".progress-pill") || wrapper.querySelector(".checklist-progress-text");
+        if (pillEl) pillEl.textContent = `${completed} OF ${total} DONE • ${percent}%`;
+
         persistAndSync();
       }
     });
@@ -1042,7 +1124,21 @@ setInterval(() => {
         item.dueTimeTriggered = true;
         changed = true;
         const alertHeading = item.label ? `[${item.label}] ${item.title}` : item.title;
-        triggerNotification(`⏰ DUE: ${alertHeading}`, item.body || "Scheduled reminder alert.", item.id + "_due");
+        const noteBody = (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0))
+          ? formatChecklistNotificationBody(item)
+          : (item.body || "Scheduled reminder alert.");
+
+        triggerNotification(`⏰ DUE: ${alertHeading}`, noteBody, item.id + "_due", {
+          reminderId: item.id,
+          actions: [
+            { action: "snooze_15", title: "⏱ Snooze 15m" },
+            { action: "mark_done", title: "✓ Done" }
+          ]
+        });
+
+        if (document.visibilityState === "visible") {
+          showDynamicIslandBanner(item);
+        }
       }
     }
 
@@ -1053,17 +1149,29 @@ setInterval(() => {
         item.lastPing = now;
         changed = true;
         const alertHeading = item.label ? `[${item.label}] ${item.title}` : item.title;
-        triggerNotification(alertHeading, item.body || "Pinned note remains active.", item.id);
+        const noteBody = (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0))
+          ? formatChecklistNotificationBody(item)
+          : (item.body || "Pinned note remains active.");
+
+        triggerNotification(alertHeading, noteBody, item.id, {
+          reminderId: item.id
+        });
+
+        if (document.visibilityState === "visible") {
+          showDynamicIslandBanner(item);
+        }
       }
     }
   });
 
   if (changed) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+    renderReminders();
   }
 
+  checkDailyMorningBriefing();
   cleanupExpiredTrash();
-}, 3000);
+}, 1000);
 
 const customTimeRow = document.getElementById("custom-time-row");
 document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
@@ -1233,49 +1341,93 @@ function openCardIosMenu(item, wrapper) {
   const editSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
   const copySvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
   const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+  const clockSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+
+  const menuItems = [
+    {
+      label: item.pinned ? "Unpin Note" : "Pin Note to Top",
+      icon: pinSvg,
+      action: () => {
+        item.pinned = !item.pinned;
+        persistAndSync();
+      }
+    },
+    {
+      label: "Edit Note",
+      icon: editSvg,
+      action: () => {
+        openEditModal(item);
+      }
+    },
+    {
+      label: "Duplicate Note",
+      icon: copySvg,
+      action: () => {
+        const duplicate = JSON.parse(JSON.stringify(item));
+        duplicate.id = "postr_" + Date.now();
+        duplicate.title = duplicate.title + " (Copy)";
+        duplicate.createdAt = Date.now();
+        duplicate.lastPing = Date.now();
+        reminders.unshift(duplicate);
+        persistAndSync();
+      }
+    }
+  ];
+
+  if (item.dueTime) {
+    menuItems.push(
+      {
+        label: "⏱ Snooze 15 Minutes",
+        icon: clockSvg,
+        action: () => snoozeReminderById(item.id, 15)
+      },
+      {
+        label: "⏱ Snooze 1 Hour",
+        icon: clockSvg,
+        action: () => snoozeReminderById(item.id, 60)
+      },
+      {
+        label: "🌅 Snooze to Tomorrow 9 AM",
+        icon: clockSvg,
+        action: () => {
+          const d = new Date();
+          d.setDate(d.getDate() + 1);
+          d.setHours(9, 0, 0, 0);
+          item.dueTime = d.toISOString();
+          item.dueTimeTriggered = false;
+          persistAndSync();
+          renderReminders();
+          showToast("Snoozed to tomorrow 9:00 AM");
+        }
+      }
+    );
+  }
+
+  if (item.type === "checklist" && item.checklistItems && item.checklistItems.length > 0) {
+    const hasUnchecked = item.checklistItems.some(i => !i.done);
+    menuItems.push({
+      label: hasUnchecked ? "✓ Complete All Items" : "□ Uncheck All Items",
+      icon: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+      action: () => {
+        item.checklistItems.forEach(i => i.done = hasUnchecked);
+        persistAndSync();
+        renderReminders();
+      }
+    });
+  }
+
+  menuItems.push({
+    label: "Move to Trash",
+    icon: trashSvg,
+    destructive: true,
+    action: () => {
+      moveToTrash(item.id, wrapper);
+    }
+  });
 
   showIosMenu({
     title: item.title || "Note Options",
-    items: [
-      {
-        label: item.pinned ? "Unpin Note" : "Pin Note to Top",
-        icon: pinSvg,
-        action: () => {
-          item.pinned = !item.pinned;
-          triggerHaptic("light");
-          persistAndSync();
-        }
-      },
-      {
-        label: "Edit Note",
-        icon: editSvg,
-        action: () => {
-          openEditModal(item);
-        }
-      },
-      {
-        label: "Duplicate Note",
-        icon: copySvg,
-        action: () => {
-          const duplicate = JSON.parse(JSON.stringify(item));
-          duplicate.id = "postr_" + Date.now();
-          duplicate.title = duplicate.title + " (Copy)";
-          duplicate.createdAt = Date.now();
-          duplicate.lastPing = Date.now();
-          reminders.unshift(duplicate);
-          triggerHaptic("medium");
-          persistAndSync();
-        }
-      },
-      {
-        label: "Move to Trash",
-        icon: trashSvg,
-        destructive: true,
-        action: () => {
-          moveToTrash(item.id, wrapper);
-        }
-      }
-    ]
+    items: menuItems
   });
 }
 
@@ -1767,3 +1919,431 @@ updateTrashBadge();
 updateAppBadge();
 render();
 applyHapticOverlays();
+
+// ============================================================================
+// DYNAMIC ISLAND IN-APP HEADS-UP BANNER
+// ============================================================================
+const diBanner = document.getElementById("dynamic-island-banner");
+const diTitle = document.getElementById("di-title");
+const diSubtitle = document.getElementById("di-subtitle");
+const diBtnSnooze = document.getElementById("di-btn-snooze");
+const diBtnDone = document.getElementById("di-btn-done");
+let diTimeout = null;
+let currentDiReminderId = null;
+
+function showDynamicIslandBanner(item) {
+  if (!diBanner) return;
+  currentDiReminderId = item.id;
+  if (diTitle) diTitle.textContent = item.title || "Reminder Alert";
+  if (diSubtitle) {
+    diSubtitle.textContent = item.label ? `[${item.label}] Due now` : "Due now";
+  }
+
+  diBanner.classList.remove("hidden");
+
+  if (diTimeout) clearTimeout(diTimeout);
+  diTimeout = setTimeout(() => {
+    hideDynamicIslandBanner();
+  }, 9000);
+}
+
+function hideDynamicIslandBanner() {
+  if (!diBanner) return;
+  diBanner.classList.add("hidden");
+  if (diTimeout) clearTimeout(diTimeout);
+  diTimeout = null;
+  currentDiReminderId = null;
+}
+
+if (diBtnSnooze) {
+  diBtnSnooze.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (currentDiReminderId) {
+      snoozeReminderById(currentDiReminderId, 15);
+    }
+    hideDynamicIslandBanner();
+  });
+}
+
+if (diBtnDone) {
+  diBtnDone.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (currentDiReminderId) {
+      moveToTrash(currentDiReminderId);
+    }
+    hideDynamicIslandBanner();
+  });
+}
+
+if (diBanner) {
+  diBanner.addEventListener("click", () => {
+    if (currentDiReminderId) {
+      const el = document.querySelector(`.card-wrapper[data-id="${currentDiReminderId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    hideDynamicIslandBanner();
+  });
+
+  let diTouchStartY = 0;
+  diBanner.addEventListener("touchstart", (e) => {
+    if (e.touches && e.touches[0]) diTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  diBanner.addEventListener("touchend", (e) => {
+    if (e.changedTouches && e.changedTouches[0]) {
+      const diffY = diTouchStartY - e.changedTouches[0].clientY;
+      if (diffY > 20) {
+        hideDynamicIslandBanner();
+      }
+    }
+  }, { passive: true });
+}
+
+// ============================================================================
+// SERVICE WORKER NOTIFICATION ACTION LISTENER
+// ============================================================================
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (!event.data) return;
+    if (event.data.type === "NOTIFICATION_ACTION_SNOOZE") {
+      if (event.data.reminderId) {
+        snoozeReminderById(event.data.reminderId, 15);
+      }
+    } else if (event.data.type === "NOTIFICATION_ACTION_DONE") {
+      if (event.data.reminderId) {
+        moveToTrash(event.data.reminderId);
+      }
+    } else if (event.data.type === "NOTIFICATION_CLICK_OPEN") {
+      if (event.data.reminderId) {
+        const el = document.querySelector(`.card-wrapper[data-id="${event.data.reminderId}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  });
+}
+
+// ============================================================================
+// DAILY MORNING BRIEFING
+// ============================================================================
+const MORNING_BRIEFING_KEY = "postr_morning_briefing_enabled";
+const LAST_BRIEFING_DATE_KEY = "postr_last_morning_briefing_date";
+
+function checkDailyMorningBriefing() {
+  const isEnabled = localStorage.getItem(MORNING_BRIEFING_KEY) === "true";
+  if (!isEnabled) return;
+
+  const now = new Date();
+  if (now.getHours() < 8) return;
+
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const lastRun = localStorage.getItem(LAST_BRIEFING_DATE_KEY);
+
+  if (lastRun === todayStr) return;
+
+  localStorage.setItem(LAST_BRIEFING_DATE_KEY, todayStr);
+
+  const totalCount = reminders.length;
+  const pinnedCount = reminders.filter(r => r.pinned).length;
+  const dueCount = reminders.filter(r => r.dueTime).length;
+
+  if (totalCount === 0) return;
+
+  const msg = `You have ${totalCount} reminder${totalCount === 1 ? "" : "s"} today: ${pinnedCount} pinned, ${dueCount} scheduled.`;
+  triggerNotification("☀️ Good Morning!", msg, "postr_briefing_" + todayStr);
+}
+
+const toggleMorningBriefing = document.getElementById("toggle-morning-briefing");
+if (toggleMorningBriefing) {
+  toggleMorningBriefing.checked = localStorage.getItem(MORNING_BRIEFING_KEY) === "true";
+  toggleMorningBriefing.addEventListener("change", () => {
+    const enabled = toggleMorningBriefing.checked;
+    localStorage.setItem(MORNING_BRIEFING_KEY, enabled ? "true" : "false");
+    if (enabled && "Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+    showToast(enabled ? "Morning Briefing enabled (8:00 AM)" : "Morning Briefing disabled");
+  });
+}
+
+// ============================================================================
+// APP LOCK: BIOMETRICS (FACE ID / TOUCH ID) & 4-DIGIT PASSCODE
+// ============================================================================
+const APP_LOCK_KEY = "postr_app_lock_enabled";
+const PIN_CODE_KEY = "postr_pin_code";
+const WEBAUTHN_ID_KEY = "postr_webauthn_id";
+
+const appLockOverlay = document.getElementById("app-lock-overlay");
+const pinDotsContainer = document.getElementById("pin-dots-container");
+const pinErrorMsg = document.getElementById("pin-error-msg");
+const pinKeypad = document.getElementById("pin-keypad");
+const keyBtnBio = document.getElementById("key-btn-bio");
+const keyBtnDel = document.getElementById("key-btn-del");
+const btnLockFaceIdTrigger = document.getElementById("btn-lock-faceid-trigger");
+
+const toggleAppLock = document.getElementById("toggle-app-lock");
+const pinManagementRow = document.getElementById("pin-management-row");
+const btnChangePin = document.getElementById("btn-change-pin");
+const pinSetupModal = document.getElementById("pin-setup-modal");
+const btnClosePinSetup = document.getElementById("btn-close-pin-setup");
+const btnCancelPin = document.getElementById("btn-cancel-pin");
+const btnSavePin = document.getElementById("btn-save-pin");
+const pinInputNew = document.getElementById("pin-input-new");
+const pinInputConfirm = document.getElementById("pin-input-confirm");
+const pinSetupError = document.getElementById("pin-setup-error");
+
+let isAppLocked = false;
+let enteredPin = "";
+
+function updatePinDots() {
+  if (!pinDotsContainer) return;
+  const dots = pinDotsContainer.querySelectorAll(".pin-dot");
+  dots.forEach((dot, index) => {
+    dot.classList.toggle("filled", index < enteredPin.length);
+  });
+}
+
+function lockApp() {
+  if (!appLockOverlay) return;
+  isAppLocked = true;
+  enteredPin = "";
+  if (pinErrorMsg) pinErrorMsg.textContent = "";
+  updatePinDots();
+  appLockOverlay.classList.remove("hidden");
+  tryBiometricUnlock();
+}
+
+function unlockApp() {
+  if (!appLockOverlay) return;
+  isAppLocked = false;
+  enteredPin = "";
+  if (pinErrorMsg) pinErrorMsg.textContent = "";
+  updatePinDots();
+  appLockOverlay.classList.add("hidden");
+}
+
+async function tryBiometricUnlock() {
+  if (!window.PublicKeyCredential || !navigator.credentials) return false;
+  try {
+    if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      if (!isAvailable) return false;
+    }
+
+    const challenge = new Uint8Array(32);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(challenge);
+    }
+
+    const credIdStr = localStorage.getItem(WEBAUTHN_ID_KEY);
+    if (credIdStr) {
+      const rawId = Uint8Array.from(atob(credIdStr), c => c.charCodeAt(0));
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: challenge,
+          timeout: 60000,
+          userVerification: "required",
+          allowCredentials: [{
+            type: "public-key",
+            id: rawId,
+            transports: ["internal"]
+          }]
+        }
+      });
+      if (assertion) {
+        unlockApp();
+        showToast("Unlocked with Face ID");
+        return true;
+      }
+    }
+  } catch (err) {
+    // Biometric cancelled or not recognized, fall back silently to keypad
+  }
+  return false;
+}
+
+async function tryBiometricRegister() {
+  if (!window.PublicKeyCredential || !navigator.credentials) return false;
+  try {
+    if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      if (!isAvailable) return false;
+    }
+
+    const challenge = new Uint8Array(32);
+    const userId = new Uint8Array(16);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(challenge);
+      window.crypto.getRandomValues(userId);
+    }
+
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge: challenge,
+        rp: { name: "Postr" },
+        user: {
+          id: userId,
+          name: "postr_user",
+          displayName: "Postr User"
+        },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+        authenticatorSelection: {
+          authenticatorAttachment: "platform",
+          userVerification: "required"
+        },
+        timeout: 60000
+      }
+    });
+
+    if (credential && credential.rawId) {
+      const idB64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      localStorage.setItem(WEBAUTHN_ID_KEY, idB64);
+      return true;
+    }
+  } catch (err) {
+    // WebAuthn registration skipped/cancelled
+  }
+  return false;
+}
+
+if (pinKeypad) {
+  pinKeypad.addEventListener("click", (e) => {
+    const btn = e.target.closest(".key-btn");
+    if (!btn) return;
+    const key = btn.dataset.key;
+    if (key !== undefined) {
+      if (enteredPin.length < 4) {
+        enteredPin += key;
+        if (pinErrorMsg) pinErrorMsg.textContent = "";
+        updatePinDots();
+
+        if (enteredPin.length === 4) {
+          const storedPin = localStorage.getItem(PIN_CODE_KEY);
+          if (enteredPin === storedPin) {
+            unlockApp();
+          } else {
+            if (pinDotsContainer) pinDotsContainer.classList.add("shake");
+            if (pinErrorMsg) pinErrorMsg.textContent = "Incorrect Passcode";
+            setTimeout(() => {
+              if (pinDotsContainer) pinDotsContainer.classList.remove("shake");
+              enteredPin = "";
+              updatePinDots();
+            }, 500);
+          }
+        }
+      }
+    }
+  });
+}
+
+if (keyBtnDel) {
+  keyBtnDel.addEventListener("click", () => {
+    if (enteredPin.length > 0) {
+      enteredPin = enteredPin.slice(0, -1);
+      if (pinErrorMsg) pinErrorMsg.textContent = "";
+      updatePinDots();
+    }
+  });
+}
+
+if (keyBtnBio) {
+  keyBtnBio.addEventListener("click", () => {
+    tryBiometricUnlock();
+  });
+}
+
+if (btnLockFaceIdTrigger) {
+  btnLockFaceIdTrigger.addEventListener("click", () => {
+    tryBiometricUnlock();
+  });
+}
+
+function openPinSetupModal() {
+  if (!pinSetupModal) return;
+  if (pinInputNew) pinInputNew.value = "";
+  if (pinInputConfirm) pinInputConfirm.value = "";
+  if (pinSetupError) pinSetupError.textContent = "";
+  openModal("pin-setup-modal");
+  setTimeout(() => pinInputNew?.focus(), 200);
+}
+
+function closePinSetupModal() {
+  if (!pinSetupModal) return;
+  closeModal("pin-setup-modal");
+  const hasPin = !!localStorage.getItem(PIN_CODE_KEY);
+  const isLocked = localStorage.getItem(APP_LOCK_KEY) === "true";
+  if (toggleAppLock) toggleAppLock.checked = isLocked && hasPin;
+}
+
+if (btnClosePinSetup) btnClosePinSetup.addEventListener("click", closePinSetupModal);
+if (btnCancelPin) btnCancelPin.addEventListener("click", closePinSetupModal);
+
+if (btnSavePin) {
+  btnSavePin.addEventListener("click", () => {
+    const valNew = pinInputNew ? pinInputNew.value.trim() : "";
+    const valConfirm = pinInputConfirm ? pinInputConfirm.value.trim() : "";
+
+    if (!/^\d{4}$/.test(valNew)) {
+      if (pinSetupError) pinSetupError.textContent = "Passcode must be exactly 4 digits.";
+      return;
+    }
+
+    if (valNew !== valConfirm) {
+      if (pinSetupError) pinSetupError.textContent = "Passcodes do not match.";
+      return;
+    }
+
+    localStorage.setItem(PIN_CODE_KEY, valNew);
+    localStorage.setItem(APP_LOCK_KEY, "true");
+    if (toggleAppLock) toggleAppLock.checked = true;
+    if (pinManagementRow) pinManagementRow.classList.remove("hidden");
+    closePinSetupModal();
+    showToast("Passcode Saved");
+    tryBiometricRegister();
+  });
+}
+
+if (btnChangePin) {
+  btnChangePin.addEventListener("click", () => {
+    openPinSetupModal();
+  });
+}
+
+if (toggleAppLock) {
+  const hasPin = !!localStorage.getItem(PIN_CODE_KEY);
+  const isLocked = localStorage.getItem(APP_LOCK_KEY) === "true";
+  toggleAppLock.checked = isLocked && hasPin;
+  if (isLocked && hasPin && pinManagementRow) {
+    pinManagementRow.classList.remove("hidden");
+  }
+
+  toggleAppLock.addEventListener("change", () => {
+    if (toggleAppLock.checked) {
+      const existingPin = localStorage.getItem(PIN_CODE_KEY);
+      if (!existingPin) {
+        toggleAppLock.checked = false;
+        openPinSetupModal();
+      } else {
+        localStorage.setItem(APP_LOCK_KEY, "true");
+        if (pinManagementRow) pinManagementRow.classList.remove("hidden");
+        showToast("App Lock Enabled");
+        tryBiometricRegister();
+      }
+    } else {
+      localStorage.setItem(APP_LOCK_KEY, "false");
+      if (pinManagementRow) pinManagementRow.classList.add("hidden");
+      showToast("App Lock Disabled");
+    }
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CODE_KEY)) {
+      lockApp();
+    }
+  }
+});
+
+if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CODE_KEY)) {
+  lockApp();
+}
+

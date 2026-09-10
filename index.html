@@ -18,6 +18,26 @@
 </head>
 <body>
   <div id="app-viewport">
+    <!-- In-App Dynamic Island Heads-Up Banner -->
+    <aside id="dynamic-island-banner" class="dynamic-island hidden" aria-live="assertive">
+      <div class="di-leading">
+        <div class="di-icon-pulse">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="di-body">
+        <span class="di-title" id="di-title">Reminder Alert</span>
+        <span class="di-subtitle" id="di-subtitle">Due now</span>
+      </div>
+      <div class="di-trailing">
+        <button type="button" id="di-btn-snooze" class="di-btn di-btn-snooze" title="Snooze 15m">15m</button>
+        <button type="button" id="di-btn-done" class="di-btn di-btn-done" title="Complete">✓</button>
+      </div>
+    </aside>
+
     <!-- Top Navigation -->
     <nav class="top-nav">
       <h1 class="logo" id="btn-logo" title="About Postr">POSTR</h1>
@@ -284,6 +304,36 @@
             <div class="spec-row"><span>TRASH RETENTION</span><strong>24 HOURS AUTO-EXPIRING</strong></div>
             <div class="spec-row"><span>CORE ENGINE</span><strong>SERVICE WORKER PWA</strong></div>
           </div>
+
+          <!-- Preferences & Security Settings -->
+          <div class="version-settings-group">
+            <div class="settings-group-title">PREFERENCES & SECURITY</div>
+            
+            <!-- Daily Briefing Toggle -->
+            <label class="toggle-control settings-toggle-row">
+              <span class="settings-toggle-label">
+                <strong>DAILY MORNING BRIEFING</strong>
+                <small>8:00 AM summary of pinned & due notes</small>
+              </span>
+              <input type="checkbox" id="toggle-morning-briefing" class="ios-switch">
+              <span class="switch-slider"></span>
+            </label>
+
+            <!-- App Lock Toggle -->
+            <label class="toggle-control settings-toggle-row">
+              <span class="settings-toggle-label">
+                <strong>APP LOCK (FACE ID / PASSCODE)</strong>
+                <small>Biometric or PIN lock on app launch</small>
+              </span>
+              <input type="checkbox" id="toggle-app-lock" class="ios-switch">
+              <span class="switch-slider"></span>
+            </label>
+
+            <div id="pin-management-row" class="pin-management-row hidden">
+              <button type="button" id="btn-change-pin" class="btn-secondary btn-small">CHANGE 4-DIGIT PIN</button>
+            </div>
+          </div>
+
           <div class="backup-actions">
             <button type="button" id="btn-export-backup" class="btn-secondary">EXPORT BACKUP (JSON)</button>
             <label class="btn-secondary file-upload-label">
@@ -376,6 +426,91 @@
         </div>
         <div class="ios-menu-group ios-menu-cancel-group">
           <button type="button" class="ios-menu-item ios-menu-cancel" id="btn-cancel-ios-menu">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- App Lock Screen Overlay (Face ID / Passcode) -->
+    <div id="app-lock-overlay" class="app-lock-overlay hidden" aria-modal="true" role="dialog">
+      <div class="lock-container">
+        <div class="lock-header">
+          <div class="lock-icon-badge" id="btn-lock-faceid-trigger" title="Tap to use Face ID">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+              <path d="M9 9h.01"></path>
+              <path d="M15 9h.01"></path>
+              <path d="M10 13a2 2 0 0 0 4 0"></path>
+            </svg>
+          </div>
+          <h2 class="lock-title">POSTR</h2>
+          <p class="lock-subtitle" id="lock-subtitle-text">Enter Passcode or Face ID</p>
+        </div>
+
+        <div class="pin-dots-container" id="pin-dots-container">
+          <span class="pin-dot"></span>
+          <span class="pin-dot"></span>
+          <span class="pin-dot"></span>
+          <span class="pin-dot"></span>
+        </div>
+
+        <div class="pin-error-msg" id="pin-error-msg"></div>
+
+        <div class="pin-keypad" id="pin-keypad">
+          <button type="button" class="key-btn" data-key="1">1</button>
+          <button type="button" class="key-btn" data-key="2">2</button>
+          <button type="button" class="key-btn" data-key="3">3</button>
+          <button type="button" class="key-btn" data-key="4">4</button>
+          <button type="button" class="key-btn" data-key="5">5</button>
+          <button type="button" class="key-btn" data-key="6">6</button>
+          <button type="button" class="key-btn" data-key="7">7</button>
+          <button type="button" class="key-btn" data-key="8">8</button>
+          <button type="button" class="key-btn" data-key="9">9</button>
+          <button type="button" class="key-btn key-btn-aux" id="key-btn-bio" title="Face ID / Touch ID">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+              <path d="M9 9h.01"></path>
+              <path d="M15 9h.01"></path>
+              <path d="M10 13a2 2 0 0 0 4 0"></path>
+            </svg>
+          </button>
+          <button type="button" class="key-btn" data-key="0">0</button>
+          <button type="button" class="key-btn key-btn-aux" id="key-btn-del" title="Delete">⌫</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIN Setup / Change Modal -->
+    <div id="pin-setup-modal" class="modal-backdrop">
+      <div class="hud-card pin-setup-card">
+        <div class="hud-header">
+          <span>SECURITY PASSCODE</span>
+          <button id="btn-close-pin-setup" class="btn-circle" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="pin-setup-body">
+          <p class="pin-setup-desc">Create a 4-digit numeric PIN to secure your reminders when opening Postr.</p>
+          <div class="pin-field-group">
+            <label for="pin-input-new">NEW 4-DIGIT PIN</label>
+            <input type="password" id="pin-input-new" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
+          </div>
+          <div class="pin-field-group">
+            <label for="pin-input-confirm">CONFIRM 4-DIGIT PIN</label>
+            <input type="password" id="pin-input-confirm" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
+          </div>
+          <div class="pin-setup-error" id="pin-setup-error"></div>
+          <div class="pin-setup-actions">
+            <button type="button" id="btn-save-pin" class="btn-primary">SAVE PASSCODE</button>
+            <button type="button" id="btn-cancel-pin" class="btn-secondary">CANCEL</button>
+          </div>
         </div>
       </div>
     </div>

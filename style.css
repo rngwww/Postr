@@ -1934,3 +1934,525 @@ input[type="text"]:focus, textarea:focus {
   padding: 16px;
 }
 
+/* ==========================================================================
+   DYNAMIC ISLAND IN-APP HEADS-UP BANNER
+   ========================================================================== */
+.dynamic-island {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  width: calc(100% - 24px);
+  max-width: 420px;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 10000;
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, filter 0.3s ease;
+  will-change: transform, opacity;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.dynamic-island.hidden {
+  transform: translateX(-50%) translateY(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.di-leading {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.di-icon-pulse {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.18);
+  color: #ff3b30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: diPulse 2s infinite ease-in-out;
+}
+
+@keyframes diPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 12px 2px rgba(255, 59, 48, 0.4);
+  }
+}
+
+.di-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.di-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.di-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.di-trailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.di-btn {
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 16px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.di-btn:active {
+  transform: scale(0.92);
+}
+
+.di-btn-snooze {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.di-btn-snooze:active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.di-btn-done {
+  background: #ff3b30;
+  color: #ffffff;
+  min-width: 32px;
+}
+
+.di-btn-done:active {
+  background: #d32f2f;
+}
+
+/* ==========================================================================
+   CHECKLIST PROGRESS PILL & OVERDUE PULSE ACCENTS
+   ========================================================================== */
+.card-checklist-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #ff3b30;
+  border-radius: 999px;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.progress-pill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #555555;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 8px;
+  border-radius: 12px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+.card-due-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #333333;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-due-tag.is-overdue {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.45);
+  animation: overduePulse 2s infinite ease-in-out;
+}
+
+@keyframes overduePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+    border-color: rgba(255, 59, 48, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(255, 59, 48, 0.5);
+    border-color: rgba(255, 59, 48, 0.95);
+  }
+}
+
+.btn-card-snooze {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #111111;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-card-snooze:active {
+  background: #000000;
+  color: #ffffff;
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   APP LOCK SCREEN OVERLAY & PASSCODE KEYPAD
+   ========================================================================== */
+.app-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-lock-overlay.hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  padding: 20px;
+  text-align: center;
+}
+
+.lock-header {
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lock-icon-badge {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.lock-icon-badge:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lock-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.lock-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.pin-dots-container {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 28px;
+  transition: transform 0.3s ease;
+}
+
+.pin-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pin-dot.filled {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: scale(1.15);
+}
+
+.pin-dots-container.shake {
+  animation: pinShake 0.4s ease-in-out;
+}
+
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-12px); }
+  40%, 80% { transform: translateX(12px); }
+}
+
+.pin-error-msg {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff453a;
+  min-height: 18px;
+  margin-top: -16px;
+  margin-bottom: 22px;
+  letter-spacing: 0.02em;
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px 24px;
+  width: 100%;
+  max-width: 280px;
+  justify-items: center;
+}
+
+.key-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.key-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.92);
+}
+
+.key-btn-aux {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.key-btn-aux:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   VERSION SETTINGS & PIN SETUP MODAL
+   ========================================================================== */
+.version-settings-group {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-group-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8e8e93;
+  text-transform: uppercase;
+}
+
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.settings-toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.settings-toggle-label strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.settings-toggle-label small {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.pin-management-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.btn-small {
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+.pin-setup-card {
+  width: 90%;
+  max-width: 360px;
+}
+
+.pin-setup-body {
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pin-setup-desc {
+  font-size: 12px;
+  color: #8e8e93;
+  line-height: 1.4;
+}
+
+.pin-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pin-field-group label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #8e8e93;
+}
+
+.pin-field-group input {
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 8px;
+  font-family: inherit;
+}
+
+.pin-field-group input:focus {
+  outline: none;
+  border-color: #ffffff;
+}
+
+.pin-setup-error {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff453a;
+  min-height: 14px;
+}
+
+.pin-setup-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.pin-setup-actions button {
+  flex: 1;
+}
+
+
