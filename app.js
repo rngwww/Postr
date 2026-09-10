@@ -286,6 +286,39 @@ function renderNoteBody(bodyText) {
   return `<p>${escapeHtml(bodyText)}</p>`;
 }
 
+function renderCardBody(item) {
+  if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
+    const items = item.checklistItems || [];
+    const total = items.length;
+    const completed = items.filter(i => i.done).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const itemsHtml = items.map((ci, idx) => `
+      <div class="card-checklist-item ${ci.done ? "completed" : ""}" data-item-index="${idx}">
+        <button type="button" class="checklist-item-check" aria-label="Toggle ${escapeHtml(ci.text)}">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+        <span class="checklist-item-text">${escapeHtml(ci.text)}</span>
+      </div>
+    `).join("");
+
+    return `
+      <div class="card-checklist">
+        <div class="checklist-progress-bar">
+          <div class="progress-fill" style="width: ${percent}%;"></div>
+        </div>
+        <div class="checklist-progress-text">${completed} OF ${total} COMPLETED (${percent}%)</div>
+        <div class="card-checklist-items">
+          ${itemsHtml}
+        </div>
+      </div>
+    `;
+  }
+  return renderNoteBody(item.body);
+}
+
 function formatDueTime(isoString) {
   if (!isoString) return "";
   try {
@@ -384,7 +417,7 @@ function render() {
                 ${item.pinned ? "📌" : "📍"}
               </button>
             </div>
-            ${renderNoteBody(item.body, item.id)}
+            ${renderCardBody(item)}
             <div class="card-tags-row">
               ${item.pinned ? `<span class="pin-badge">📌 PINNED</span>` : ""}
               ${item.label ? `<span class="pastel-tag" style="background-color: ${labelColor};">${escapeHtml(item.label)}</span>` : ""}
@@ -392,11 +425,20 @@ function render() {
               ${pingLabel ? `<span class="card-meta">${pingLabel}</span>` : ""}
             </div>
           </div>
-          <button class="btn-complete" title="Move to Trash" aria-label="Move to Trash">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </button>
+          <div class="card-actions-col">
+            <button class="btn-complete" title="Move to Trash" aria-label="Move to Trash">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+            <button class="btn-card-menu" title="Options" aria-label="Options">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <circle cx="5" cy="12" r="2.2"></circle>
+                <circle cx="12" cy="12" r="2.2"></circle>
+                <circle cx="19" cy="12" r="2.2"></circle>
+              </svg>
+            </button>
+          </div>
         </div>
       `;
 
@@ -442,6 +484,26 @@ function attachCardInteractions(wrapper, item) {
     });
   }
 
+  const btnCardMenu = wrapper.querySelector(".btn-card-menu");
+  if (btnCardMenu) {
+    btnCardMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openCardIosMenu(item, wrapper);
+    });
+  }
+
+  wrapper.querySelectorAll(".card-checklist-item").forEach(itemEl => {
+    itemEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(itemEl.dataset.itemIndex, 10);
+      if (item.checklistItems && item.checklistItems[idx]) {
+        item.checklistItems[idx].done = !item.checklistItems[idx].done;
+        triggerHaptic("selection");
+        persistAndSync();
+      }
+    });
+  });
+
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
     moveToTrash(item.id, wrapper);
@@ -453,9 +515,10 @@ function attachCardInteractions(wrapper, item) {
   let swipeDirection = null; // 'left' | 'right' | null
   let hasThresholdCrossed = false;
   let isDragging = false;
+  let longPressTimer = null;
 
   function onPointerStart(e) {
-    if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle")) return;
+    if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle") || e.target.closest(".btn-card-menu") || e.target.closest(".card-checklist-item")) return;
 
     const point = e.touches ? e.touches[0] : e;
     startX = point.clientX;
@@ -464,6 +527,15 @@ function attachCardInteractions(wrapper, item) {
     swipeDirection = null;
     hasThresholdCrossed = false;
     isDragging = true;
+
+    if (longPressTimer) clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      if (isDragging && !hasThresholdCrossed && Math.abs(currentOffsetX) < 10) {
+        isDragging = false;
+        triggerHaptic("medium");
+        openCardIosMenu(item, wrapper);
+      }
+    }, 520);
 
     card.style.transition = "none";
     trashIcon.style.transition = "none";
@@ -476,6 +548,13 @@ function attachCardInteractions(wrapper, item) {
     const point = e.touches ? e.touches[0] : e;
     const diffX = point.clientX - startX;
     const diffY = point.clientY - startY;
+
+    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
 
     if (!swipeDirection) {
       if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
@@ -544,6 +623,10 @@ function attachCardInteractions(wrapper, item) {
   }
 
   function onPointerEnd() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
     if (!isDragging) return;
     isDragging = false;
 
@@ -648,6 +731,9 @@ function openCreateModal() {
   document.getElementById("input-body").value = "";
   document.getElementById("input-pin-note").checked = false;
 
+  setEditorMode("note");
+  populateBuilderChecklist([]);
+
   const toggleDue = document.getElementById("toggle-due-time");
   const dueControls = document.getElementById("due-time-controls");
   const inputDue = document.getElementById("input-due-time");
@@ -675,6 +761,14 @@ function openEditModal(item) {
   document.getElementById("input-title").value = item.title;
   document.getElementById("input-body").value = item.body || "";
   document.getElementById("input-pin-note").checked = !!item.pinned;
+
+  if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
+    setEditorMode("checklist");
+    populateBuilderChecklist(item.checklistItems || []);
+  } else {
+    setEditorMode("note");
+    populateBuilderChecklist([]);
+  }
 
   const toggleDue = document.getElementById("toggle-due-time");
   const dueControls = document.getElementById("due-time-controls");
@@ -864,6 +958,318 @@ if (btnClearDue && inputDueTime) {
   });
 }
 
+// iOS Native Context Menu System
+function showIosMenu({ title = "Options", items = [] }) {
+  const backdrop = document.getElementById("ios-context-menu-backdrop");
+  const menuTitle = document.getElementById("ios-menu-title");
+  const menuItemsContainer = document.getElementById("ios-menu-items");
+
+  if (!backdrop || !menuItemsContainer) return;
+
+  triggerHaptic("medium");
+
+  if (title) {
+    menuTitle.textContent = title;
+    menuTitle.style.display = "block";
+  } else {
+    menuTitle.style.display = "none";
+  }
+
+  menuItemsContainer.innerHTML = "";
+  items.forEach(item => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `ios-menu-item ${item.destructive ? "destructive" : ""}`;
+    btn.innerHTML = `
+      <span>${escapeHtml(item.label)}</span>
+      <span class="ios-menu-icon">${item.icon || ""}</span>
+    `;
+    btn.addEventListener("click", () => {
+      triggerHaptic("selection");
+      closeIosMenu();
+      if (item.action) item.action();
+    });
+    menuItemsContainer.appendChild(btn);
+  });
+
+  backdrop.classList.remove("menu-closing");
+  backdrop.classList.add("active");
+}
+
+function closeIosMenu() {
+  const backdrop = document.getElementById("ios-context-menu-backdrop");
+  if (!backdrop || !backdrop.classList.contains("active")) return;
+  triggerHaptic("light");
+  backdrop.classList.add("menu-closing");
+  backdrop.classList.remove("active");
+  setTimeout(() => {
+    backdrop.classList.remove("menu-closing");
+  }, 240);
+}
+
+const btnCancelIosMenu = document.getElementById("btn-cancel-ios-menu");
+if (btnCancelIosMenu) {
+  btnCancelIosMenu.addEventListener("click", closeIosMenu);
+}
+const iosBackdrop = document.getElementById("ios-context-menu-backdrop");
+if (iosBackdrop) {
+  iosBackdrop.addEventListener("click", (e) => {
+    if (e.target === iosBackdrop) closeIosMenu();
+  });
+}
+
+function openCardIosMenu(item, wrapper) {
+  const pinSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.8l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`;
+  const editSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+  const copySvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+
+  showIosMenu({
+    title: item.title || "Note Options",
+    items: [
+      {
+        label: item.pinned ? "Unpin Note" : "Pin Note to Top",
+        icon: pinSvg,
+        action: () => {
+          item.pinned = !item.pinned;
+          triggerHaptic("light");
+          persistAndSync();
+        }
+      },
+      {
+        label: "Edit Note",
+        icon: editSvg,
+        action: () => {
+          openEditModal(item);
+        }
+      },
+      {
+        label: "Duplicate Note",
+        icon: copySvg,
+        action: () => {
+          const duplicate = JSON.parse(JSON.stringify(item));
+          duplicate.id = "postr_" + Date.now();
+          duplicate.title = duplicate.title + " (Copy)";
+          duplicate.createdAt = Date.now();
+          duplicate.lastPing = Date.now();
+          reminders.unshift(duplicate);
+          triggerHaptic("medium");
+          persistAndSync();
+        }
+      },
+      {
+        label: "Move to Trash",
+        icon: trashSvg,
+        destructive: true,
+        action: () => {
+          moveToTrash(item.id, wrapper);
+        }
+      }
+    ]
+  });
+}
+
+// Mode Switcher & Checklist Builder
+const tabModeNote = document.getElementById("tab-mode-note");
+const tabModeChecklist = document.getElementById("tab-mode-checklist");
+const inputNoteType = document.getElementById("input-note-type");
+const inputBody = document.getElementById("input-body");
+const checklistBuilder = document.getElementById("checklist-builder");
+const checklistRowsContainer = document.getElementById("checklist-rows-container");
+const btnAddChecklistRow = document.getElementById("btn-add-checklist-row");
+const btnChecklistMenu = document.getElementById("btn-checklist-menu");
+
+function setEditorMode(mode) {
+  if (inputNoteType) inputNoteType.value = mode;
+  if (mode === "checklist") {
+    tabModeChecklist?.classList.add("active");
+    tabModeNote?.classList.remove("active");
+    if (inputBody) inputBody.style.display = "none";
+    if (checklistBuilder) checklistBuilder.classList.remove("hidden");
+    if (checklistRowsContainer && checklistRowsContainer.children.length === 0) {
+      createBuilderRow("", false, true);
+    }
+  } else {
+    tabModeNote?.classList.add("active");
+    tabModeChecklist?.classList.remove("active");
+    if (inputBody) inputBody.style.display = "block";
+    if (checklistBuilder) checklistBuilder.classList.add("hidden");
+  }
+}
+
+if (tabModeNote) {
+  tabModeNote.addEventListener("click", () => {
+    triggerHaptic("selection");
+    setEditorMode("note");
+  });
+}
+
+if (tabModeChecklist) {
+  tabModeChecklist.addEventListener("click", () => {
+    triggerHaptic("selection");
+    setEditorMode("checklist");
+  });
+}
+
+function createBuilderRow(text = "", done = false, autoFocus = false) {
+  if (!checklistRowsContainer) return null;
+  const rowId = "ci_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4);
+  const row = document.createElement("div");
+  row.className = "builder-row";
+  row.dataset.rowId = rowId;
+
+  row.innerHTML = `
+    <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="Toggle Complete">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </button>
+    <input type="text" class="builder-row-input ${done ? "checked" : ""}" placeholder="List item..." value="${escapeHtml(text)}">
+    <button type="button" class="builder-row-del" title="Delete row">✕</button>
+  `;
+
+  const checkBtn = row.querySelector(".builder-row-check");
+  const input = row.querySelector(".builder-row-input");
+  const delBtn = row.querySelector(".builder-row-del");
+
+  checkBtn.addEventListener("click", () => {
+    triggerHaptic("selection");
+    checkBtn.classList.toggle("checked");
+    input.classList.toggle("checked");
+  });
+
+  delBtn.addEventListener("click", () => {
+    triggerHaptic("light");
+    row.remove();
+    if (checklistRowsContainer.children.length === 0) {
+      createBuilderRow("", false, true);
+    }
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nextRow = createBuilderRow("", false, true);
+      row.after(nextRow);
+    } else if (e.key === "Backspace" && input.value === "" && checklistRowsContainer.children.length > 1) {
+      e.preventDefault();
+      const prev = row.previousElementSibling;
+      row.remove();
+      if (prev) {
+        const prevInput = prev.querySelector(".builder-row-input");
+        if (prevInput) prevInput.focus();
+      }
+    }
+  });
+
+  checklistRowsContainer.appendChild(row);
+  if (autoFocus) {
+    setTimeout(() => input.focus(), 50);
+  }
+  return row;
+}
+
+function getBuilderChecklistItems() {
+  const items = [];
+  if (!checklistRowsContainer) return items;
+  checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+    const input = row.querySelector(".builder-row-input");
+    const checkBtn = row.querySelector(".builder-row-check");
+    const text = input ? input.value.trim() : "";
+    if (text) {
+      items.push({
+        id: row.dataset.rowId || ("ci_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4)),
+        text: text,
+        done: checkBtn ? checkBtn.classList.contains("checked") : false
+      });
+    }
+  });
+  return items;
+}
+
+function populateBuilderChecklist(items = []) {
+  if (!checklistRowsContainer) return;
+  checklistRowsContainer.innerHTML = "";
+  if (!items || items.length === 0) {
+    createBuilderRow("", false, false);
+  } else {
+    items.forEach(it => createBuilderRow(it.text, it.done, false));
+  }
+}
+
+if (btnAddChecklistRow) {
+  btnAddChecklistRow.addEventListener("click", () => {
+    triggerHaptic("light");
+    createBuilderRow("", false, true);
+  });
+}
+
+function openChecklistBuilderIosMenu() {
+  const checkSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  const uncheckSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect></svg>`;
+  const clearSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+
+  showIosMenu({
+    title: "Checklist Actions",
+    items: [
+      {
+        label: "Mark All Complete",
+        icon: checkSvg,
+        action: () => {
+          checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+            row.querySelector(".builder-row-check")?.classList.add("checked");
+            row.querySelector(".builder-row-input")?.classList.add("checked");
+          });
+          triggerHaptic("medium");
+        }
+      },
+      {
+        label: "Unmark All",
+        icon: uncheckSvg,
+        action: () => {
+          checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+            row.querySelector(".builder-row-check")?.classList.remove("checked");
+            row.querySelector(".builder-row-input")?.classList.remove("checked");
+          });
+          triggerHaptic("medium");
+        }
+      },
+      {
+        label: "Clear Completed Items",
+        icon: clearSvg,
+        action: () => {
+          checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+            if (row.querySelector(".builder-row-check")?.classList.contains("checked")) {
+              row.remove();
+            }
+          });
+          if (checklistRowsContainer.children.length === 0) {
+            createBuilderRow("", false, false);
+          }
+          triggerHaptic("light");
+        }
+      },
+      {
+        label: "Delete All Items",
+        icon: trashSvg,
+        destructive: true,
+        action: () => {
+          checklistRowsContainer.innerHTML = "";
+          createBuilderRow("", false, true);
+          triggerHaptic("heavy");
+        }
+      }
+    ]
+  });
+}
+
+if (btnChecklistMenu) {
+  btnChecklistMenu.addEventListener("click", () => {
+    openChecklistBuilderIosMenu();
+  });
+}
+
 // Search & Filter Controls
 const searchInput = document.getElementById("search-input");
 const btnClearSearch = document.getElementById("btn-clear-search");
@@ -966,7 +1372,15 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
   const editId = document.getElementById("edit-reminder-id").value;
   const title = document.getElementById("input-title").value.trim();
-  const body = document.getElementById("input-body").value.trim();
+  const noteType = document.getElementById("input-note-type")?.value || "note";
+  const rawBody = document.getElementById("input-body").value.trim();
+  const checklistItems = (noteType === "checklist") ? getBuilderChecklistItems() : [];
+
+  let body = rawBody;
+  if (noteType === "checklist") {
+    body = checklistItems.map(i => (i.done ? "[✓] " : "[ ] ") + i.text).join("\n");
+  }
+
   const isPinned = document.getElementById("input-pin-note").checked;
   const toggleDue = document.getElementById("toggle-due-time");
   const isDueActive = toggleDue ? toggleDue.checked : false;
@@ -989,7 +1403,9 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     const index = reminders.findIndex(r => r.id === editId);
     if (index !== -1) {
       reminders[index].title = title;
+      reminders[index].type = noteType;
       reminders[index].body = body;
+      reminders[index].checklistItems = checklistItems;
       reminders[index].label = activeSelectedLabel;
       reminders[index].pinned = isPinned;
       reminders[index].dueTime = dueTimeVal;
@@ -1002,7 +1418,9 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     const newReminder = {
       id: "postr_" + Date.now(),
       title,
+      type: noteType,
       body,
+      checklistItems,
       label: activeSelectedLabel,
       pinned: isPinned,
       dueTime: dueTimeVal,

@@ -108,9 +108,53 @@
         </div>
         <form id="reminder-form">
           <input type="hidden" id="edit-reminder-id" value="">
+          <input type="hidden" id="input-note-type" value="note">
+          
+          <!-- Mode Switcher: Note vs Checklist -->
+          <div class="mode-segmented-control">
+            <button type="button" id="tab-mode-note" class="mode-tab active">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              <span>NOTE</span>
+            </button>
+            <button type="button" id="tab-mode-checklist" class="mode-tab">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              <span>CHECKLIST</span>
+            </button>
+          </div>
+
           <input type="text" id="input-title" placeholder="What needs remembering?" required autocomplete="off">
           
           <textarea id="input-body" placeholder="Notes or instructions (optional)" rows="3"></textarea>
+
+          <!-- Interactive Checklist Builder -->
+          <div id="checklist-builder" class="checklist-builder hidden">
+            <div class="checklist-builder-header">
+              <span class="section-label">CHECKLIST ITEMS</span>
+              <button type="button" id="btn-checklist-menu" class="btn-builder-menu" title="List Actions">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <circle cx="5" cy="12" r="2"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <circle cx="19" cy="12" r="2"></circle>
+                </svg>
+              </button>
+            </div>
+            <div id="checklist-rows-container" class="checklist-rows-container"></div>
+            <button type="button" id="btn-add-checklist-row" class="btn-add-row">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>ADD ITEM</span>
+            </button>
+          </div>
 
           <!-- Toggleable Pastel Labels -->
           <div class="picker-section">
@@ -291,9 +335,9 @@
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 3 / 6</div>
-              <h3>SPECIFIC DUE TIME</h3>
-              <p>Toggle <strong>Specific Due Time</strong> in the note creator to set an exact alert date & time.<br>
-              When disabled, time settings are cleanly greyed out. When active, Postr alerts your lock screen right on schedule.</p>
+              <h3>CHECKLISTS & IOS MENUS</h3>
+              <p><strong>Checklists:</strong> Switch from [ Note ] to [ Checklist ] in the creator to build interactive to-do lists with live progress bars.<br>
+              <strong>iOS Menus:</strong> Tap <strong>•••</strong> on any card or checklist to access native action menus (Duplicate, Pin, Trash, Complete All).</p>
             </div>
             <div class="carousel-slide">
               <div class="slide-badge">SLIDE 4 / 6</div>
@@ -323,6 +367,19 @@
           <span class="dot" data-index="3"></span>
           <span class="dot" data-index="4"></span>
           <span class="dot" data-index="5"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS Native Context Menu / Action Sheet -->
+    <div id="ios-context-menu-backdrop" class="ios-menu-backdrop">
+      <div id="ios-context-menu" class="ios-context-menu">
+        <div class="ios-menu-header" id="ios-menu-title">Options</div>
+        <div class="ios-menu-group" id="ios-menu-items">
+          <!-- Dynamically populated menu items -->
+        </div>
+        <div class="ios-menu-group ios-menu-cancel-group">
+          <button type="button" class="ios-menu-item ios-menu-cancel" id="btn-cancel-ios-menu">Cancel</button>
         </div>
       </div>
     </div>
