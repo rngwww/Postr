@@ -18,25 +18,6 @@
 </head>
 <body>
   <div id="app-viewport">
-    <!-- In-App Dynamic Island Heads-Up Banner -->
-    <aside id="dynamic-island-banner" class="dynamic-island hidden" aria-live="assertive">
-      <div class="di-leading">
-        <div class="di-icon-pulse" id="di-icon-box">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </div>
-      </div>
-      <div class="di-body">
-        <span class="di-title" id="di-title">Reminder Alert</span>
-        <span class="di-subtitle" id="di-subtitle">Due now</span>
-      </div>
-      <div class="di-trailing">
-        <button type="button" id="di-btn-snooze" class="di-btn di-btn-snooze" title="Snooze 15m">15m</button>
-        <button type="button" id="di-btn-done" class="di-btn di-btn-done" title="Complete">✓</button>
-      </div>
-    </aside>
 
     <!-- Top Navigation -->
     <nav class="top-nav">
@@ -319,15 +300,6 @@
               <span class="switch-slider"></span>
             </label>
 
-            <!-- Dynamic Island HUD Toggle -->
-            <label class="toggle-control settings-toggle-row">
-              <span class="settings-toggle-label">
-                <strong>DYNAMIC ISLAND HUD</strong>
-                <small>Always-on heads-up display while app is running</small>
-              </span>
-              <input type="checkbox" id="toggle-dynamic-island" class="ios-switch">
-              <span class="switch-slider"></span>
-            </label>
 
             <!-- App Lock Toggle -->
             <label class="toggle-control settings-toggle-row">
