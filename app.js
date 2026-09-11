@@ -545,7 +545,11 @@ function render() {
   }
   updateTrashBadge();
   updateAppBadge();
+  if (typeof updateDynamicIslandState === "function") {
+    updateDynamicIslandState();
+  }
 }
+const renderReminders = render;
 
 function persistAndSync() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
@@ -1167,6 +1171,8 @@ setInterval(() => {
   if (changed) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
     renderReminders();
+  } else if (typeof updateDynamicIslandState === "function") {
+    updateDynamicIslandState();
   }
 
   checkDailyMorningBriefing();
@@ -1910,49 +1916,158 @@ window.addEventListener("visibilitychange", () => {
   }
 });
 
-updateViewportHeight();
-setupDynamicAppIcon();
-setupLabelSelector();
-updateNotifyButton();
-syncVersionDisplay();
-updateTrashBadge();
-updateAppBadge();
-render();
-applyHapticOverlays();
+
 
 // ============================================================================
-// DYNAMIC ISLAND IN-APP HEADS-UP BANNER
+// DYNAMIC ISLAND IN-APP HEADS-UP BANNER (ALWAYS-ON TOGGLEABLE HUD)
 // ============================================================================
+const DYNAMIC_ISLAND_KEY = "postr_dynamic_island_enabled";
+
 const diBanner = document.getElementById("dynamic-island-banner");
 const diTitle = document.getElementById("di-title");
 const diSubtitle = document.getElementById("di-subtitle");
 const diBtnSnooze = document.getElementById("di-btn-snooze");
 const diBtnDone = document.getElementById("di-btn-done");
-let diTimeout = null;
-let currentDiReminderId = null;
+const diIconBox = document.getElementById("di-icon-box");
+const toggleDynamicIsland = document.getElementById("toggle-dynamic-island");
 
-function showDynamicIslandBanner(item) {
+let currentDiReminderId = null;
+let diAlertUntil = 0;
+let diAlertReminder = null;
+
+function isDynamicIslandEnabled() {
+  const saved = localStorage.getItem(DYNAMIC_ISLAND_KEY);
+  if (saved === null) return true; // Enabled by default
+  return saved === "true";
+}
+
+function updateDynamicIslandState() {
   if (!diBanner) return;
-  currentDiReminderId = item.id;
-  if (diTitle) diTitle.textContent = item.title || "Reminder Alert";
-  if (diSubtitle) {
-    diSubtitle.textContent = item.label ? `[${item.label}] Due now` : "Due now";
+  const viewport = document.getElementById("app-viewport");
+  const enabled = isDynamicIslandEnabled();
+
+  if (!enabled) {
+    diBanner.classList.add("hidden");
+    viewport?.classList.remove("has-dynamic-island");
+    return;
   }
 
+  // Always show when enabled and app is open
   diBanner.classList.remove("hidden");
+  viewport?.classList.add("has-dynamic-island");
 
-  if (diTimeout) clearTimeout(diTimeout);
-  diTimeout = setTimeout(() => {
-    hideDynamicIslandBanner();
-  }, 9000);
+  const now = Date.now();
+
+  // 1. Fresh alarm triggered within last 15 seconds
+  if (diAlertReminder && now < diAlertUntil) {
+    displayDynamicIslandItem(diAlertReminder, "alert");
+    return;
+  }
+
+  // 2. Highest priority: Any overdue reminder
+  const overdueItem = reminders.find(r => r.dueTime && now > new Date(r.dueTime).getTime());
+  if (overdueItem) {
+    displayDynamicIslandItem(overdueItem, "overdue");
+    return;
+  }
+
+  // 3. Next upcoming scheduled reminder
+  const upcomingItems = reminders
+    .filter(r => r.dueTime && new Date(r.dueTime).getTime() > now)
+    .sort((a, b) => new Date(a.dueTime).getTime() - new Date(b.dueTime).getTime());
+  if (upcomingItems.length > 0) {
+    displayDynamicIslandItem(upcomingItems[0], "upcoming");
+    return;
+  }
+
+  // 4. Top pinned reminder
+  const pinnedItem = reminders.find(r => r.pinned);
+  if (pinnedItem) {
+    displayDynamicIslandItem(pinnedItem, "pinned");
+    return;
+  }
+
+  // 5. First active note
+  if (reminders.length > 0) {
+    displayDynamicIslandItem(reminders[0], "active");
+    return;
+  }
+
+  // 6. Zero active notes
+  displayDynamicIslandEmpty();
+}
+
+function displayDynamicIslandItem(item, mode) {
+  currentDiReminderId = item.id;
+  if (diTitle) diTitle.textContent = item.title || "Reminder";
+
+  if (diBtnSnooze) diBtnSnooze.style.display = "";
+  if (diBtnDone) diBtnDone.style.display = "";
+
+  const iconEl = diIconBox || (diBanner ? diBanner.querySelector(".di-icon-pulse") : null);
+  if (iconEl) {
+    iconEl.className = "di-icon-pulse";
+  }
+
+  if (mode === "alert") {
+    if (diSubtitle) diSubtitle.textContent = item.label ? `[${item.label}] ⏰ Alarm due now` : "⏰ Alarm due now";
+    iconEl?.classList.add("pulse-urgent");
+    if (iconEl) {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`;
+    }
+  } else if (mode === "overdue") {
+    const dueStatus = getDueStatus(item.dueTime);
+    if (diSubtitle) diSubtitle.textContent = `🔥 Overdue • ${dueStatus.overdueAgo}`;
+    iconEl?.classList.add("pulse-urgent");
+    if (iconEl) {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>`;
+    }
+  } else if (mode === "upcoming") {
+    if (diSubtitle) diSubtitle.textContent = `⏰ Due ${formatDueTime(item.dueTime)}`;
+    iconEl?.classList.add("pulse-normal");
+    if (iconEl) {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+    }
+  } else if (mode === "pinned") {
+    if (diSubtitle) diSubtitle.textContent = item.label ? `[${item.label}] 📌 Pinned` : "📌 Pinned";
+    iconEl?.classList.add("pulse-normal");
+    if (iconEl) {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.8l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`;
+    }
+  } else {
+    // Active note
+    if (diSubtitle) diSubtitle.textContent = `${reminders.length} active note${reminders.length === 1 ? "" : "s"}`;
+    iconEl?.classList.add("pulse-normal");
+    if (iconEl) {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+    }
+  }
+}
+
+function displayDynamicIslandEmpty() {
+  currentDiReminderId = null;
+  if (diTitle) diTitle.textContent = "POSTR";
+  if (diSubtitle) diSubtitle.textContent = "All clear • No active notes";
+  if (diBtnSnooze) diBtnSnooze.style.display = "none";
+  if (diBtnDone) diBtnDone.style.display = "none";
+  const iconEl = diIconBox || (diBanner ? diBanner.querySelector(".di-icon-pulse") : null);
+  if (iconEl) {
+    iconEl.className = "di-icon-pulse pulse-success";
+    iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  }
+}
+
+function showDynamicIslandBanner(item) {
+  if (!isDynamicIslandEnabled()) return;
+  diAlertReminder = item;
+  diAlertUntil = Date.now() + 15000;
+  updateDynamicIslandState();
 }
 
 function hideDynamicIslandBanner() {
-  if (!diBanner) return;
-  diBanner.classList.add("hidden");
-  if (diTimeout) clearTimeout(diTimeout);
-  diTimeout = null;
-  currentDiReminderId = null;
+  diAlertReminder = null;
+  diAlertUntil = 0;
+  updateDynamicIslandState();
 }
 
 if (diBtnSnooze) {
@@ -1960,8 +2075,10 @@ if (diBtnSnooze) {
     e.stopPropagation();
     if (currentDiReminderId) {
       snoozeReminderById(currentDiReminderId, 15);
+      diAlertReminder = null;
+      diAlertUntil = 0;
+      updateDynamicIslandState();
     }
-    hideDynamicIslandBanner();
   });
 }
 
@@ -1970,33 +2087,38 @@ if (diBtnDone) {
     e.stopPropagation();
     if (currentDiReminderId) {
       moveToTrash(currentDiReminderId);
+      diAlertReminder = null;
+      diAlertUntil = 0;
+      updateDynamicIslandState();
     }
-    hideDynamicIslandBanner();
   });
 }
 
 if (diBanner) {
-  diBanner.addEventListener("click", () => {
+  diBanner.addEventListener("click", (e) => {
+    if (e.target.closest(".di-btn")) return;
     if (currentDiReminderId) {
       const el = document.querySelector(`.card-wrapper[data-id="${currentDiReminderId}"]`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    hideDynamicIslandBanner();
-  });
-
-  let diTouchStartY = 0;
-  diBanner.addEventListener("touchstart", (e) => {
-    if (e.touches && e.touches[0]) diTouchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  diBanner.addEventListener("touchend", (e) => {
-    if (e.changedTouches && e.changedTouches[0]) {
-      const diffY = diTouchStartY - e.changedTouches[0].clientY;
-      if (diffY > 20) {
-        hideDynamicIslandBanner();
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("highlight-pulse");
+        setTimeout(() => el.classList.remove("highlight-pulse"), 1200);
       }
     }
-  }, { passive: true });
+  });
 }
+
+if (toggleDynamicIsland) {
+  toggleDynamicIsland.checked = isDynamicIslandEnabled();
+  toggleDynamicIsland.addEventListener("change", () => {
+    const enabled = toggleDynamicIsland.checked;
+    localStorage.setItem(DYNAMIC_ISLAND_KEY, enabled ? "true" : "false");
+    updateDynamicIslandState();
+    showToast(enabled ? "Dynamic Island HUD enabled" : "Dynamic Island HUD disabled");
+  });
+}
+
+updateDynamicIslandState();
 
 // ============================================================================
 // SERVICE WORKER NOTIFICATION ACTION LISTENER
@@ -2346,4 +2468,16 @@ document.addEventListener("visibilitychange", () => {
 if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CODE_KEY)) {
   lockApp();
 }
+
+// Initial App Bootstrap
+updateViewportHeight();
+setupDynamicAppIcon();
+setupLabelSelector();
+updateNotifyButton();
+syncVersionDisplay();
+updateTrashBadge();
+updateAppBadge();
+render();
+applyHapticOverlays();
+
 
