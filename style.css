@@ -2384,8 +2384,9 @@ body,
   background: var(--color-fill-secondary);
 }
 
-/* Theme Segmented Switcher */
-#theme-segmented-control .segmented-option {
+/* Theme & Language Segmented Switchers */
+#theme-segmented-control .segmented-option,
+#language-segmented-control .segmented-option {
   font-size: 0.75rem;
   padding: 0 0.25rem;
   white-space: nowrap;

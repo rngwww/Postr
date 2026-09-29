@@ -10,6 +10,7 @@ const LAST_BRIEFING_DATE_KEY = "postr_last_morning_briefing_date";
 const THEME_MODE_KEY = "postr_theme_mode";
 const ACCENT_COLOR_KEY = "postr_accent_color";
 const SUBSCRIPTION_PLAN_KEY = "postr_subscription_plan";
+const LANGUAGE_KEY = "postr_language";
 
 // State
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -19,6 +20,130 @@ let activeSelectedLabel = null;
 let activeFilterCategory = null;
 let searchQuery = "";
 let toastTimeout = null;
+let currentLanguage = "en";
+
+// ============================================================================
+// I18N TRANSLATION ENGINE
+// ============================================================================
+function t(key, params = {}) {
+  const lang = currentLanguage || "en";
+  const dict = (window.POSTR_I18N && window.POSTR_I18N[lang]) || (window.POSTR_I18N && window.POSTR_I18N["en"]) || {};
+  let str = dict[key] !== undefined ? dict[key] : (window.POSTR_I18N && window.POSTR_I18N["en"] && window.POSTR_I18N["en"][key] !== undefined ? window.POSTR_I18N["en"][key] : key);
+  if (params && typeof str === "string") {
+    for (const [k, v] of Object.entries(params)) {
+      str = str.replace(new RegExp(`\\{${k}\\}`, "g"), v);
+    }
+  }
+  return str;
+}
+
+function translateCategory(label) {
+  if (!label) return "";
+  const l = label.toLowerCase();
+  switch (l) {
+    case "all": return t("category_all");
+    case "school": return t("category_school");
+    case "work": return t("category_work");
+    case "shopping": return t("category_shopping");
+    case "personal": return t("category_personal");
+    case "tasks": return t("category_tasks");
+    default: return label;
+  }
+}
+
+function applyLanguage(lang, showToastNotification = false) {
+  if (!window.POSTR_I18N || !window.POSTR_I18N[lang]) {
+    lang = "en";
+  }
+  currentLanguage = lang;
+  localStorage.setItem(LANGUAGE_KEY, lang);
+  document.documentElement.setAttribute("lang", lang);
+
+  // Translate all static DOM elements marked with data-i18n attributes
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (key) el.textContent = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-html]").forEach(el => {
+    const key = el.getAttribute("data-i18n-html");
+    if (key) el.innerHTML = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) el.placeholder = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-title]").forEach(el => {
+    const key = el.getAttribute("data-i18n-title");
+    if (key) el.title = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => {
+    const key = el.getAttribute("data-i18n-aria");
+    if (key) el.setAttribute("aria-label", t(key));
+  });
+
+  // Sync segmented control for language
+  const langControl = document.getElementById("language-segmented-control");
+  if (langControl) {
+    langControl.querySelectorAll(".segmented-option").forEach(btn => {
+      const val = btn.getAttribute("data-lang-val");
+      btn.classList.toggle("active", val === lang);
+    });
+    updateSegmentedPill(langControl);
+  }
+
+  // Update dynamic labels & inputs
+  const alarmInput = document.getElementById("input-alarm-value");
+  if (alarmInput && typeof setAlarmSelectorValue === "function") {
+    setAlarmSelectorValue(alarmInput.value);
+  }
+
+  const editId = document.getElementById("edit-reminder-id")?.value;
+  const modalTitle = document.getElementById("modal-title");
+  const btnSubmit = document.getElementById("btn-submit");
+  if (modalTitle) modalTitle.textContent = editId ? t("modal_edit_title") : t("modal_add_title");
+  if (btnSubmit) btnSubmit.textContent = editId ? t("btn_submit_save") : t("btn_submit_pin");
+
+  if (typeof syncSubscriptionUI === "function") syncSubscriptionUI();
+  if (typeof renderTrashList === "function") renderTrashList();
+  if (typeof render === "function") render();
+
+  if (showToastNotification && typeof showToast === "function") {
+    showToast(t("toast_lang_changed"));
+  }
+}
+
+function setLanguage(lang) {
+  applyLanguage(lang, true);
+}
+
+function initLanguage() {
+  const savedLang = localStorage.getItem(LANGUAGE_KEY);
+  if (savedLang && window.POSTR_I18N && window.POSTR_I18N[savedLang]) {
+    applyLanguage(savedLang, false);
+  } else {
+    // Detect browser language
+    const browserLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+    let detected = "en";
+    if (browserLang.startsWith("zh")) detected = "zh";
+    else if (browserLang.startsWith("es")) detected = "es";
+    else if (browserLang.startsWith("de")) detected = "de";
+    applyLanguage(detected, false);
+  }
+
+  const langControl = document.getElementById("language-segmented-control");
+  if (langControl) {
+    langControl.querySelectorAll(".segmented-option").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-lang-val");
+        setLanguage(lang);
+      });
+    });
+  }
+}
 
 // Category Badge Helper for Distinct Pastel Tags
 function getCategoryBadgeClass(label) {
@@ -64,7 +189,7 @@ const premiumManager = {
     localStorage.setItem(SUBSCRIPTION_PLAN_KEY, plan);
     syncSubscriptionUI();
     const isPrem = plan === "premium";
-    showToast(isPrem ? "Activated Premium Plan" : "Switched to Free Plan");
+    showToast(isPrem ? t("toast_premium_active") : t("toast_free_active"));
   },
 
   startCheckout() {
@@ -85,15 +210,18 @@ function syncSubscriptionUI() {
   const devToggle = document.getElementById("toggle-dev-premium");
 
   if (badge) {
-    badge.textContent = isPrem ? "Premium Plan" : "Free Plan";
+    badge.textContent = isPrem ? t("plan_badge_premium") : t("plan_badge_free");
     badge.className = isPrem ? "badge-tag badge-pinned" : "badge-tag badge-category";
   }
 
   if (subtitle) {
     if (isPrem) {
-      subtitle.textContent = "Unlimited active reminders unlocked";
+      subtitle.textContent = t("settings_plan_premium_unlimited");
     } else {
-      subtitle.textContent = `${reminders.length} of ${premiumManager.limits.maxFreeReminders} active reminders used`;
+      subtitle.textContent = t("settings_plan_free_used", {
+        used: reminders.length,
+        max: premiumManager.limits.maxFreeReminders
+      });
     }
   }
 
@@ -205,12 +333,12 @@ function setThemeMode(themeMode) {
   localStorage.setItem(THEME_MODE_KEY, themeMode);
   applyTheme(themeMode);
   const nameMap = {
-    auto: "Auto",
-    system: "Auto",
-    light: "Light",
-    dark: "Dark",
-    aurora: "Aurora",
-    sunset: "Sunset"
+    auto: t("theme_auto"),
+    system: t("theme_auto"),
+    light: t("theme_light"),
+    dark: t("theme_dark"),
+    aurora: t("theme_aurora"),
+    sunset: t("theme_sunset")
   };
   showToast(nameMap[themeMode] || themeMode);
 }
@@ -517,7 +645,7 @@ if (btnNotifyPerm) {
       const perm = await Notification.requestPermission();
       updateNotifyButton();
       if (perm === "granted") {
-        triggerNotification("Reminders Active", "Lock screen alerts and custom intervals enabled.", "perm_granted");
+        triggerNotification(t("notif_reminders_active"), t("notif_reminders_active_body"), "perm_granted");
       }
     }
   });
@@ -572,8 +700,8 @@ function triggerNotification(primaryText, secondaryText, tag, options = {}) {
       reminderId: options.reminderId || null
     },
     actions: options.actions || [
-      { action: "snooze_15", title: "Snooze 15m" },
-      { action: "mark_done", title: "Done" }
+      { action: "snooze_15", title: t("notif_action_snooze") },
+      { action: "mark_done", title: t("notif_action_done") }
     ]
   };
 
@@ -662,7 +790,7 @@ function restoreFromTrash(id) {
     reminders.unshift(restoredNote);
     persistTrash();
     persistAndSync();
-    showToast("Note Restored");
+    showToast(t("toast_note_restored"));
   }
 }
 
@@ -684,7 +812,7 @@ function animateTrashCardRemoval(card, type, callback) {
 function emptyEntireTrash() {
   trashedNotes = [];
   persistTrash();
-  showToast("Trash Emptied");
+  showToast(t("toast_trash_emptied"));
 }
 
 function formatRemainingTime(deletedAt) {
@@ -692,10 +820,13 @@ function formatRemainingTime(deletedAt) {
   const remaining = Math.max(0, TRASH_RETENTION_MS - elapsed);
   const hours = Math.floor(remaining / (1000 * 60 * 60));
   const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-  if (hours > 0) {
-    return `${hours}h ${minutes}m left`;
+  if (remaining <= 0) {
+    return t("trash_expired");
   }
-  return `${minutes}m left`;
+  if (hours > 0) {
+    return t("trash_remaining_hm", { h: hours, m: minutes });
+  }
+  return t("trash_remaining_m", { m: minutes });
 }
 
 function renderTrashList() {
@@ -724,8 +855,8 @@ function renderTrashList() {
         </div>
         ${item.body ? `<div class="trash-item-body">${escapeHtml(item.body)}</div>` : ""}
         <div class="trash-item-actions">
-          <button type="button" class="btn-trash-restore" data-id="${item.id}">Restore</button>
-          <button type="button" class="btn-trash-delete" data-id="${item.id}">Delete Now</button>
+          <button type="button" class="btn-trash-restore" data-id="${item.id}">${t("btn_restore")}</button>
+          <button type="button" class="btn-trash-delete" data-id="${item.id}">${t("btn_delete_now")}</button>
         </div>
       `;
 
@@ -752,7 +883,7 @@ const btnEmptyTrash = document.getElementById("btn-empty-trash");
 if (btnEmptyTrash) {
   btnEmptyTrash.addEventListener("click", () => {
     if (trashedNotes.length === 0) return;
-    if (confirm("Permanently empty all notes in the trash?")) {
+    if (confirm(t("confirm_empty_trash"))) {
       emptyEntireTrash();
     }
   });
@@ -768,7 +899,9 @@ function formatDueTime(isoString) {
     if (isNaN(d.getTime())) return "";
     const hours = d.getHours().toString().padStart(2, "0");
     const mins = d.getMinutes().toString().padStart(2, "0");
-    const month = d.toLocaleString("default", { month: "short" });
+    const localeMap = { en: "en-US", zh: "zh-CN", es: "es-ES", de: "de-DE" };
+    const locale = localeMap[currentLanguage] || "en-US";
+    const month = d.toLocaleString(locale, { month: "short" });
     const day = d.getDate();
     return `${month} ${day} ${hours}:${mins}`;
   } catch (e) {
@@ -786,10 +919,10 @@ function getDueStatus(isoString) {
   let overdueAgo = "";
   if (isOverdue) {
     const diffMins = Math.floor((now - targetTs) / 60000);
-    if (diffMins < 1) overdueAgo = "Just now";
-    else if (diffMins < 60) overdueAgo = `${diffMins}m ago`;
-    else if (diffMins < 1440) overdueAgo = `${Math.floor(diffMins / 60)}h ago`;
-    else overdueAgo = `${Math.floor(diffMins / 1440)}d ago`;
+    if (diffMins < 1) overdueAgo = t("time_just_now");
+    else if (diffMins < 60) overdueAgo = t("time_m_ago", { m: diffMins });
+    else if (diffMins < 1440) overdueAgo = t("time_h_ago", { h: Math.floor(diffMins / 60) });
+    else overdueAgo = t("time_d_ago", { d: Math.floor(diffMins / 1440) });
   }
   return { isOverdue, label, overdueAgo };
 }
@@ -798,12 +931,12 @@ function formatChecklistNotificationBody(item) {
   const items = item.checklistItems || [];
   const pending = items.filter(i => !i.done);
   if (pending.length === 0) {
-    return item.body || "All checklist items completed.";
+    return item.body || t("notif_scheduled_alert");
   }
   const topPending = pending.slice(0, 3).map(i => `[ ] ${i.text}`).join("\n");
   const remaining = pending.length - 3;
   if (remaining > 0) {
-    return `${topPending}\n(+${remaining} more item${remaining === 1 ? "" : "s"})`;
+    return `${topPending}\n(+${remaining} more)`;
   }
   return topPending;
 }
@@ -818,7 +951,7 @@ function snoozeReminderById(reminderId, minutes) {
   item.dueTimeTriggered = false;
   persistAndSync();
   renderReminders();
-  showToast(`Snoozed for ${minutes}m`);
+  showToast(t("toast_snoozed", { mins: minutes }));
 }
 
 function getFilteredReminders() {
@@ -831,7 +964,8 @@ function getFilteredReminders() {
       const matchTitle = (item.title || "").toLowerCase().includes(q);
       const matchBody = (item.body || "").toLowerCase().includes(q);
       const matchLabel = (item.label || "").toLowerCase().includes(q);
-      if (!matchTitle && !matchBody && !matchLabel) {
+      const translatedLabel = translateCategory(item.label || "").toLowerCase();
+      if (!matchTitle && !matchBody && !matchLabel && !translatedLabel.includes(q)) {
         return false;
       }
     }
@@ -852,7 +986,7 @@ function renderCardBody(item) {
 
     const itemsHtml = items.map((ci, idx) => `
       <div class="card-checklist-item ${ci.done ? "completed" : ""}" data-item-index="${idx}">
-        <button type="button" class="checklist-item-check" aria-label="Toggle ${escapeHtml(ci.text)}">
+        <button type="button" class="checklist-item-check" aria-label="${t("toggle_item", { item: escapeHtml(ci.text) })}">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
@@ -868,7 +1002,7 @@ function renderCardBody(item) {
             <div class="progress-bar-fill" style="width: ${percent}%;"></div>
           </div>
           <div class="progress-pill-row">
-            <span class="progress-pill">${completed} OF ${total} DONE • ${percent}%</span>
+            <span class="progress-pill">${t("checklist_progress", { completed, total, percent })}</span>
           </div>
         </div>
         <div class="card-checklist-items">
@@ -909,9 +1043,9 @@ function render() {
       let pingLabel = "";
       if (item.pingMinutes > 0) {
         if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
-          pingLabel = `EVERY ${item.pingMinutes / 60}H`;
+          pingLabel = t("alarm_every_h", { h: item.pingMinutes / 60 });
         } else {
-          pingLabel = `EVERY ${item.pingMinutes}M`;
+          pingLabel = t("alarm_every_m", { m: item.pingMinutes });
         }
       }
 
@@ -937,7 +1071,7 @@ function render() {
           <div class="card-content">
             <div class="card-title-row">
               <h4>${escapeHtml(item.title)}</h4>
-              <button class="btn-pin-toggle ${item.pinned ? "active" : ""}" title="${item.pinned ? "Unpin note" : "Pin note to top"}" aria-label="Pin">
+              <button class="btn-pin-toggle ${item.pinned ? "active" : ""}" title="${item.pinned ? t("aria_unpin_note") : t("aria_pin_note")}" aria-label="${t("aria_pin_note")}">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="12" y1="17" x2="12" y2="22"></line>
                   <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.8l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
@@ -946,23 +1080,23 @@ function render() {
             </div>
             ${renderCardBody(item)}
             <div class="card-tags-row">
-              ${item.pinned ? `<span class="badge-tag badge-pinned">PINNED</span>` : ""}
-              ${item.label ? `<span class="badge-tag ${getCategoryBadgeClass(item.label)}">${escapeHtml(item.label)}</span>` : ""}
+              ${item.pinned ? `<span class="badge-tag badge-pinned">${t("badge_pinned")}</span>` : ""}
+              ${item.label ? `<span class="badge-tag ${getCategoryBadgeClass(item.label)}">${escapeHtml(translateCategory(item.label))}</span>` : ""}
               ${item.dueTime ? (
                 dueStatus.isOverdue
-                  ? `<span class="badge-tag badge-due is-overdue">OVERDUE • ${dueStatus.overdueAgo}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">+15m</button>`
-                  : `<span class="badge-tag badge-due">DUE: ${dueStatus.label}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">+15m</button>`
+                  ? `<span class="badge-tag badge-due is-overdue">${t("badge_overdue", { ago: dueStatus.overdueAgo })}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">${t("btn_snooze_15")}</button>`
+                  : `<span class="badge-tag badge-due">${t("badge_due", { time: dueStatus.label })}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">${t("btn_snooze_15")}</button>`
               ) : ""}
               ${pingLabel ? `<span class="badge-tag badge-alarm">${pingLabel}</span>` : ""}
             </div>
           </div>
           <div class="card-actions-col">
-            <button class="btn-complete" title="Move to Trash" aria-label="Complete">
+            <button class="btn-complete" title="${t("aria_complete")}" aria-label="${t("aria_complete")}">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </button>
-            <button class="btn-card-menu" title="Options" aria-label="Options">
+            <button class="btn-card-menu" title="${t("aria_options")}" aria-label="${t("aria_options")}">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <circle cx="5" cy="12" r="2"></circle>
                 <circle cx="12" cy="12" r="2"></circle>
@@ -1092,7 +1226,7 @@ function attachCardInteractions(wrapper, item) {
         if (fillEl) fillEl.style.width = `${percent}%`;
 
         const pillEl = wrapper.querySelector(".progress-pill");
-        if (pillEl) pillEl.textContent = `${completed} OF ${total} DONE • ${percent}%`;
+        if (pillEl) pillEl.textContent = t("checklist_progress", { completed, total, percent });
 
         persistAndSync();
       }
@@ -1434,17 +1568,17 @@ function setAlarmSelectorValue(val) {
   alarmInput.value = String(val);
 
   if (val === "custom") {
-    alarmLabel.textContent = "Custom";
+    alarmLabel.textContent = t("alarm_custom");
     if (customTimeRow) customTimeRow.classList.remove("hidden");
   } else {
     const num = parseInt(val, 10);
     if (customTimeRow) customTimeRow.classList.add("hidden");
     if (!num || num === 0) {
-      alarmLabel.textContent = "Off";
+      alarmLabel.textContent = t("alarm_off");
     } else if (num >= 60 && num % 60 === 0) {
-      alarmLabel.textContent = `Every ${num / 60}h`;
+      alarmLabel.textContent = t("alarm_every_h_label", { h: num / 60 });
     } else {
-      alarmLabel.textContent = `Every ${num}m`;
+      alarmLabel.textContent = t("alarm_every_m_label", { m: num });
     }
   }
 }
@@ -1455,27 +1589,27 @@ function initAlarmSelector() {
 
   btnSelectAlarm.addEventListener("click", () => {
     showIosMenu({
-      title: "Recurring Alarm Interval",
+      title: t("menu_alarm_title"),
       items: [
         {
-          label: "Off (No recurring alarm)",
-          onClick: () => setAlarmSelectorValue(0)
+          label: t("alarm_opt_off"),
+          action: () => setAlarmSelectorValue(0)
         },
         {
-          label: "Every 1 Minute",
-          onClick: () => setAlarmSelectorValue(1)
+          label: t("alarm_opt_1m"),
+          action: () => setAlarmSelectorValue(1)
         },
         {
-          label: "Every 5 Minutes",
-          onClick: () => setAlarmSelectorValue(5)
+          label: t("alarm_opt_5m"),
+          action: () => setAlarmSelectorValue(5)
         },
         {
-          label: "Every 10 Minutes",
-          onClick: () => setAlarmSelectorValue(10)
+          label: t("alarm_opt_10m"),
+          action: () => setAlarmSelectorValue(10)
         },
         {
-          label: "Every 15 Minutes",
-          onClick: () => {
+          label: t("alarm_opt_15m"),
+          action: () => {
             if (!premiumManager.canUseCustomAlarm()) {
               premiumManager.startCheckout();
               return;
@@ -1484,8 +1618,8 @@ function initAlarmSelector() {
           }
         },
         {
-          label: "Every 30 Minutes",
-          onClick: () => {
+          label: t("alarm_opt_30m"),
+          action: () => {
             if (!premiumManager.canUseCustomAlarm()) {
               premiumManager.startCheckout();
               return;
@@ -1494,8 +1628,8 @@ function initAlarmSelector() {
           }
         },
         {
-          label: "Every 1 Hour",
-          onClick: () => {
+          label: t("alarm_opt_1h"),
+          action: () => {
             if (!premiumManager.canUseCustomAlarm()) {
               premiumManager.startCheckout();
               return;
@@ -1504,8 +1638,8 @@ function initAlarmSelector() {
           }
         },
         {
-          label: "Custom Interval...",
-          onClick: () => {
+          label: t("alarm_opt_custom"),
+          action: () => {
             if (!premiumManager.canUseCustomAlarm()) {
               premiumManager.startCheckout();
               return;
@@ -1579,19 +1713,19 @@ function initDueDateControls() {
     btnDuePresets.addEventListener("click", (e) => {
       e.stopPropagation();
       showIosMenu({
-        title: "Due Date Presets",
+        title: t("menu_due_presets_title"),
         items: [
           {
-            label: "In 1 Hour",
-            onClick: () => {
+            label: t("preset_in_1h"),
+            action: () => {
               const d = new Date(Date.now() + 3600000);
               d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
               setDueDateTime(d);
             }
           },
           {
-            label: "Today at 6:00 PM",
-            onClick: () => {
+            label: t("preset_today_6pm"),
+            action: () => {
               const d = new Date();
               d.setHours(18, 0, 0, 0);
               if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
@@ -1599,8 +1733,8 @@ function initDueDateControls() {
             }
           },
           {
-            label: "Tomorrow at 9:00 AM",
-            onClick: () => {
+            label: t("preset_tomorrow_9am"),
+            action: () => {
               const d = new Date();
               d.setDate(d.getDate() + 1);
               d.setHours(9, 0, 0, 0);
@@ -1608,8 +1742,8 @@ function initDueDateControls() {
             }
           },
           {
-            label: "In 2 Days",
-            onClick: () => {
+            label: t("preset_in_2d"),
+            action: () => {
               const d = new Date();
               d.setDate(d.getDate() + 2);
               d.setHours(9, 0, 0, 0);
@@ -1617,8 +1751,8 @@ function initDueDateControls() {
             }
           },
           {
-            label: "In 1 Week",
-            onClick: () => {
+            label: t("preset_in_1w"),
+            action: () => {
               const d = new Date();
               d.setDate(d.getDate() + 7);
               d.setHours(9, 0, 0, 0);
@@ -1626,9 +1760,9 @@ function initDueDateControls() {
             }
           },
           {
-            label: "Clear Due Date",
+            label: t("preset_clear_due"),
             destructive: true,
-            onClick: () => {
+            action: () => {
               inputDueTime.value = "";
               if (toggleDueTime) toggleDueTime.checked = false;
               if (btnClearDue) btnClearDue.classList.add("hidden");
@@ -1646,8 +1780,8 @@ function openCreateModal() {
     return;
   }
 
-  document.getElementById("modal-title").innerText = "ADD REMINDER";
-  document.getElementById("btn-submit").innerText = "PIN TO LOCK SCREEN";
+  document.getElementById("modal-title").innerText = t("modal_add_title");
+  document.getElementById("btn-submit").innerText = t("btn_submit_pin");
   document.getElementById("edit-reminder-id").value = "";
   document.getElementById("input-title").value = "";
   document.getElementById("input-body").value = "";
@@ -1676,8 +1810,8 @@ function openCreateModal() {
 }
 
 function openEditModal(item) {
-  document.getElementById("modal-title").innerText = "EDIT REMINDER";
-  document.getElementById("btn-submit").innerText = "SAVE CHANGES";
+  document.getElementById("modal-title").innerText = t("modal_edit_title");
+  document.getElementById("btn-submit").innerText = t("btn_submit_save");
   document.getElementById("edit-reminder-id").value = item.id;
   document.getElementById("input-title").value = item.title;
   document.getElementById("input-body").value = item.body || "";
@@ -1851,19 +1985,19 @@ setInterval(() => {
       if (!isNaN(targetTs) && now >= targetTs) {
         item.dueTimeTriggered = true;
         changed = true;
-        const alertHeading = item.label ? `[${item.label}] ${item.title}` : item.title;
+        const alertHeading = item.label ? `[${translateCategory(item.label)}] ${item.title}` : item.title;
         const noteBody = (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0))
           ? formatChecklistNotificationBody(item)
-          : (item.body || "Scheduled reminder alert.");
+          : (item.body || t("notif_scheduled_alert"));
 
         playDueChime();
-        showToast(`⏰ Due: ${item.title}`);
+        showToast(t("toast_due_alert", { title: item.title }));
 
-        triggerNotification(`DUE: ${alertHeading}`, noteBody, item.id + "_due", {
+        triggerNotification(`${t("notif_due_prefix")}${alertHeading}`, noteBody, item.id + "_due", {
           reminderId: item.id,
           actions: [
-            { action: "snooze_15", title: "Snooze 15m" },
-            { action: "mark_done", title: "Done" }
+            { action: "snooze_15", title: t("notif_action_snooze") },
+            { action: "mark_done", title: t("notif_action_done") }
           ]
         });
       }
@@ -1874,13 +2008,13 @@ setInterval(() => {
       if (now - item.lastPing >= intervalMs) {
         item.lastPing = now;
         changed = true;
-        const alertHeading = item.label ? `[${item.label}] ${item.title}` : item.title;
+        const alertHeading = item.label ? `[${translateCategory(item.label)}] ${item.title}` : item.title;
         const noteBody = (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0))
           ? formatChecklistNotificationBody(item)
-          : (item.body || "Pinned note remains active.");
+          : (item.body || t("notif_pinned_remains"));
 
         playDueChime();
-        showToast(`Alarm: ${item.title}`);
+        showToast(t("toast_alarm_alert", { title: item.title }));
 
         triggerNotification(alertHeading, noteBody, item.id, {
           reminderId: item.id
@@ -1937,6 +2071,7 @@ function showIosMenu({ title = "Options", items = [] }) {
     btn.addEventListener("click", () => {
       closeIosMenu();
       if (item.action) item.action();
+      else if (item.onClick) item.onClick();
     });
     menuItemsContainer.appendChild(btn);
   });
@@ -1970,7 +2105,7 @@ function openCardIosMenu(item, wrapper) {
 
   const menuItems = [
     {
-      label: item.pinned ? "Unpin Note" : "Pin Note to Top",
+      label: item.pinned ? t("menu_unpin_note") : t("menu_pin_note"),
       icon: pinSvg,
       action: () => {
         item.pinned = !item.pinned;
@@ -1978,14 +2113,14 @@ function openCardIosMenu(item, wrapper) {
       }
     },
     {
-      label: "Edit Note",
+      label: t("menu_edit_note"),
       icon: editSvg,
       action: () => {
         openEditModal(item);
       }
     },
     {
-      label: "Duplicate Note",
+      label: t("menu_duplicate_note"),
       icon: copySvg,
       action: () => {
         const duplicate = JSON.parse(JSON.stringify(item));
@@ -2002,17 +2137,17 @@ function openCardIosMenu(item, wrapper) {
   if (item.dueTime) {
     menuItems.push(
       {
-        label: "Snooze 15 Minutes",
+        label: t("menu_snooze_15m"),
         icon: clockSvg,
         action: () => snoozeReminderById(item.id, 15)
       },
       {
-        label: "Snooze 1 Hour",
+        label: t("menu_snooze_1h"),
         icon: clockSvg,
         action: () => snoozeReminderById(item.id, 60)
       },
       {
-        label: "Snooze to Tomorrow 9 AM",
+        label: t("menu_snooze_tomorrow"),
         icon: clockSvg,
         action: () => {
           const d = new Date();
@@ -2022,7 +2157,7 @@ function openCardIosMenu(item, wrapper) {
           item.dueTimeTriggered = false;
           persistAndSync();
           renderReminders();
-          showToast("Snoozed to tomorrow 9:00 AM");
+          showToast(t("toast_snoozed_tomorrow"));
         }
       }
     );
@@ -2031,7 +2166,7 @@ function openCardIosMenu(item, wrapper) {
   if (item.type === "checklist" && item.checklistItems && item.checklistItems.length > 0) {
     const hasUnchecked = item.checklistItems.some(i => !i.done);
     menuItems.push({
-      label: hasUnchecked ? "Complete All Items" : "Uncheck All Items",
+      label: hasUnchecked ? t("menu_complete_all") : t("menu_uncheck_all"),
       icon: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
       action: () => {
         item.checklistItems.forEach(i => i.done = hasUnchecked);
@@ -2042,7 +2177,7 @@ function openCardIosMenu(item, wrapper) {
   }
 
   menuItems.push({
-    label: "Move to Trash",
+    label: t("menu_move_trash"),
     icon: trashSvg,
     destructive: true,
     action: () => {
@@ -2051,7 +2186,7 @@ function openCardIosMenu(item, wrapper) {
   });
 
   showIosMenu({
-    title: item.title || "Note Options",
+    title: item.title || t("menu_options"),
     items: menuItems
   });
 }
@@ -2072,7 +2207,7 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
 
   const isCheckable = _builderCheckingAllowed;
   const checkBtnHtml = isCheckable ? `
-    <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="Toggle Complete">
+    <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="${t("aria_options")}">
       <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
@@ -2081,8 +2216,8 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
 
   row.innerHTML = `
     ${checkBtnHtml}
-    <input type="text" class="builder-row-input ${done ? "checked" : ""}" placeholder="List item..." value="${escapeHtml(text)}">
-    <button type="button" class="builder-row-del" title="Delete row">
+    <input type="text" class="builder-row-input ${done ? "checked" : ""}" placeholder="${t("placeholder_checklist_item")}" value="${escapeHtml(text)}">
+    <button type="button" class="builder-row-del" title="${t("aria_close")}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2183,10 +2318,10 @@ function openChecklistBuilderIosMenu() {
   const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
   showIosMenu({
-    title: "Checklist Actions",
+    title: t("menu_checklist_title"),
     items: [
       {
-        label: "Mark All Complete",
+        label: t("menu_mark_all_complete"),
         icon: checkSvg,
         action: () => {
           checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
@@ -2196,7 +2331,7 @@ function openChecklistBuilderIosMenu() {
         }
       },
       {
-        label: "Unmark All",
+        label: t("menu_unmark_all"),
         icon: uncheckSvg,
         action: () => {
           checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
@@ -2206,7 +2341,7 @@ function openChecklistBuilderIosMenu() {
         }
       },
       {
-        label: "Clear Completed Items",
+        label: t("menu_clear_completed"),
         icon: clearSvg,
         action: () => {
           checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
@@ -2220,7 +2355,7 @@ function openChecklistBuilderIosMenu() {
         }
       },
       {
-        label: "Delete All Items",
+        label: t("menu_delete_all"),
         icon: trashSvg,
         destructive: true,
         action: () => {
@@ -2302,7 +2437,7 @@ function exportBackupData() {
   a.download = `postr-backup-${dateStr}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast("Backup Exported");
+  showToast(t("toast_backup_exported"));
 }
 
 function importBackupData(file) {
@@ -2318,12 +2453,12 @@ function importBackupData(file) {
         }
         persistTrash();
         persistAndSync();
-        showToast(`Imported ${reminders.length} reminders`);
+        showToast(t("toast_backup_imported", { count: reminders.length }));
       } else {
-        alert("Invalid backup file format.");
+        alert(t("alert_backup_invalid"));
       }
     } catch (err) {
-      alert("Failed to parse backup JSON file.");
+      alert(t("alert_backup_failed"));
     }
   };
   reader.readAsText(file);
@@ -2394,7 +2529,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       reminders[index].pingMinutes = finalMinutes;
       reminders[index].lastPing = Date.now();
     }
-    showToast("Changes Saved");
+    showToast(t("toast_changes_saved"));
   } else {
     if (!premiumManager.canAddReminder()) {
       premiumManager.startCheckout();
@@ -2417,14 +2552,14 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     };
     reminders.unshift(newReminder);
     const alertHeading = newReminder.label ? `[${newReminder.label}] ${title}` : title;
-    triggerNotification(alertHeading, body || "Added to active reminders.", newReminder.id);
+    triggerNotification(alertHeading, body || t("notif_added_active"), newReminder.id);
     activeFilterCategory = null;
     if (categoryFilters) {
       categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
       const allChip = categoryFilters.querySelector('.filter-chip[data-filter="all"]');
       if (allChip) allChip.classList.add("active");
     }
-    showToast("Reminder Added");
+    showToast(t("toast_reminder_added"));
   }
 
   persistAndSync();
@@ -2556,8 +2691,9 @@ function checkDailyMorningBriefing() {
 
   if (totalCount === 0) return;
 
-  const msg = `You have ${totalCount} reminder${totalCount === 1 ? "" : "s"} today: ${pinnedCount} pinned, ${dueCount} scheduled.`;
-  triggerNotification("Good Morning", msg, "postr_briefing_" + todayStr);
+  const s = totalCount === 1 ? "" : "s";
+  const msg = t("notif_briefing_msg", { total: totalCount, s, pinned: pinnedCount, due: dueCount });
+  triggerNotification(t("notif_good_morning"), msg, "postr_briefing_" + todayStr);
 }
 
 const toggleMorningBriefing = document.getElementById("toggle-morning-briefing");
@@ -2569,7 +2705,7 @@ if (toggleMorningBriefing) {
     if (enabled && "Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
-    showToast(enabled ? "Morning Briefing enabled (8:00 AM)" : "Morning Briefing disabled");
+    showToast(enabled ? t("toast_briefing_enabled") : t("toast_briefing_disabled"));
   });
 }
 
@@ -2577,7 +2713,7 @@ if (toggleMorningBriefing) {
 const cellCheckUpdate = document.getElementById("cell-check-update");
 if (cellCheckUpdate) {
   cellCheckUpdate.addEventListener("click", async () => {
-    showToast("Checking for updates...");
+    showToast(t("toast_checking_updates"));
     if ("caches" in window) {
       try {
         const keys = await caches.keys();
@@ -2596,13 +2732,14 @@ if (cellCheckUpdate) {
       } catch (e) {}
     }
     setTimeout(() => {
-      showToast("Reloading latest version...");
+      showToast(t("toast_reloading"));
       window.location.reload();
     }, 400);
   });
 }
 
 // Initial App Bootstrap
+initLanguage();
 initThemeAndAppearance();
 initTopNavigation();
 initDueDateControls();

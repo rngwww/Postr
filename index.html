@@ -13,7 +13,7 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-v10";
+    window.APP_BUILD_VERSION = "20260929-v11";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -79,12 +79,12 @@
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-v10">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-v10">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-v11">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-v11">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-v10">
+  <link rel="stylesheet" href="style.css?v=20260929-v11">
 </head>
 <body>
 
@@ -111,8 +111,8 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="search-input" placeholder="Search..." autocomplete="off">
-          <button id="btn-clear-search" class="btn-clear-search hidden" aria-label="Clear search">
+          <input type="text" id="search-input" placeholder="Search..." data-i18n-placeholder="search_placeholder" autocomplete="off">
+          <button id="btn-clear-search" class="btn-clear-search hidden" aria-label="Clear search" data-i18n-aria="aria_clear_search">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -123,7 +123,7 @@
         <!-- Ergonomic Top Action Icons -->
         <div class="top-nav-actions">
           <!-- Notification Permission Bell -->
-          <button id="btn-notify-perm" class="btn-glass-icon" title="Notifications" aria-label="Notifications">
+          <button id="btn-notify-perm" class="btn-glass-icon" title="Notifications" aria-label="Notifications" data-i18n-title="nav_notifications" data-i18n-aria="nav_notifications">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -131,7 +131,7 @@
           </button>
 
           <!-- Trash Icon Button -->
-          <button id="btn-open-trash" class="btn-glass-icon" title="Recently Deleted" aria-label="Recently Deleted">
+          <button id="btn-open-trash" class="btn-glass-icon" title="Recently Deleted" aria-label="Recently Deleted" data-i18n-title="nav_recently_deleted" data-i18n-aria="nav_recently_deleted">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -140,7 +140,7 @@
           </button>
 
           <!-- Settings Icon Button -->
-          <button id="btn-open-settings" class="btn-glass-icon" title="Settings" aria-label="Settings">
+          <button id="btn-open-settings" class="btn-glass-icon" title="Settings" aria-label="Settings" data-i18n-title="nav_settings" data-i18n-aria="nav_settings">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -151,12 +151,12 @@
 
       <!-- Pastel Category Filter Capsules -->
       <div class="filter-pills" id="category-filters">
-        <button class="filter-chip chip-all active" data-filter="all">All</button>
-        <button class="filter-chip chip-school" data-filter="School">School</button>
-        <button class="filter-chip chip-work" data-filter="Work">Work</button>
-        <button class="filter-chip chip-shopping" data-filter="Shopping">Shopping</button>
-        <button class="filter-chip chip-personal" data-filter="Personal">Personal</button>
-        <button class="filter-chip chip-tasks" data-filter="Tasks">Tasks</button>
+        <button class="filter-chip chip-all active" data-filter="all" data-i18n="category_all">All</button>
+        <button class="filter-chip chip-school" data-filter="School" data-i18n="category_school">School</button>
+        <button class="filter-chip chip-work" data-filter="Work" data-i18n="category_work">Work</button>
+        <button class="filter-chip chip-shopping" data-filter="Shopping" data-i18n="category_shopping">Shopping</button>
+        <button class="filter-chip chip-personal" data-filter="Personal" data-i18n="category_personal">Personal</button>
+        <button class="filter-chip chip-tasks" data-filter="Tasks" data-i18n="category_tasks">Tasks</button>
       </div>
     </header>
 
@@ -166,14 +166,19 @@
         <div class="empty-icon-wrap">
           <span class="empty-face-emoji">:D</span>
         </div>
-        <h3>No Active Reminders</h3>
-        <p>Tap the plus button to create a new reminder.</p>
+        <h3 data-i18n="empty_title">No Active Reminders</h3>
+        <p data-i18n="empty_desc">Tap the plus button to create a new reminder.</p>
       </div>
       <div id="card-list" class="cards-list"></div>
     </main>
 
     <!-- Floating Action Button (+) -->
-    <button id="btn-add" class="fab" aria-label="Add Reminder">
+    <button id="btn-add" class="fab" aria-label="Add Reminder" data-i18n-aria="fab_add">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -186,8 +191,8 @@
     <div class="modal-sheet">
       <div class="modal-grabber"></div>
       <div class="modal-header">
-        <h3 id="modal-title" class="modal-title">ADD REMINDER</h3>
-        <button id="btn-close-modal" class="btn-modal-close" aria-label="Close">
+        <h3 id="modal-title" class="modal-title" data-i18n="modal_add_title">ADD REMINDER</h3>
+        <button id="btn-close-modal" class="btn-modal-close" aria-label="Close" data-i18n-aria="aria_close">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -201,25 +206,25 @@
 
         <!-- Mode Segmented Switcher (Note vs Checklist) -->
         <div class="segmented-control">
-          <button type="button" id="tab-mode-note" class="segmented-option active">Note</button>
-          <button type="button" id="tab-mode-checklist" class="segmented-option">Checklist</button>
+          <button type="button" id="tab-mode-note" class="segmented-option active" data-i18n="tab_mode_note">Note</button>
+          <button type="button" id="tab-mode-checklist" class="segmented-option" data-i18n="tab_mode_checklist">Checklist</button>
         </div>
 
-        <input type="text" id="input-title" class="form-input-text" placeholder="What needs remembering?" required autocomplete="off">
+        <input type="text" id="input-title" class="form-input-text" placeholder="What needs remembering?" data-i18n-placeholder="placeholder_title" required autocomplete="off">
 
         <!-- Animated Note vs Checklist Content Slider -->
         <div class="mode-slider-wrap">
           <div class="mode-slider-track" id="mode-slider-track">
             <!-- Mode 1: Note Textarea -->
             <div class="mode-panel active" id="panel-mode-note">
-              <textarea id="input-body" class="form-textarea" placeholder="Notes or instructions (optional)" rows="3"></textarea>
+              <textarea id="input-body" class="form-textarea" placeholder="Notes or instructions (optional)" data-i18n-placeholder="placeholder_body" rows="3"></textarea>
             </div>
             <!-- Mode 2: Checklist Builder -->
             <div class="mode-panel" id="panel-mode-checklist">
               <div id="checklist-builder" class="checklist-builder">
                 <div class="checklist-builder-header">
-                  <span>Checklist Items</span>
-                  <button type="button" id="btn-checklist-menu" class="btn-modal-close" style="width: 1.5rem; height: 1.5rem;" title="List Actions">
+                  <span data-i18n="checklist_items_header">Checklist Items</span>
+                  <button type="button" id="btn-checklist-menu" class="btn-modal-close" style="width: 1.5rem; height: 1.5rem;" title="List Actions" data-i18n-title="checklist_list_actions">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                       <circle cx="5" cy="12" r="2"></circle>
                       <circle cx="12" cy="12" r="2"></circle>
@@ -233,7 +238,7 @@
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
-                  <span>Add Item</span>
+                  <span data-i18n="checklist_add_item">Add Item</span>
                 </button>
               </div>
             </div>
@@ -244,46 +249,46 @@
         <div class="ios-compact-group">
           <!-- Line 1: Category Picker -->
           <div class="compact-row">
-            <span class="row-label">Category</span>
+            <span class="row-label" data-i18n="label_category">Category</span>
             <div class="labels-picker-row" id="label-selector">
-              <button type="button" class="label-pill pill-school" data-label="School">School</button>
-              <button type="button" class="label-pill pill-work" data-label="Work">Work</button>
-              <button type="button" class="label-pill pill-shopping" data-label="Shopping">Shopping</button>
-              <button type="button" class="label-pill pill-personal" data-label="Personal">Personal</button>
-              <button type="button" class="label-pill pill-tasks" data-label="Tasks">Tasks</button>
+              <button type="button" class="label-pill pill-school" data-label="School" data-i18n="category_school">School</button>
+              <button type="button" class="label-pill pill-work" data-label="Work" data-i18n="category_work">Work</button>
+              <button type="button" class="label-pill pill-shopping" data-label="Shopping" data-i18n="category_shopping">Shopping</button>
+              <button type="button" class="label-pill pill-personal" data-label="Personal" data-i18n="category_personal">Personal</button>
+              <button type="button" class="label-pill pill-tasks" data-label="Tasks" data-i18n="category_tasks">Tasks</button>
             </div>
           </div>
 
           <!-- Line 2: Pin to Top -->
           <div class="compact-row">
-            <span class="row-label">Pin to Top</span>
+            <span class="row-label" data-i18n="label_pin_to_top">Pin to Top</span>
             <input type="checkbox" id="input-pin-note" class="ios-switch">
           </div>
 
           <!-- Line 3: Due Date Controls -->
           <div class="compact-row" id="row-due-date">
-            <span class="row-label">Due Date</span>
+            <span class="row-label" data-i18n="label_due_date">Due Date</span>
             <div class="compact-inline-controls">
-              <input type="datetime-local" id="input-due-time" class="input-datetime-compact" aria-label="Due Date and Time">
-              <button type="button" id="btn-due-presets" class="btn-picker-inline" title="Due Date Presets" aria-label="Due Date Presets">
+              <input type="datetime-local" id="input-due-time" class="input-datetime-compact" aria-label="Due Date and Time" data-i18n-aria="aria_due_datetime">
+              <button type="button" id="btn-due-presets" class="btn-picker-inline" title="Due Date Presets" aria-label="Due Date Presets" data-i18n-title="title_due_presets" data-i18n-aria="title_due_presets">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
               </button>
-              <button type="button" id="btn-clear-due-time" class="btn-clear-time hidden" title="Clear due time" aria-label="Clear due time">
+              <button type="button" id="btn-clear-due-time" class="btn-clear-time hidden" title="Clear due time" aria-label="Clear due time" data-i18n-title="title_clear_due" data-i18n-aria="title_clear_due">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
-              <input type="checkbox" id="toggle-due-time" class="ios-switch" title="Toggle Due Date">
+              <input type="checkbox" id="toggle-due-time" class="ios-switch" title="Toggle Due Date" data-i18n-title="title_toggle_due">
             </div>
           </div>
 
           <!-- Line 4: Recurring Alarm Selector Action Menu -->
           <div class="compact-row" id="row-alarm-select">
-            <span class="row-label">Alarm</span>
+            <span class="row-label" data-i18n="label_alarm">Alarm</span>
             <input type="hidden" id="input-alarm-value" value="0">
             <button type="button" id="btn-select-alarm" class="picker-value-btn" aria-label="Select Alarm Interval">
               <span id="selected-alarm-label">Off</span>
@@ -295,14 +300,14 @@
         </div>
 
         <div id="custom-time-row" class="custom-time-row hidden">
-          <input type="number" id="custom-val" placeholder="Value" min="1" max="1000" value="15">
+          <input type="number" id="custom-val" placeholder="Value" data-i18n-placeholder="custom_val_placeholder" min="1" max="1000" value="15">
           <select id="custom-unit">
-            <option value="m">Minutes</option>
-            <option value="h">Hours</option>
+            <option value="m" data-i18n="alarm_unit_minutes">Minutes</option>
+            <option value="h" data-i18n="alarm_unit_hours">Hours</option>
           </select>
         </div>
 
-        <button type="submit" id="btn-submit" class="btn-primary-action" style="margin-top: 0.25rem;">PIN TO LOCK SCREEN</button>
+        <button type="submit" id="btn-submit" class="btn-primary-action" style="margin-top: 0.25rem;" data-i18n="btn_submit_pin">PIN TO LOCK SCREEN</button>
       </form>
     </div>
   </div>
@@ -312,8 +317,8 @@
     <div class="modal-sheet">
       <div class="modal-grabber"></div>
       <div class="modal-header">
-        <h3 class="modal-title">RECENTLY DELETED</h3>
-        <button id="btn-close-trash" class="btn-modal-close" aria-label="Close">
+        <h3 class="modal-title" data-i18n="modal_trash_title">RECENTLY DELETED</h3>
+        <button id="btn-close-trash" class="btn-modal-close" aria-label="Close" data-i18n-aria="aria_close">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -327,7 +332,7 @@
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <span>Notes in recently deleted are kept for 24 hours before permanent removal.</span>
+          <span data-i18n="trash_notice">Notes in recently deleted are kept for 24 hours before permanent removal.</span>
         </div>
 
         <div id="trash-list" class="cards-list"></div>
@@ -339,11 +344,11 @@
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
           </div>
-          <h3>Trash is Empty</h3>
+          <h3 data-i18n="trash_empty_title">Trash is Empty</h3>
         </div>
 
         <div style="padding-top: 0.5rem; padding-bottom: 1rem;">
-          <button id="btn-empty-trash" class="btn-destructive-action hidden">EMPTY TRASH NOW</button>
+          <button id="btn-empty-trash" class="btn-destructive-action hidden" data-i18n="btn_empty_trash">EMPTY TRASH NOW</button>
         </div>
       </div>
     </div>
@@ -354,8 +359,8 @@
     <div class="modal-sheet">
       <div class="modal-grabber"></div>
       <div class="modal-header">
-        <h3 class="modal-title">SETTINGS</h3>
-        <button id="btn-close-settings" class="btn-modal-close" aria-label="Close">
+        <h3 class="modal-title" data-i18n="modal_settings_title">SETTINGS</h3>
+        <button id="btn-close-settings" class="btn-modal-close" aria-label="Close" data-i18n-aria="aria_close">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -366,62 +371,62 @@
       <div class="settings-scroll-container">
         <!-- Section: Subscription Plan -->
         <div class="ios-section">
-          <div class="ios-section-header">Subscription Plan</div>
+          <div class="ios-section-header" data-i18n="section_subscription">Subscription Plan</div>
           <div class="ios-group-card">
             <div class="ios-cell">
               <div class="ios-cell-label">
-                <strong>Current Tier</strong>
+                <strong data-i18n="label_current_tier">Current Tier</strong>
                 <small id="settings-plan-subtitle">5 active reminders included</small>
               </div>
-              <span class="badge-tag badge-category" id="settings-plan-badge">Free Plan</span>
+              <span class="badge-tag badge-category" id="settings-plan-badge" data-i18n="plan_badge_free">Free Plan</span>
             </div>
             <div class="ios-cell" id="cell-upgrade-action">
-              <button type="button" class="btn-primary-action" id="btn-open-upgrade">UPGRADE TO PREMIUM</button>
+              <button type="button" class="btn-primary-action" id="btn-open-upgrade" data-i18n="btn_open_upgrade">UPGRADE TO PREMIUM</button>
             </div>
             <div class="ios-cell hidden" id="cell-cancel-subscription">
-              <button type="button" class="btn-destructive-action" id="btn-cancel-subscription">Cancel Test Subscription</button>
+              <button type="button" class="btn-destructive-action" id="btn-cancel-subscription" data-i18n="btn_cancel_subscription">Cancel Test Subscription</button>
             </div>
             <div class="ios-cell">
               <div class="ios-cell-label">
-                <strong>Test Plan Switch</strong>
-                <small>Development toggle to test tier limits</small>
+                <strong data-i18n="label_dev_switch">Test Plan Switch</strong>
+                <small data-i18n="sub_dev_switch">Development toggle to test tier limits</small>
               </div>
               <input type="checkbox" id="toggle-dev-premium" class="ios-switch">
             </div>
           </div>
-          <div class="ios-section-footer">Free tier includes up to 5 active reminders and standard interval alerts. Premium unlocks unlimited active reminders and custom interval scheduling.</div>
+          <div class="ios-section-footer" data-i18n="footer_subscription">Free tier includes up to 5 active reminders and standard interval alerts. Premium unlocks unlimited active reminders and custom interval scheduling.</div>
         </div>
 
         <!-- Section: Appearance -->
         <div class="ios-section">
-          <div class="ios-section-header">Appearance</div>
+          <div class="ios-section-header" data-i18n="section_appearance">Appearance</div>
           <div class="ios-group-card">
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
               <div class="ios-cell-label">
-                <strong>Theme Mode</strong>
+                <strong data-i18n="label_theme_mode">Theme Mode</strong>
               </div>
               <div class="segmented-control" id="theme-segmented-control">
-                <button type="button" class="segmented-option" data-theme-val="auto">Auto</button>
-                <button type="button" class="segmented-option" data-theme-val="light">Light</button>
-                <button type="button" class="segmented-option active" data-theme-val="dark">Dark</button>
-                <button type="button" class="segmented-option" data-theme-val="aurora">Aurora</button>
-                <button type="button" class="segmented-option" data-theme-val="sunset">Sunset</button>
+                <button type="button" class="segmented-option" data-theme-val="auto" data-i18n="theme_auto">Auto</button>
+                <button type="button" class="segmented-option" data-theme-val="light" data-i18n="theme_light">Light</button>
+                <button type="button" class="segmented-option active" data-theme-val="dark" data-i18n="theme_dark">Dark</button>
+                <button type="button" class="segmented-option" data-theme-val="aurora" data-i18n="theme_aurora">Aurora</button>
+                <button type="button" class="segmented-option" data-theme-val="sunset" data-i18n="theme_sunset">Sunset</button>
               </div>
             </div>
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
               <div class="ios-cell-label">
-                <strong>Accent Color</strong>
-                <small>Tint color applied across switches, badges, and controls</small>
+                <strong data-i18n="label_accent_color">Accent Color</strong>
+                <small data-i18n="sub_accent_color">Tint color applied across switches, badges, and controls</small>
               </div>
               <div class="swatches-row" id="swatches-palette">
-                <button type="button" class="swatch-btn" data-color="#000000" style="background: #000000;" title="Black"></button>
-                <button type="button" class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White"></button>
-                <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;" title="Orange"></button>
-                <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;" title="Green"></button>
-                <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;" title="Teal"></button>
-                <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;" title="Indigo"></button>
-                <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;" title="Purple"></button>
-                <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;" title="Pink"></button>
+                <button type="button" class="swatch-btn" data-color="#000000" style="background: #000000;" title="Black" data-i18n-title="swatch_black"></button>
+                <button type="button" class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White" data-i18n-title="swatch_white"></button>
+                <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;" title="Orange" data-i18n-title="swatch_orange"></button>
+                <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;" title="Green" data-i18n-title="swatch_green"></button>
+                <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;" title="Teal" data-i18n-title="swatch_teal"></button>
+                <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;" title="Indigo" data-i18n-title="swatch_indigo"></button>
+                <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;" title="Purple" data-i18n-title="swatch_purple"></button>
+                <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;" title="Pink" data-i18n-title="swatch_pink"></button>
               </div>
               <!-- Full-Width Rectangular Spectrum Bar -->
               <div class="custom-spectrum-bar-wrap" id="custom-spectrum-bar-wrap" title="Custom color spectrum">
@@ -429,7 +434,7 @@
                 <div class="spectrum-bar-inner">
                   <div class="spectrum-gradient-bg"></div>
                   <div class="spectrum-content-overlay">
-                    <span class="spectrum-bar-label">Custom Color</span>
+                    <span class="spectrum-bar-label" data-i18n="spectrum_custom_color">Custom Color</span>
                     <span class="spectrum-current-indicator" id="spectrum-current-indicator"></span>
                   </div>
                 </div>
@@ -438,42 +443,62 @@
           </div>
         </div>
 
+        <!-- Section: Language -->
+        <div class="ios-section">
+          <div class="ios-section-header" data-i18n="section_language">Language</div>
+          <div class="ios-group-card">
+            <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
+              <div class="ios-cell-label">
+                <strong data-i18n="label_language">Interface Language</strong>
+                <small data-i18n="sub_language">Select your preferred UI display language</small>
+              </div>
+              <div class="segmented-control" id="language-segmented-control">
+                <button type="button" class="segmented-option active" data-lang-val="en" data-i18n="lang_en">English</button>
+                <button type="button" class="segmented-option" data-lang-val="zh" data-i18n="lang_zh">中文</button>
+                <button type="button" class="segmented-option" data-lang-val="es" data-i18n="lang_es">Español</button>
+                <button type="button" class="segmented-option" data-lang-val="de" data-i18n="lang_de">Deutsch</button>
+              </div>
+            </div>
+          </div>
+          <div class="ios-section-footer" data-i18n="footer_language">Instantly translates all interface controls, menus, guide slides, and notifications.</div>
+        </div>
+
         <!-- Section: Preferences -->
         <div class="ios-section">
-          <div class="ios-section-header">Reminders & Alerts</div>
+          <div class="ios-section-header" data-i18n="section_reminders_alerts">Reminders & Alerts</div>
           <div class="ios-group-card">
             <div class="ios-cell">
               <span class="ios-cell-label">
-                <strong>Daily Morning Briefing</strong>
+                <strong data-i18n="label_morning_briefing">Daily Morning Briefing</strong>
               </span>
               <input type="checkbox" id="toggle-morning-briefing" class="ios-switch">
             </div>
           </div>
-          <div class="ios-section-footer">8:00 AM summary of pinned and scheduled notes.</div>
+          <div class="ios-section-footer" data-i18n="footer_morning_briefing">8:00 AM summary of pinned and scheduled notes.</div>
         </div>
 
         <!-- Section: Data Management -->
         <div class="ios-section">
-          <div class="ios-section-header">Data & Backup</div>
+          <div class="ios-section-header" data-i18n="section_data">Data & Backup</div>
           <div class="ios-group-card">
             <div class="ios-cell" style="gap: 0.5rem;">
-              <button type="button" class="btn-secondary-action" id="btn-export-backup">Export Backup (JSON)</button>
+              <button type="button" class="btn-secondary-action" id="btn-export-backup" data-i18n="btn_export_backup">Export Backup (JSON)</button>
               <label class="btn-secondary-action" style="cursor: pointer;">
-                <span>Import Backup</span>
+                <span data-i18n="btn_import_backup">Import Backup</span>
                 <input type="file" id="file-import-backup" accept=".json" style="display: none;">
               </label>
             </div>
           </div>
-          <div class="ios-section-footer">Export your reminders and trash archive to a JSON document for local backup and multi-device transfer.</div>
+          <div class="ios-section-footer" data-i18n="footer_data">Export your reminders and trash archive to a JSON document for local backup and multi-device transfer.</div>
         </div>
 
         <!-- Section: Guide & Information -->
         <div class="ios-section">
-          <div class="ios-section-header">About & Guide</div>
+          <div class="ios-section-header" data-i18n="section_about">About & Guide</div>
           <div class="ios-group-card">
             <div class="ios-cell ios-cell-clickable" id="btn-open-guide-cell">
               <span class="ios-cell-label">
-                <strong>User Guide & Gestures</strong>
+                <strong data-i18n="label_guide">User Guide & Gestures</strong>
               </span>
               <span class="ios-cell-value">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -481,12 +506,12 @@
                 </svg>
               </span>
             </div>
-            <div class="ios-cell ios-cell-clickable" id="cell-check-update" title="Tap to force update">
+            <div class="ios-cell ios-cell-clickable" id="cell-check-update" title="Tap to force update" data-i18n-title="title_check_update">
               <span class="ios-cell-label">
-                <strong>Version</strong>
-                <small id="settings-build-id">Build 20260929-v10</small>
+                <strong data-i18n="label_version">Version</strong>
+                <small id="settings-build-id">Build 20260929-v11</small>
               </span>
-              <span class="ios-cell-value" id="app-version-badge">1.0 • Check for Update</span>
+              <span class="ios-cell-value" id="app-version-badge" data-i18n="badge_version">1.0 • Check for Update</span>
             </div>
           </div>
         </div>
@@ -500,8 +525,8 @@
     <div class="modal-sheet">
       <div class="modal-grabber"></div>
       <div class="modal-header">
-        <h3 class="modal-title">UPGRADE TO PREMIUM</h3>
-        <button id="btn-close-upgrade" class="btn-modal-close" aria-label="Close">
+        <h3 class="modal-title" data-i18n="upgrade_modal_title">UPGRADE TO PREMIUM</h3>
+        <button id="btn-close-upgrade" class="btn-modal-close" aria-label="Close" data-i18n-aria="aria_close">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -510,11 +535,11 @@
       </div>
 
       <div class="modal-body-scroll">
-        <div class="upgrade-mock-banner">
+        <div class="upgrade-mock-banner" data-i18n="upgrade_mock_banner">
           Development mode: no real payment
         </div>
 
-        <p style="font-size: 0.9375rem; font-weight: 300; line-height: 1.45; color: var(--color-text-secondary);">
+        <p style="font-size: 0.9375rem; font-weight: 300; line-height: 1.45; color: var(--color-text-secondary);" data-i18n="upgrade_desc">
           Unlock unrestricted reminders and full customization capabilities for Postr.
         </p>
 
@@ -523,23 +548,23 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>Unlimited active reminders (Free capped at 5)</span>
+            <span data-i18n="upgrade_feat_1">Unlimited active reminders (Free capped at 5)</span>
           </div>
           <div class="upgrade-feature-row">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>Arbitrary custom alarm intervals (Hours and Minutes)</span>
+            <span data-i18n="upgrade_feat_2">Arbitrary custom alarm intervals (Hours and Minutes)</span>
           </div>
           <div class="upgrade-feature-row">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>Custom palette colors & full theme customization</span>
+            <span data-i18n="upgrade_feat_3">Custom palette colors & full theme customization</span>
           </div>
         </div>
 
-        <button type="button" id="btn-test-purchase" class="btn-primary-action">TEST PURCHASE (FREE ACTIVATION)</button>
+        <button type="button" id="btn-test-purchase" class="btn-primary-action" data-i18n="btn_test_purchase">TEST PURCHASE (FREE ACTIVATION)</button>
       </div>
     </div>
   </div>
@@ -549,8 +574,8 @@
     <div class="modal-sheet">
       <div class="modal-grabber"></div>
       <div class="modal-header">
-        <h3 class="modal-title">POSTR GUIDE</h3>
-        <button id="btn-close-tips" class="btn-modal-close" aria-label="Close">
+        <h3 class="modal-title" data-i18n="guide_modal_title">POSTR GUIDE</h3>
+        <button id="btn-close-tips" class="btn-modal-close" aria-label="Close" data-i18n-aria="aria_close">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -562,29 +587,29 @@
         <div class="carousel-viewport" id="carousel-track">
           <div class="carousel-slides">
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 1 / 5</div>
-              <h3>Swipe Gestures</h3>
-              <p>Swipe a card to the right until the orange underlay expands to edit contents or alarms.<br>Swipe to the left until the red underlay expands to move it to the 24-hour trash bin.</p>
+              <div class="slide-badge" data-i18n="guide_slide_1_badge">GUIDE 1 / 5</div>
+              <h3 data-i18n="guide_slide_1_title">Swipe Gestures</h3>
+              <p data-i18n-html="guide_slide_1_text">Swipe a card to the right until the orange underlay expands to edit contents or alarms.<br>Swipe to the left until the red underlay expands to move it to the 24-hour trash bin.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 2 / 5</div>
-              <h3>24-Hour Retention</h3>
-              <p>Deleted reminders stay in the Recently Deleted modal for exactly 24 hours with live countdown indicators. You can restore them or permanently delete them.</p>
+              <div class="slide-badge" data-i18n="guide_slide_2_badge">GUIDE 2 / 5</div>
+              <h3 data-i18n="guide_slide_2_title">24-Hour Retention</h3>
+              <p data-i18n="guide_slide_2_text">Deleted reminders stay in the Recently Deleted modal for exactly 24 hours with live countdown indicators. You can restore them or permanently delete them.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 3 / 5</div>
-              <h3>Checklists & Menus</h3>
-              <p>Switch to Checklist mode to track actionable tasks with live progress bars. Tap the three dots icon on any card to access native options (Duplicate, Pin, Snooze, Complete All).</p>
+              <div class="slide-badge" data-i18n="guide_slide_3_badge">GUIDE 3 / 5</div>
+              <h3 data-i18n="guide_slide_3_title">Checklists & Menus</h3>
+              <p data-i18n="guide_slide_3_text">Switch to Checklist mode to track actionable tasks with live progress bars. Tap the three dots icon on any card to access native options (Duplicate, Pin, Snooze, Complete All).</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 4 / 5</div>
-              <h3>Pinning & Drag Reorder</h3>
-              <p>Tap the pin icon to keep high-priority notes at the top. Press and hold any card for a moment to drag and drop it into a customized sort order.</p>
+              <div class="slide-badge" data-i18n="guide_slide_4_badge">GUIDE 4 / 5</div>
+              <h3 data-i18n="guide_slide_4_title">Pinning & Drag Reorder</h3>
+              <p data-i18n="guide_slide_4_text">Tap the pin icon to keep high-priority notes at the top. Press and hold any card for a moment to drag and drop it into a customized sort order.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 5 / 5</div>
-              <h3>Due Dates & Alarms</h3>
-              <p>Assign scheduled due times to receive lock screen notifications. Configure recurring alarm intervals to keep persistent reminders sticky.</p>
+              <div class="slide-badge" data-i18n="guide_slide_5_badge">GUIDE 5 / 5</div>
+              <h3 data-i18n="guide_slide_5_title">Due Dates & Alarms</h3>
+              <p data-i18n="guide_slide_5_text">Assign scheduled due times to receive lock screen notifications. Configure recurring alarm intervals to keep persistent reminders sticky.</p>
             </div>
           </div>
         </div>
@@ -604,17 +629,18 @@
   <div id="ios-context-menu-backdrop" class="ios-menu-backdrop">
     <div id="ios-context-menu" class="ios-context-menu">
       <div class="ios-menu-group">
-        <div class="ios-menu-header" id="ios-menu-title">Options</div>
+        <div class="ios-menu-header" id="ios-menu-title" data-i18n="menu_options">Options</div>
         <div id="ios-menu-items">
           <!-- Dynamically generated action buttons -->
         </div>
       </div>
       <div class="ios-menu-group ios-menu-cancel-group">
-        <button type="button" class="ios-menu-item ios-menu-cancel" id="btn-cancel-ios-menu">Cancel</button>
+        <button type="button" class="ios-menu-item ios-menu-cancel" id="btn-cancel-ios-menu" data-i18n="menu_cancel">Cancel</button>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=20260929-v10"></script>
+  <script src="translations.js?v=20260929-v11"></script>
+  <script src="app.js?v=20260929-v11"></script>
 </body>
 </html>
