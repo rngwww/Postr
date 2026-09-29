@@ -226,7 +226,7 @@ This document provides a complete checklist of all functional specifications, st
   - Custom numeric keypad (digits 0 through 9, biometric icon, delete button).
   - Automatically verifies when 4th digit is keyed in; unlocks on match, clears and shakes on mismatch.
 - PIN Setup and Change Modal:
-  - Inputs for New 4-Digit PIN and Confirm 4-Digit PIN.
+  - Inputs for Passcode (4 Digits) and Confirm 4-Digit PIN.
   - Enforces numeric 4-digit format and match validation.
   - Saves PIN, enables lock, and initiates WebAuthn credential registration if supported.
 - Lifecycle auto-lock:
