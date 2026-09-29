@@ -170,7 +170,7 @@ function showToast(message) {
 }
 
 // ============================================================================
-// THEMES AND APPEARANCE ENGINE
+// THEMES AND APPEARANCE ENGINE (iOS 26 Atmospheric Themes)
 // ============================================================================
 function applyTheme(themeMode) {
   let effectiveTheme = themeMode;
@@ -183,18 +183,35 @@ function applyTheme(themeMode) {
 
   const metaThemeColor = document.getElementById("meta-theme-color");
   if (metaThemeColor) {
-    metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#060608" : "#f2f2f7");
+    let color = "#060608";
+    if (effectiveTheme === "light") color = "#f2f2f7";
+    else if (effectiveTheme === "aurora") color = "#060612";
+    else if (effectiveTheme === "sunset") color = "#0f0907";
+    metaThemeColor.setAttribute("content", color);
   }
 
   // Sync segmented buttons
   document.querySelectorAll("#theme-segmented-control .segmented-option").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-theme-val") === themeMode);
   });
+
+  // Sync interactive visual wallpaper cards
+  document.querySelectorAll("#wallpaper-previews .wallpaper-preview-card").forEach(card => {
+    card.classList.toggle("active", card.getAttribute("data-theme-target") === effectiveTheme);
+  });
 }
 
 function setThemeMode(themeMode) {
   localStorage.setItem(THEME_MODE_KEY, themeMode);
   applyTheme(themeMode);
+  const nameMap = {
+    system: "System Match",
+    light: "Light Ceramic",
+    dark: "Dark Obsidian",
+    aurora: "Aurora Cosmic",
+    sunset: "Sunset Amber"
+  };
+  showToast(nameMap[themeMode] || `Theme: ${themeMode}`);
 }
 
 function applyAccentColor(hexColor) {
@@ -243,6 +260,16 @@ function initThemeAndAppearance() {
     btn.addEventListener("click", () => {
       const mode = btn.getAttribute("data-theme-val");
       setThemeMode(mode);
+    });
+  });
+
+  // Wallpaper preview thumbnails clicks
+  document.querySelectorAll("#wallpaper-previews .wallpaper-preview-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const targetTheme = card.getAttribute("data-theme-target");
+      if (targetTheme) {
+        setThemeMode(targetTheme);
+      }
     });
   });
 

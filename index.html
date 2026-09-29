@@ -13,7 +13,7 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-ios26-v6";
+    window.APP_BUILD_VERSION = "20260929-ios26-v7";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -50,12 +50,12 @@
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v6">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v6">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v7">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v7">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-ios26-v6">
+  <link rel="stylesheet" href="style.css?v=20260929-ios26-v7">
 </head>
 <body>
 
@@ -391,11 +391,34 @@
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
               <div class="ios-cell-label">
                 <strong>Theme Mode</strong>
+                <small>Select from 4 iOS 26 atmospheric liquid glass styles</small>
               </div>
               <div class="segmented-control" id="theme-segmented-control">
                 <button type="button" class="segmented-option" data-theme-val="system">System</button>
                 <button type="button" class="segmented-option" data-theme-val="light">Light</button>
                 <button type="button" class="segmented-option active" data-theme-val="dark">Dark</button>
+                <button type="button" class="segmented-option" data-theme-val="aurora">Aurora</button>
+                <button type="button" class="segmented-option" data-theme-val="sunset">Sunset</button>
+              </div>
+
+              <!-- Interactive Visual Wallpaper Previews -->
+              <div class="wallpaper-previews-grid" id="wallpaper-previews">
+                <button type="button" class="wallpaper-preview-card active" data-theme-target="dark" title="Dark Obsidian">
+                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-dark.webp');"></div>
+                  <span>Dark</span>
+                </button>
+                <button type="button" class="wallpaper-preview-card" data-theme-target="light" title="Light Ceramic">
+                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-light.webp');"></div>
+                  <span>Light</span>
+                </button>
+                <button type="button" class="wallpaper-preview-card" data-theme-target="aurora" title="Aurora Violet">
+                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-aurora.webp');"></div>
+                  <span>Aurora</span>
+                </button>
+                <button type="button" class="wallpaper-preview-card" data-theme-target="sunset" title="Sunset Amber">
+                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-sunset.webp');"></div>
+                  <span>Sunset</span>
+                </button>
               </div>
             </div>
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
@@ -608,6 +631,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260929-ios26-v6"></script>
+  <script src="app.js?v=20260929-ios26-v7"></script>
 </body>
 </html>

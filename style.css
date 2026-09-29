@@ -138,6 +138,104 @@
   --pastel-tasks-chip-active: #1582a2;
 }
 
+/* Aurora Theme Tokens (Deep Cosmic Violet & Cyan) */
+[data-theme="aurora"] {
+  --color-bg-base: #060612;
+  --color-bg-page: #0b091a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(235, 235, 255, 0.74);
+  --color-text-tertiary: rgba(200, 205, 255, 0.48);
+  --color-text-quaternary: rgba(180, 185, 255, 0.25);
+  --color-separator: rgba(160, 150, 255, 0.16);
+  --color-fill-secondary: rgba(120, 100, 255, 0.12);
+  --color-fill-tertiary: rgba(100, 80, 240, 0.08);
+
+  --glass-bg: rgba(18, 16, 34, 0.75);
+  --glass-bg-sheet: rgba(24, 20, 44, 0.88);
+  --glass-bg-card: rgba(22, 18, 40, 0.74);
+  --glass-bg-card-active: rgba(36, 28, 64, 0.85);
+  --glass-border: rgba(160, 140, 255, 0.18);
+  --glass-border-specular: rgba(210, 200, 255, 0.40);
+  --glass-shadow: 0 14px 40px rgba(6, 4, 20, 0.65);
+  --glass-shadow-card: 0 8px 28px rgba(6, 4, 20, 0.45);
+  --wallpaper-image: url('assets/backgrounds/wallpaper-aurora.webp');
+
+  /* Pastel Category Palettes in Aurora */
+  --pastel-school-bg: rgba(180, 195, 255, 0.22);
+  --pastel-school-border: rgba(195, 210, 255, 0.50);
+  --pastel-school-text: #d8e2ff;
+  --pastel-school-chip-active: #667eeb;
+
+  --pastel-work-bg: rgba(255, 180, 160, 0.22);
+  --pastel-work-border: rgba(255, 195, 175, 0.50);
+  --pastel-work-text: #ffe0d5;
+  --pastel-work-chip-active: #e26e45;
+
+  --pastel-shopping-bg: rgba(120, 245, 215, 0.22);
+  --pastel-shopping-border: rgba(145, 250, 225, 0.50);
+  --pastel-shopping-text: #c0faea;
+  --pastel-shopping-chip-active: #15b597;
+
+  --pastel-personal-bg: rgba(255, 155, 225, 0.22);
+  --pastel-personal-border: rgba(255, 175, 235, 0.50);
+  --pastel-personal-text: #ffd5f2;
+  --pastel-personal-chip-active: #d63f9d;
+
+  --pastel-tasks-bg: rgba(125, 225, 255, 0.22);
+  --pastel-tasks-border: rgba(155, 235, 255, 0.50);
+  --pastel-tasks-text: #ccf3ff;
+  --pastel-tasks-chip-active: #09a7dc;
+}
+
+/* Sunset Theme Tokens (Warm Golden Hour & Rose Gold) */
+[data-theme="sunset"] {
+  --color-bg-base: #0f0907;
+  --color-bg-page: #170d0a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 240, 230, 0.74);
+  --color-text-tertiary: rgba(255, 215, 195, 0.48);
+  --color-text-quaternary: rgba(255, 195, 170, 0.24);
+  --color-separator: rgba(255, 170, 130, 0.16);
+  --color-fill-secondary: rgba(255, 140, 90, 0.12);
+  --color-fill-tertiary: rgba(255, 110, 60, 0.08);
+
+  --glass-bg: rgba(30, 18, 16, 0.75);
+  --glass-bg-sheet: rgba(40, 24, 22, 0.88);
+  --glass-bg-card: rgba(34, 21, 18, 0.74);
+  --glass-bg-card-active: rgba(56, 32, 28, 0.85);
+  --glass-border: rgba(255, 180, 140, 0.18);
+  --glass-border-specular: rgba(255, 215, 180, 0.42);
+  --glass-shadow: 0 14px 40px rgba(22, 10, 6, 0.65);
+  --glass-shadow-card: 0 8px 28px rgba(22, 10, 6, 0.45);
+  --wallpaper-image: url('assets/backgrounds/wallpaper-sunset.webp');
+
+  /* Pastel Category Palettes in Sunset */
+  --pastel-school-bg: rgba(190, 185, 255, 0.22);
+  --pastel-school-border: rgba(205, 200, 255, 0.50);
+  --pastel-school-text: #e0dcff;
+  --pastel-school-chip-active: #786dec;
+
+  --pastel-work-bg: rgba(255, 190, 130, 0.22);
+  --pastel-work-border: rgba(255, 205, 150, 0.50);
+  --pastel-work-text: #ffe2c5;
+  --pastel-work-chip-active: #d67923;
+
+  --pastel-shopping-bg: rgba(140, 240, 180, 0.22);
+  --pastel-shopping-border: rgba(160, 245, 195, 0.50);
+  --pastel-shopping-text: #cbfbe2;
+  --pastel-shopping-chip-active: #23a85e;
+
+  --pastel-personal-bg: rgba(255, 160, 180, 0.22);
+  --pastel-personal-border: rgba(255, 180, 200, 0.50);
+  --pastel-personal-text: #ffd5df;
+  --pastel-personal-chip-active: #db486c;
+
+  --pastel-tasks-bg: rgba(255, 210, 140, 0.22);
+  --pastel-tasks-border: rgba(255, 220, 160, 0.50);
+  --pastel-tasks-text: #ffebcc;
+  --pastel-tasks-chip-active: #d48f1c;
+}
+
 /* Fallback for environments lacking backdrop-filter */
 @supports not (backdrop-filter: blur(1px)) {
   :root {
@@ -151,6 +249,18 @@
     --glass-bg-sheet: #f2f2f7;
     --glass-bg-card: #ffffff;
     --glass-bg-card-active: #e5e5ea;
+  }
+  [data-theme="aurora"] {
+    --glass-bg: #151325;
+    --glass-bg-sheet: #1d1933;
+    --glass-bg-card: #19162e;
+    --glass-bg-card-active: #272247;
+  }
+  [data-theme="sunset"] {
+    --glass-bg: #211310;
+    --glass-bg-sheet: #2c1a16;
+    --glass-bg-card: #261613;
+    --glass-bg-card-active: #3b221e;
   }
 }
 
@@ -214,6 +324,14 @@ body {
 
 [data-theme="light"] .wallpaper-backdrop {
   filter: blur(85px) saturate(200%) brightness(1.04);
+}
+
+[data-theme="aurora"] .wallpaper-backdrop {
+  filter: blur(85px) saturate(230%) brightness(0.92);
+}
+
+[data-theme="sunset"] .wallpaper-backdrop {
+  filter: blur(85px) saturate(230%) brightness(0.95);
 }
 
 /* App Viewport Container */
@@ -347,6 +465,14 @@ body {
 
 [data-theme="light"] .top-nav-liquid {
   background: rgba(242, 242, 247, 0.55);
+}
+
+[data-theme="aurora"] .top-nav-liquid {
+  background: rgba(6, 6, 18, 0.45);
+}
+
+[data-theme="sunset"] .top-nav-liquid {
+  background: rgba(15, 9, 7, 0.45);
 }
 
 /* Dynamic Liquid Glass Elevation when Feed is Scrolled */
@@ -2077,6 +2203,65 @@ body {
 
 .ios-cell-clickable:active {
   background: var(--color-fill-secondary);
+}
+
+/* Theme Segmented Switcher & Wallpaper Preview Thumbnails */
+#theme-segmented-control .segmented-option {
+  font-size: 0.75rem;
+  padding: 0 0.25rem;
+  white-space: nowrap;
+}
+
+.wallpaper-previews-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.wallpaper-preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 0.75rem;
+  background: var(--color-fill-secondary);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  touch-action: manipulation;
+}
+
+.wallpaper-preview-card:active {
+  transform: scale(0.92);
+}
+
+.wallpaper-preview-card.active {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 12px rgba(var(--accent-color-rgb), 0.45);
+}
+
+.wallpaper-thumb {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 0.5rem;
+  background-size: cover;
+  background-position: center;
+  border: 0.5px solid var(--glass-border-specular);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.wallpaper-preview-card span {
+  font-size: 0.6875rem;
+  font-weight: 300 !important;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.wallpaper-preview-card.active span {
+  color: var(--color-text-primary);
+  font-weight: 400 !important;
 }
 
 /* Swatches Picker & Spectrum Gradient Icon */
