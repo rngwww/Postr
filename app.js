@@ -174,7 +174,7 @@ function showToast(message) {
 // ============================================================================
 function applyTheme(themeMode) {
   let effectiveTheme = themeMode;
-  if (themeMode === "system") {
+  if (themeMode === "auto" || themeMode === "system") {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     effectiveTheme = isDark ? "dark" : "light";
   }
@@ -192,12 +192,9 @@ function applyTheme(themeMode) {
 
   // Sync segmented buttons
   document.querySelectorAll("#theme-segmented-control .segmented-option").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-theme-val") === themeMode);
-  });
-
-  // Sync interactive visual wallpaper cards
-  document.querySelectorAll("#wallpaper-previews .wallpaper-preview-card").forEach(card => {
-    card.classList.toggle("active", card.getAttribute("data-theme-target") === effectiveTheme);
+    const val = btn.getAttribute("data-theme-val");
+    const isActive = (val === themeMode) || (val === "auto" && themeMode === "system") || (val === "system" && themeMode === "auto");
+    btn.classList.toggle("active", isActive);
   });
 }
 
@@ -205,13 +202,14 @@ function setThemeMode(themeMode) {
   localStorage.setItem(THEME_MODE_KEY, themeMode);
   applyTheme(themeMode);
   const nameMap = {
-    system: "System Match",
-    light: "Light Ceramic",
-    dark: "Dark Obsidian",
-    aurora: "Aurora Cosmic",
-    sunset: "Sunset Amber"
+    auto: "Auto",
+    system: "Auto",
+    light: "Light",
+    dark: "Dark",
+    aurora: "Aurora",
+    sunset: "Sunset"
   };
-  showToast(nameMap[themeMode] || `Theme: ${themeMode}`);
+  showToast(nameMap[themeMode] || themeMode);
 }
 
 function applyAccentColor(hexColor) {
@@ -235,6 +233,11 @@ function applyAccentColor(hexColor) {
   if (customInput) {
     customInput.value = hexColor;
   }
+
+  const currentIndicator = document.getElementById("spectrum-current-indicator");
+  if (currentIndicator) {
+    currentIndicator.style.backgroundColor = hexColor;
+  }
 }
 
 function setAccentColor(hexColor) {
@@ -251,8 +254,8 @@ function initThemeAndAppearance() {
 
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     const currentMode = localStorage.getItem(THEME_MODE_KEY) || "dark";
-    if (currentMode === "system") {
-      applyTheme("system");
+    if (currentMode === "auto" || currentMode === "system") {
+      applyTheme(currentMode);
     }
   });
 
@@ -260,16 +263,6 @@ function initThemeAndAppearance() {
     btn.addEventListener("click", () => {
       const mode = btn.getAttribute("data-theme-val");
       setThemeMode(mode);
-    });
-  });
-
-  // Wallpaper preview thumbnails clicks
-  document.querySelectorAll("#wallpaper-previews .wallpaper-preview-card").forEach(card => {
-    card.addEventListener("click", () => {
-      const targetTheme = card.getAttribute("data-theme-target");
-      if (targetTheme) {
-        setThemeMode(targetTheme);
-      }
     });
   });
 
@@ -457,6 +450,44 @@ if (btnNotifyPerm) {
       }
     }
   });
+}
+
+function playDueChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, now);
+    osc1.frequency.exponentialRampToValueAtTime(1318.51, now + 0.14);
+
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(1760, now + 0.14);
+    osc2.frequency.exponentialRampToValueAtTime(2637, now + 0.32);
+
+    gainNode.gain.setValueAtTime(0.001, now);
+    gainNode.gain.linearRampToValueAtTime(0.25, now + 0.04);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc1.start(now);
+    osc1.stop(now + 0.7);
+    osc2.start(now + 0.14);
+    osc2.stop(now + 0.7);
+  } catch (err) {
+    console.warn("Chime audio note:", err);
+  }
 }
 
 function triggerNotification(primaryText, secondaryText, tag, options = {}) {
@@ -1024,12 +1055,15 @@ function attachCardInteractions(wrapper, item) {
   let initialRect = null;
   let lastHoveredSibling = null;
 
+  let startTime = 0;
+
   function onPointerStart(e) {
     if (e.target.closest(".btn-complete") || e.target.closest(".btn-pin-toggle") || e.target.closest(".btn-card-menu") || e.target.closest(".card-checklist-item")) return;
 
     const point = e.touches ? e.touches[0] : e;
     startX = point.clientX;
     startY = point.clientY;
+    startTime = Date.now();
     currentOffsetX = 0;
     currentOffsetY = 0;
     swipeDirection = null;
@@ -1109,9 +1143,9 @@ function attachCardInteractions(wrapper, item) {
     }
 
     if (!swipeDirection) {
-      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
         if (longPressTimer) clearTimeout(longPressTimer);
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (Math.abs(deltaX) * 0.75 > Math.abs(deltaY)) {
           swipeDirection = deltaX < 0 ? "left" : "right";
         } else {
           isDragging = false;
@@ -1128,13 +1162,13 @@ function attachCardInteractions(wrapper, item) {
       card.style.transform = `translate3d(${currentOffsetX}px, 0px, 0px)`;
 
       const cardWidth = card.offsetWidth;
-      const progress = Math.min(Math.abs(currentOffsetX) / (cardWidth * 0.45), 1.6);
-      const isThreshold = Math.abs(currentOffsetX) >= Math.min(cardWidth * 0.42, 130);
+      const progress = Math.min(Math.abs(currentOffsetX) / 60, 1.5);
+      const isThreshold = Math.abs(currentOffsetX) >= Math.min(cardWidth * 0.22, 60);
 
       if (isThreshold && !hasThresholdCrossed) {
         hasThresholdCrossed = true;
         if ("vibrate" in navigator) {
-          try { navigator.vibrate(12); } catch (err) {}
+          try { navigator.vibrate(10); } catch (err) {}
         }
       } else if (!isThreshold && hasThresholdCrossed) {
         hasThresholdCrossed = false;
@@ -1144,13 +1178,13 @@ function attachCardInteractions(wrapper, item) {
         if (underlayDelete) underlayDelete.style.opacity = Math.min(progress, 1);
         if (underlayEdit) underlayEdit.style.opacity = 0;
         if (trashIcon) {
-          trashIcon.style.transform = `scale(${0.8 + progress * 0.4})`;
+          trashIcon.style.transform = `scale(${0.8 + progress * 0.35})`;
         }
       } else {
         if (underlayEdit) underlayEdit.style.opacity = Math.min(progress, 1);
         if (underlayDelete) underlayDelete.style.opacity = 0;
         if (editIcon) {
-          editIcon.style.transform = `scale(${0.8 + progress * 0.4})`;
+          editIcon.style.transform = `scale(${0.8 + progress * 0.35})`;
         }
       }
     }
@@ -1176,12 +1210,15 @@ function attachCardInteractions(wrapper, item) {
     if (underlayDelete) underlayDelete.style.opacity = 0;
     if (underlayEdit) underlayEdit.style.opacity = 0;
 
-    if (swipeDirection === "left") {
-      const cardWidth = card.offsetWidth;
-      const dist = Math.abs(currentOffsetX);
-      const threshold = Math.min(cardWidth * 0.42, 130);
+    const cardWidth = card.offsetWidth;
+    const dist = Math.abs(currentOffsetX);
+    const elapsed = Math.max(1, Date.now() - startTime);
+    const velocity = dist / elapsed;
+    const isFlick = velocity > 0.32 && dist > 35;
+    const threshold = Math.min(cardWidth * 0.22, 60);
 
-      if (dist >= threshold) {
+    if (swipeDirection === "left") {
+      if (dist >= threshold || isFlick) {
         card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = `translate3d(-${cardWidth + 40}px, 0px, 0px)`;
         setTimeout(() => {
@@ -1193,11 +1230,7 @@ function attachCardInteractions(wrapper, item) {
         if (trashIcon) trashIcon.style.transform = "scale(0.8)";
       }
     } else if (swipeDirection === "right") {
-      const cardWidth = card.offsetWidth;
-      const dist = currentOffsetX;
-      const threshold = Math.min(cardWidth * 0.42, 130);
-
-      if (dist >= threshold) {
+      if (dist >= threshold || isFlick) {
         card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
         setTimeout(() => {
@@ -1318,6 +1351,221 @@ if (tabModeChecklist) {
   });
 }
 
+function setAlarmSelectorValue(val) {
+  const alarmInput = document.getElementById("input-alarm-value");
+  const alarmLabel = document.getElementById("selected-alarm-label");
+  const customTimeRow = document.getElementById("custom-time-row");
+  if (!alarmInput || !alarmLabel) return;
+
+  alarmInput.value = String(val);
+
+  if (val === "custom") {
+    alarmLabel.textContent = "Custom";
+    if (customTimeRow) customTimeRow.classList.remove("hidden");
+  } else {
+    const num = parseInt(val, 10);
+    if (customTimeRow) customTimeRow.classList.add("hidden");
+    if (!num || num === 0) {
+      alarmLabel.textContent = "Off";
+    } else if (num >= 60 && num % 60 === 0) {
+      alarmLabel.textContent = `Every ${num / 60}h`;
+    } else {
+      alarmLabel.textContent = `Every ${num}m`;
+    }
+  }
+}
+
+function initAlarmSelector() {
+  const btnSelectAlarm = document.getElementById("btn-select-alarm");
+  if (!btnSelectAlarm) return;
+
+  btnSelectAlarm.addEventListener("click", () => {
+    showIosMenu({
+      title: "Recurring Alarm Interval",
+      items: [
+        {
+          label: "Off (No recurring alarm)",
+          onClick: () => setAlarmSelectorValue(0)
+        },
+        {
+          label: "Every 1 Minute",
+          onClick: () => setAlarmSelectorValue(1)
+        },
+        {
+          label: "Every 5 Minutes",
+          onClick: () => setAlarmSelectorValue(5)
+        },
+        {
+          label: "Every 10 Minutes",
+          onClick: () => setAlarmSelectorValue(10)
+        },
+        {
+          label: "Every 15 Minutes",
+          onClick: () => {
+            if (!premiumManager.canUseCustomAlarm()) {
+              premiumManager.startCheckout();
+              return;
+            }
+            setAlarmSelectorValue(15);
+          }
+        },
+        {
+          label: "Every 30 Minutes",
+          onClick: () => {
+            if (!premiumManager.canUseCustomAlarm()) {
+              premiumManager.startCheckout();
+              return;
+            }
+            setAlarmSelectorValue(30);
+          }
+        },
+        {
+          label: "Every 1 Hour",
+          onClick: () => {
+            if (!premiumManager.canUseCustomAlarm()) {
+              premiumManager.startCheckout();
+              return;
+            }
+            setAlarmSelectorValue(60);
+          }
+        },
+        {
+          label: "Custom Interval...",
+          onClick: () => {
+            if (!premiumManager.canUseCustomAlarm()) {
+              premiumManager.startCheckout();
+              return;
+            }
+            setAlarmSelectorValue("custom");
+          }
+        }
+      ]
+    });
+  });
+}
+
+function initDueDateControls() {
+  const toggleDueTime = document.getElementById("toggle-due-time");
+  const inputDueTime = document.getElementById("input-due-time");
+  const btnClearDue = document.getElementById("btn-clear-due-time");
+  const btnDuePresets = document.getElementById("btn-due-presets");
+
+  if (!inputDueTime) return;
+
+  function setDueDateTime(dateObj) {
+    const pad = n => String(n).padStart(2, "0");
+    const formatted = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+    inputDueTime.value = formatted;
+    if (toggleDueTime) toggleDueTime.checked = true;
+    if (btnClearDue) btnClearDue.classList.remove("hidden");
+  }
+
+  inputDueTime.addEventListener("click", () => {
+    if (typeof inputDueTime.showPicker === "function") {
+      try { inputDueTime.showPicker(); } catch (err) {}
+    }
+  });
+
+  inputDueTime.addEventListener("change", () => {
+    if (inputDueTime.value) {
+      if (toggleDueTime) toggleDueTime.checked = true;
+      if (btnClearDue) btnClearDue.classList.remove("hidden");
+    } else {
+      if (toggleDueTime) toggleDueTime.checked = false;
+      if (btnClearDue) btnClearDue.classList.add("hidden");
+    }
+  });
+
+  if (toggleDueTime) {
+    toggleDueTime.addEventListener("change", () => {
+      if (toggleDueTime.checked) {
+        if (!inputDueTime.value) {
+          const d = new Date(Date.now() + 3600000);
+          d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+          setDueDateTime(d);
+        }
+        if (btnClearDue) btnClearDue.classList.remove("hidden");
+      } else {
+        inputDueTime.value = "";
+        if (btnClearDue) btnClearDue.classList.add("hidden");
+      }
+    });
+  }
+
+  if (btnClearDue) {
+    btnClearDue.addEventListener("click", (e) => {
+      e.stopPropagation();
+      inputDueTime.value = "";
+      if (toggleDueTime) toggleDueTime.checked = false;
+      btnClearDue.classList.add("hidden");
+    });
+  }
+
+  if (btnDuePresets) {
+    btnDuePresets.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showIosMenu({
+        title: "Due Date Presets",
+        items: [
+          {
+            label: "In 1 Hour",
+            onClick: () => {
+              const d = new Date(Date.now() + 3600000);
+              d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+              setDueDateTime(d);
+            }
+          },
+          {
+            label: "Today at 6:00 PM",
+            onClick: () => {
+              const d = new Date();
+              d.setHours(18, 0, 0, 0);
+              if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+              setDueDateTime(d);
+            }
+          },
+          {
+            label: "Tomorrow at 9:00 AM",
+            onClick: () => {
+              const d = new Date();
+              d.setDate(d.getDate() + 1);
+              d.setHours(9, 0, 0, 0);
+              setDueDateTime(d);
+            }
+          },
+          {
+            label: "In 2 Days",
+            onClick: () => {
+              const d = new Date();
+              d.setDate(d.getDate() + 2);
+              d.setHours(9, 0, 0, 0);
+              setDueDateTime(d);
+            }
+          },
+          {
+            label: "In 1 Week",
+            onClick: () => {
+              const d = new Date();
+              d.setDate(d.getDate() + 7);
+              d.setHours(9, 0, 0, 0);
+              setDueDateTime(d);
+            }
+          },
+          {
+            label: "Clear Due Date",
+            destructive: true,
+            onClick: () => {
+              inputDueTime.value = "";
+              if (toggleDueTime) toggleDueTime.checked = false;
+              if (btnClearDue) btnClearDue.classList.add("hidden");
+            }
+          }
+        ]
+      });
+    });
+  }
+}
+
 function openCreateModal() {
   if (!premiumManager.canAddReminder()) {
     premiumManager.startCheckout();
@@ -1339,13 +1587,11 @@ function openCreateModal() {
   const btnClearDue = document.getElementById("btn-clear-due-time");
   if (toggleDue && inputDue) {
     toggleDue.checked = false;
-    inputDue.disabled = true;
     inputDue.value = "";
     if (btnClearDue) btnClearDue.classList.add("hidden");
   }
 
-  document.getElementById("p0").checked = true;
-  document.getElementById("custom-time-row").classList.add("hidden");
+  setAlarmSelectorValue(0);
   resetLabelSelection(null);
 
   openModal("splash-modal");
@@ -1374,12 +1620,10 @@ function openEditModal(item) {
   if (toggleDue && inputDue) {
     if (item.dueTime) {
       toggleDue.checked = true;
-      inputDue.disabled = false;
       inputDue.value = item.dueTime;
       if (btnClearDue) btnClearDue.classList.remove("hidden");
     } else {
       toggleDue.checked = false;
-      inputDue.disabled = true;
       inputDue.value = "";
       if (btnClearDue) btnClearDue.classList.add("hidden");
     }
@@ -1388,20 +1632,24 @@ function openEditModal(item) {
   resetLabelSelection(item.label || null);
 
   const customTimeRow = document.getElementById("custom-time-row");
-  if ([0, 1, 5, 10].includes(item.pingMinutes)) {
-    const radio = document.getElementById(`p${item.pingMinutes}`);
-    if (radio) radio.checked = true;
-    customTimeRow.classList.add("hidden");
-  } else {
-    document.getElementById("pCustom").checked = true;
-    customTimeRow.classList.remove("hidden");
-    if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
-      document.getElementById("custom-val").value = item.pingMinutes / 60;
-      document.getElementById("custom-unit").value = "h";
-    } else {
-      document.getElementById("custom-val").value = item.pingMinutes;
-      document.getElementById("custom-unit").value = "m";
+  if ([0, 1, 5, 10, 15, 30, 60].includes(item.pingMinutes)) {
+    setAlarmSelectorValue(item.pingMinutes);
+    if (customTimeRow) customTimeRow.classList.add("hidden");
+  } else if (item.pingMinutes > 0) {
+    setAlarmSelectorValue("custom");
+    if (customTimeRow) {
+      customTimeRow.classList.remove("hidden");
+      if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
+        document.getElementById("custom-val").value = item.pingMinutes / 60;
+        document.getElementById("custom-unit").value = "h";
+      } else {
+        document.getElementById("custom-val").value = item.pingMinutes;
+        document.getElementById("custom-unit").value = "m";
+      }
     }
+  } else {
+    setAlarmSelectorValue(0);
+    if (customTimeRow) customTimeRow.classList.add("hidden");
   }
 
   openModal("splash-modal");
@@ -1419,6 +1667,99 @@ function closeModal(modalId) {
   el.classList.remove("active");
 }
 
+function initSwipeToDismissModals() {
+  const modalBackdrops = document.querySelectorAll(".modal-backdrop, .ios-menu-backdrop");
+
+  modalBackdrops.forEach(backdrop => {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        if (backdrop.id === "ios-context-menu-backdrop") {
+          hideIosMenu();
+        } else {
+          closeModal(backdrop.id);
+        }
+      }
+    });
+
+    const sheet = backdrop.querySelector(".modal-sheet, .ios-context-menu");
+    if (!sheet) return;
+
+    let startY = 0;
+    let startX = 0;
+    let currentDeltaY = 0;
+    let isTracking = false;
+    let startTime = 0;
+
+    sheet.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      startY = touch.clientY;
+      startX = touch.clientX;
+      currentDeltaY = 0;
+      startTime = Date.now();
+
+      const scrollable = sheet.querySelector(".modal-body-scroll, .trash-scroll-container, .settings-scroll-container");
+      const scrollTop = scrollable ? scrollable.scrollTop : 0;
+
+      if (scrollTop <= 0) {
+        isTracking = true;
+      } else {
+        isTracking = false;
+      }
+    }, { passive: true });
+
+    sheet.addEventListener("touchmove", (e) => {
+      if (!isTracking) return;
+      const touch = e.touches[0];
+      const deltaY = touch.clientY - startY;
+      const deltaX = touch.clientX - startX;
+
+      if (deltaY > 0 && deltaY > Math.abs(deltaX) * 0.75) {
+        currentDeltaY = deltaY;
+        sheet.classList.add("is-swiping");
+        sheet.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+        if (e.cancelable) e.preventDefault();
+      } else if (deltaY < 0) {
+        currentDeltaY = 0;
+        sheet.style.transform = "";
+        sheet.classList.remove("is-swiping");
+      }
+    }, { passive: false });
+
+    function handleEnd() {
+      if (!isTracking) return;
+      isTracking = false;
+      sheet.classList.remove("is-swiping");
+      sheet.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
+
+      const elapsed = Math.max(1, Date.now() - startTime);
+      const velocity = currentDeltaY / elapsed;
+      const isFlick = velocity > 0.35 && currentDeltaY > 35;
+
+      if (currentDeltaY > 70 || isFlick) {
+        sheet.style.transform = "translate3d(0, 100%, 0)";
+        setTimeout(() => {
+          sheet.style.transform = "";
+          sheet.style.transition = "";
+          if (backdrop.id === "ios-context-menu-backdrop") {
+            hideIosMenu();
+          } else {
+            closeModal(backdrop.id);
+          }
+        }, 180);
+      } else {
+        sheet.style.transform = "";
+        setTimeout(() => {
+          sheet.style.transition = "";
+        }, 280);
+      }
+      currentDeltaY = 0;
+    }
+
+    sheet.addEventListener("touchend", handleEnd, { passive: true });
+    sheet.addEventListener("touchcancel", handleEnd, { passive: true });
+  });
+}
+
 // Background Interval Loop
 setInterval(() => {
   const now = Date.now();
@@ -1434,6 +1775,9 @@ setInterval(() => {
         const noteBody = (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0))
           ? formatChecklistNotificationBody(item)
           : (item.body || "Scheduled reminder alert.");
+
+        playDueChime();
+        showToast(`⏰ Due: ${item.title}`);
 
         triggerNotification(`DUE: ${alertHeading}`, noteBody, item.id + "_due", {
           reminderId: item.id,
@@ -1455,6 +1799,9 @@ setInterval(() => {
           ? formatChecklistNotificationBody(item)
           : (item.body || "Pinned note remains active.");
 
+        playDueChime();
+        showToast(`Alarm: ${item.title}`);
+
         triggerNotification(alertHeading, noteBody, item.id, {
           reminderId: item.id
         });
@@ -1471,24 +1818,6 @@ setInterval(() => {
   cleanupExpiredTrash();
 }, 1000);
 
-const customTimeRow = document.getElementById("custom-time-row");
-document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
-  radio.addEventListener("change", (e) => {
-    if (e.target.value === "custom") {
-      if (!premiumManager.canUseCustomAlarm()) {
-        e.preventDefault();
-        document.getElementById("p0").checked = true;
-        customTimeRow.classList.add("hidden");
-        premiumManager.startCheckout();
-        return;
-      }
-      customTimeRow.classList.remove("hidden");
-    } else {
-      customTimeRow.classList.add("hidden");
-    }
-  });
-});
-
 const btnAdd = document.getElementById("btn-add");
 if (btnAdd) btnAdd.addEventListener("click", openCreateModal);
 
@@ -1496,40 +1825,6 @@ const btnCloseModal = document.getElementById("btn-close-modal");
 if (btnCloseModal) {
   btnCloseModal.addEventListener("click", () => {
     closeModal("splash-modal");
-  });
-}
-
-// Due Time Toggle & Clear Controls
-const toggleDueTime = document.getElementById("toggle-due-time");
-const inputDueTime = document.getElementById("input-due-time");
-const btnClearDue = document.getElementById("btn-clear-due-time");
-
-if (toggleDueTime && inputDueTime) {
-  toggleDueTime.addEventListener("change", () => {
-    if (toggleDueTime.checked) {
-      inputDueTime.disabled = false;
-      if (btnClearDue) btnClearDue.classList.remove("hidden");
-      if (!inputDueTime.value) {
-        const d = new Date(Date.now() + 3600000);
-        d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
-        const pad = n => String(n).padStart(2, "0");
-        inputDueTime.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      }
-    } else {
-      inputDueTime.disabled = true;
-      if (btnClearDue) btnClearDue.classList.add("hidden");
-    }
-  });
-}
-
-if (btnClearDue && inputDueTime) {
-  btnClearDue.addEventListener("click", () => {
-    inputDueTime.value = "";
-    if (toggleDueTime) {
-      toggleDueTime.checked = false;
-      inputDueTime.disabled = true;
-      btnClearDue.classList.add("hidden");
-    }
   });
 }
 
@@ -1961,11 +2256,13 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
   const toggleDue = document.getElementById("toggle-due-time");
   const isDueActive = toggleDue ? toggleDue.checked : false;
   const rawDueVal = document.getElementById("input-due-time") ? document.getElementById("input-due-time").value : "";
-  const dueTimeVal = (isDueActive && rawDueVal) ? rawDueVal : null;
-  const selectedPreset = document.querySelector('input[name="pingPreset"]:checked').value;
+  const dueTimeVal = (isDueActive && rawDueVal) ? rawDueVal : (rawDueVal || null);
+
+  const alarmInput = document.getElementById("input-alarm-value");
+  const selectedAlarm = alarmInput ? alarmInput.value : "0";
 
   let finalMinutes = 0;
-  if (selectedPreset === "custom") {
+  if (selectedAlarm === "custom") {
     if (!premiumManager.canUseCustomAlarm()) {
       premiumManager.startCheckout();
       return;
@@ -1974,7 +2271,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     const unit = document.getElementById("custom-unit").value;
     finalMinutes = (unit === "h") ? (val * 60) : val;
   } else {
-    finalMinutes = parseInt(selectedPreset, 10);
+    finalMinutes = parseInt(selectedAlarm, 10) || 0;
   }
 
   if (!title) return;
@@ -2175,6 +2472,9 @@ if (toggleMorningBriefing) {
 // Initial App Bootstrap
 initThemeAndAppearance();
 initTopNavigation();
+initDueDateControls();
+initAlarmSelector();
+initSwipeToDismissModals();
 updateViewportHeight();
 setupDynamicAppIcon();
 setupLabelSelector();

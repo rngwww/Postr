@@ -34,31 +34,36 @@
   --system-purple: #af52de;
   --system-pink: #ff2d55;
 
-  /* Pastel Category Palettes (Dark Mode) */
-  --pastel-school-bg: rgba(162, 185, 255, 0.18);
-  --pastel-school-border: rgba(175, 196, 255, 0.45);
-  --pastel-school-text: #c8d7ff;
-  --pastel-school-chip-active: #5873d6;
+  /* True Pastel Category Palettes (Soft Macaron Hues) */
+  --pastel-school-bg: rgba(199, 210, 254, 0.18);
+  --pastel-school-border: rgba(199, 210, 254, 0.40);
+  --pastel-school-text: #c7d2fe;
+  --pastel-school-chip-active: #c7d2fe;
+  --pastel-school-chip-active-text: #1e1b4b;
 
-  --pastel-work-bg: rgba(255, 194, 138, 0.18);
-  --pastel-work-border: rgba(255, 203, 155, 0.45);
-  --pastel-work-text: #ffe0c2;
-  --pastel-work-chip-active: #d97824;
+  --pastel-work-bg: rgba(254, 215, 170, 0.18);
+  --pastel-work-border: rgba(254, 215, 170, 0.40);
+  --pastel-work-text: #fed7aa;
+  --pastel-work-chip-active: #fed7aa;
+  --pastel-work-chip-active-text: #431407;
 
-  --pastel-shopping-bg: rgba(144, 238, 185, 0.18);
-  --pastel-shopping-border: rgba(160, 245, 198, 0.45);
-  --pastel-shopping-text: #b6fcd2;
-  --pastel-shopping-chip-active: #2b9e63;
+  --pastel-shopping-bg: rgba(187, 247, 208, 0.18);
+  --pastel-shopping-border: rgba(187, 247, 208, 0.40);
+  --pastel-shopping-text: #bbf7d0;
+  --pastel-shopping-chip-active: #bbf7d0;
+  --pastel-shopping-chip-active-text: #052e16;
 
-  --pastel-personal-bg: rgba(255, 168, 204, 0.18);
-  --pastel-personal-border: rgba(255, 185, 215, 0.45);
-  --pastel-personal-text: #ffd3e5;
-  --pastel-personal-chip-active: #cf4d85;
+  --pastel-personal-bg: rgba(251, 207, 232, 0.18);
+  --pastel-personal-border: rgba(251, 207, 232, 0.40);
+  --pastel-personal-text: #fbcfe8;
+  --pastel-personal-chip-active: #fbcfe8;
+  --pastel-personal-chip-active-text: #500724;
 
-  --pastel-tasks-bg: rgba(145, 228, 248, 0.18);
-  --pastel-tasks-border: rgba(165, 235, 252, 0.45);
-  --pastel-tasks-text: #bef1fc;
-  --pastel-tasks-chip-active: #1994b8;
+  --pastel-tasks-bg: rgba(186, 230, 253, 0.18);
+  --pastel-tasks-border: rgba(186, 230, 253, 0.40);
+  --pastel-tasks-text: #bae6fd;
+  --pastel-tasks-chip-active: #bae6fd;
+  --pastel-tasks-chip-active-text: #082f49;
 
   /* Dark Theme Glass Tokens (Default) */
   --color-bg-base: #060608;
@@ -112,30 +117,35 @@
   --wallpaper-image: url('assets/backgrounds/wallpaper-light.webp');
 
   /* Pastel Category Palettes (Light Mode) */
-  --pastel-school-bg: rgba(88, 115, 214, 0.14);
-  --pastel-school-border: rgba(88, 115, 214, 0.35);
-  --pastel-school-text: #3c54a8;
-  --pastel-school-chip-active: #4a66cc;
+  --pastel-school-bg: rgba(199, 210, 254, 0.45);
+  --pastel-school-border: rgba(165, 180, 252, 0.65);
+  --pastel-school-text: #3730a3;
+  --pastel-school-chip-active: #c7d2fe;
+  --pastel-school-chip-active-text: #1e1b4b;
 
-  --pastel-work-bg: rgba(217, 120, 36, 0.14);
-  --pastel-work-border: rgba(217, 120, 36, 0.35);
-  --pastel-work-text: #964a06;
-  --pastel-work-chip-active: #d97824;
+  --pastel-work-bg: rgba(254, 215, 170, 0.45);
+  --pastel-work-border: rgba(253, 186, 116, 0.65);
+  --pastel-work-text: #9a3412;
+  --pastel-work-chip-active: #fed7aa;
+  --pastel-work-chip-active-text: #431407;
 
-  --pastel-shopping-bg: rgba(43, 158, 99, 0.14);
-  --pastel-shopping-border: rgba(43, 158, 99, 0.35);
-  --pastel-shopping-text: #19693e;
-  --pastel-shopping-chip-active: #238b55;
+  --pastel-shopping-bg: rgba(187, 247, 208, 0.45);
+  --pastel-shopping-border: rgba(134, 239, 172, 0.65);
+  --pastel-shopping-text: #166534;
+  --pastel-shopping-chip-active: #bbf7d0;
+  --pastel-shopping-chip-active-text: #052e16;
 
-  --pastel-personal-bg: rgba(207, 77, 133, 0.14);
-  --pastel-personal-border: rgba(207, 77, 133, 0.35);
-  --pastel-personal-text: #8c1e4f;
-  --pastel-personal-chip-active: #c4407b;
+  --pastel-personal-bg: rgba(251, 207, 232, 0.45);
+  --pastel-personal-border: rgba(244, 114, 182, 0.65);
+  --pastel-personal-text: #9d174d;
+  --pastel-personal-chip-active: #fbcfe8;
+  --pastel-personal-chip-active-text: #500724;
 
-  --pastel-tasks-bg: rgba(25, 148, 184, 0.14);
-  --pastel-tasks-border: rgba(25, 148, 184, 0.35);
-  --pastel-tasks-text: #0e637d;
-  --pastel-tasks-chip-active: #1582a2;
+  --pastel-tasks-bg: rgba(186, 230, 253, 0.45);
+  --pastel-tasks-border: rgba(125, 211, 252, 0.65);
+  --pastel-tasks-text: #075985;
+  --pastel-tasks-chip-active: #bae6fd;
+  --pastel-tasks-chip-active-text: #082f49;
 }
 
 /* Aurora Theme Tokens (Deep Cosmic Violet & Cyan) */
@@ -161,30 +171,35 @@
   --wallpaper-image: url('assets/backgrounds/wallpaper-aurora.webp');
 
   /* Pastel Category Palettes in Aurora */
-  --pastel-school-bg: rgba(180, 195, 255, 0.22);
-  --pastel-school-border: rgba(195, 210, 255, 0.50);
-  --pastel-school-text: #d8e2ff;
-  --pastel-school-chip-active: #667eeb;
+  --pastel-school-bg: rgba(199, 210, 254, 0.20);
+  --pastel-school-border: rgba(199, 210, 254, 0.42);
+  --pastel-school-text: #c7d2fe;
+  --pastel-school-chip-active: #c7d2fe;
+  --pastel-school-chip-active-text: #1e1b4b;
 
-  --pastel-work-bg: rgba(255, 180, 160, 0.22);
-  --pastel-work-border: rgba(255, 195, 175, 0.50);
-  --pastel-work-text: #ffe0d5;
-  --pastel-work-chip-active: #e26e45;
+  --pastel-work-bg: rgba(254, 215, 170, 0.20);
+  --pastel-work-border: rgba(254, 215, 170, 0.42);
+  --pastel-work-text: #fed7aa;
+  --pastel-work-chip-active: #fed7aa;
+  --pastel-work-chip-active-text: #431407;
 
-  --pastel-shopping-bg: rgba(120, 245, 215, 0.22);
-  --pastel-shopping-border: rgba(145, 250, 225, 0.50);
-  --pastel-shopping-text: #c0faea;
-  --pastel-shopping-chip-active: #15b597;
+  --pastel-shopping-bg: rgba(187, 247, 208, 0.20);
+  --pastel-shopping-border: rgba(187, 247, 208, 0.42);
+  --pastel-shopping-text: #bbf7d0;
+  --pastel-shopping-chip-active: #bbf7d0;
+  --pastel-shopping-chip-active-text: #052e16;
 
-  --pastel-personal-bg: rgba(255, 155, 225, 0.22);
-  --pastel-personal-border: rgba(255, 175, 235, 0.50);
-  --pastel-personal-text: #ffd5f2;
-  --pastel-personal-chip-active: #d63f9d;
+  --pastel-personal-bg: rgba(251, 207, 232, 0.20);
+  --pastel-personal-border: rgba(251, 207, 232, 0.42);
+  --pastel-personal-text: #fbcfe8;
+  --pastel-personal-chip-active: #fbcfe8;
+  --pastel-personal-chip-active-text: #500724;
 
-  --pastel-tasks-bg: rgba(125, 225, 255, 0.22);
-  --pastel-tasks-border: rgba(155, 235, 255, 0.50);
-  --pastel-tasks-text: #ccf3ff;
-  --pastel-tasks-chip-active: #09a7dc;
+  --pastel-tasks-bg: rgba(186, 230, 253, 0.20);
+  --pastel-tasks-border: rgba(186, 230, 253, 0.42);
+  --pastel-tasks-text: #bae6fd;
+  --pastel-tasks-chip-active: #bae6fd;
+  --pastel-tasks-chip-active-text: #082f49;
 }
 
 /* Sunset Theme Tokens (Warm Golden Hour & Rose Gold) */
@@ -210,30 +225,35 @@
   --wallpaper-image: url('assets/backgrounds/wallpaper-sunset.webp');
 
   /* Pastel Category Palettes in Sunset */
-  --pastel-school-bg: rgba(190, 185, 255, 0.22);
-  --pastel-school-border: rgba(205, 200, 255, 0.50);
-  --pastel-school-text: #e0dcff;
-  --pastel-school-chip-active: #786dec;
+  --pastel-school-bg: rgba(199, 210, 254, 0.20);
+  --pastel-school-border: rgba(199, 210, 254, 0.42);
+  --pastel-school-text: #c7d2fe;
+  --pastel-school-chip-active: #c7d2fe;
+  --pastel-school-chip-active-text: #1e1b4b;
 
-  --pastel-work-bg: rgba(255, 190, 130, 0.22);
-  --pastel-work-border: rgba(255, 205, 150, 0.50);
-  --pastel-work-text: #ffe2c5;
-  --pastel-work-chip-active: #d67923;
+  --pastel-work-bg: rgba(254, 215, 170, 0.20);
+  --pastel-work-border: rgba(254, 215, 170, 0.42);
+  --pastel-work-text: #fed7aa;
+  --pastel-work-chip-active: #fed7aa;
+  --pastel-work-chip-active-text: #431407;
 
-  --pastel-shopping-bg: rgba(140, 240, 180, 0.22);
-  --pastel-shopping-border: rgba(160, 245, 195, 0.50);
-  --pastel-shopping-text: #cbfbe2;
-  --pastel-shopping-chip-active: #23a85e;
+  --pastel-shopping-bg: rgba(187, 247, 208, 0.20);
+  --pastel-shopping-border: rgba(187, 247, 208, 0.42);
+  --pastel-shopping-text: #bbf7d0;
+  --pastel-shopping-chip-active: #bbf7d0;
+  --pastel-shopping-chip-active-text: #052e16;
 
-  --pastel-personal-bg: rgba(255, 160, 180, 0.22);
-  --pastel-personal-border: rgba(255, 180, 200, 0.50);
-  --pastel-personal-text: #ffd5df;
-  --pastel-personal-chip-active: #db486c;
+  --pastel-personal-bg: rgba(251, 207, 232, 0.20);
+  --pastel-personal-border: rgba(251, 207, 232, 0.42);
+  --pastel-personal-text: #fbcfe8;
+  --pastel-personal-chip-active: #fbcfe8;
+  --pastel-personal-chip-active-text: #500724;
 
-  --pastel-tasks-bg: rgba(255, 210, 140, 0.22);
-  --pastel-tasks-border: rgba(255, 220, 160, 0.50);
-  --pastel-tasks-text: #ffebcc;
-  --pastel-tasks-chip-active: #d48f1c;
+  --pastel-tasks-bg: rgba(186, 230, 253, 0.20);
+  --pastel-tasks-border: rgba(186, 230, 253, 0.42);
+  --pastel-tasks-text: #bae6fd;
+  --pastel-tasks-chip-active: #bae6fd;
+  --pastel-tasks-chip-active-text: #082f49;
 }
 
 /* Fallback for environments lacking backdrop-filter */
@@ -345,29 +365,46 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-width: 560px;
+  margin: 0 auto;
 }
 
-/* Desktop Mockup Framing */
-@media (min-width: 900px) and (min-height: 700px) and (hover: hover) and (pointer: fine) {
+/* Fluid Desktop and Tablet View */
+@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
   body {
-    position: static;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #060608;
+    background-color: var(--color-bg-base);
   }
   #app-viewport {
-    position: relative;
-    width: 414px;
-    height: 874px;
-    max-height: 94dvh;
-    border-radius: 46px;
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.16);
-    overflow: hidden;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-width: 480px;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
+    border-left: 0.5px solid var(--glass-border);
+    border-right: 0.5px solid var(--glass-border);
   }
-  .wallpaper-backdrop {
-    border-radius: 46px;
-  }
+}
+
+/* Fluid Theme & Accent Switching Transitions */
+body,
+#app-viewport,
+.top-nav-liquid,
+.glass-surface,
+.glass-surface-sheet,
+.glass-card,
+.card,
+.modal-sheet,
+.ios-group-card,
+.ios-cell,
+.segmented-control,
+.filter-chip,
+.fab,
+.btn-primary-action,
+.ios-switch,
+.ios-menu-group {
+  transition: background-color 0.32s cubic-bezier(0.2, 0.9, 0.3, 1),
+              border-color 0.32s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.32s cubic-bezier(0.2, 0.9, 0.3, 1),
+              color 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 /* Reusable Liquid Glass Classes */
@@ -560,7 +597,7 @@ body {
 .btn-glass-icon.active {
   color: var(--accent-color);
   border-color: var(--accent-color);
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), 0 0 14px rgba(var(--accent-color-rgb), 0.4);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), 0 0 4px rgba(var(--accent-color-rgb), 0.45);
 }
 
 .nav-badge {
@@ -708,7 +745,7 @@ body {
   background: var(--accent-color);
   border-color: var(--accent-color);
   color: var(--accent-contrast);
-  box-shadow: 0 4px 14px rgba(var(--accent-color-rgb), 0.4);
+  box-shadow: 0 2px 6px rgba(var(--accent-color-rgb), 0.35);
   transform: scale(1.04);
 }
 
@@ -719,8 +756,8 @@ body {
 .filter-chip.chip-school.active {
   background: var(--pastel-school-chip-active);
   border-color: var(--pastel-school-chip-active);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(88, 115, 214, 0.45);
+  color: var(--pastel-school-chip-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transform: scale(1.04);
 }
 
@@ -731,8 +768,8 @@ body {
 .filter-chip.chip-work.active {
   background: var(--pastel-work-chip-active);
   border-color: var(--pastel-work-chip-active);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(217, 120, 36, 0.45);
+  color: var(--pastel-work-chip-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transform: scale(1.04);
 }
 
@@ -743,8 +780,8 @@ body {
 .filter-chip.chip-shopping.active {
   background: var(--pastel-shopping-chip-active);
   border-color: var(--pastel-shopping-chip-active);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(43, 158, 99, 0.45);
+  color: var(--pastel-shopping-chip-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transform: scale(1.04);
 }
 
@@ -755,8 +792,8 @@ body {
 .filter-chip.chip-personal.active {
   background: var(--pastel-personal-chip-active);
   border-color: var(--pastel-personal-chip-active);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(207, 77, 133, 0.45);
+  color: var(--pastel-personal-chip-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transform: scale(1.04);
 }
 
@@ -767,8 +804,8 @@ body {
 .filter-chip.chip-tasks.active {
   background: var(--pastel-tasks-chip-active);
   border-color: var(--pastel-tasks-chip-active);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(25, 148, 184, 0.45);
+  color: var(--pastel-tasks-chip-active-text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   transform: scale(1.04);
 }
 
@@ -779,7 +816,7 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.65rem 1.125rem 6.5rem 1.125rem;
+  padding: 0.65rem 1.125rem max(1.25rem, env(safe-area-inset-bottom, 1.25rem)) 1.125rem;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -1366,6 +1403,10 @@ body {
   transform: translate3d(0, 0, 0);
 }
 
+.modal-sheet.is-swiping {
+  transition: none !important;
+}
+
 .modal-grabber {
   width: 2.75rem;
   height: 5px;
@@ -1373,6 +1414,8 @@ body {
   background: rgba(255, 255, 255, 0.28);
   margin: 0.625rem auto 0.25rem auto;
   flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
 }
 
 [data-theme="light"] .modal-grabber {
@@ -1702,8 +1745,8 @@ body {
 .label-pill.pill-school.selected {
   background: var(--pastel-school-chip-active);
   border-color: var(--pastel-school-chip-active);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(88, 115, 214, 0.45);
+  color: var(--pastel-school-chip-active-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .label-pill.pill-work {
@@ -1713,8 +1756,8 @@ body {
 .label-pill.pill-work.selected {
   background: var(--pastel-work-chip-active);
   border-color: var(--pastel-work-chip-active);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(217, 120, 36, 0.45);
+  color: var(--pastel-work-chip-active-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .label-pill.pill-shopping {
@@ -1724,8 +1767,8 @@ body {
 .label-pill.pill-shopping.selected {
   background: var(--pastel-shopping-chip-active);
   border-color: var(--pastel-shopping-chip-active);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(43, 158, 99, 0.45);
+  color: var(--pastel-shopping-chip-active-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .label-pill.pill-personal {
@@ -1735,8 +1778,8 @@ body {
 .label-pill.pill-personal.selected {
   background: var(--pastel-personal-chip-active);
   border-color: var(--pastel-personal-chip-active);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(207, 77, 133, 0.45);
+  color: var(--pastel-personal-chip-active-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .label-pill.pill-tasks {
@@ -1746,8 +1789,8 @@ body {
 .label-pill.pill-tasks.selected {
   background: var(--pastel-tasks-chip-active);
   border-color: var(--pastel-tasks-chip-active);
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(25, 148, 184, 0.45);
+  color: var(--pastel-tasks-chip-active-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Compact Due Date Inline Controls */
@@ -1768,12 +1811,38 @@ body {
   padding: 0.35rem 0.5rem;
   outline: none;
   max-width: 155px;
-  transition: opacity 0.2s ease;
+  cursor: pointer;
+  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.input-datetime-compact:disabled {
-  opacity: 0.35;
-  pointer-events: none;
+.input-datetime-compact:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.25);
+}
+
+.btn-picker-inline {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-fill-secondary);
+  border: 0.5px solid var(--glass-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.btn-picker-inline:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.btn-picker-inline:active {
+  background: var(--color-fill-tertiary);
+  transform: scale(0.92);
 }
 
 .btn-clear-time {
@@ -1792,6 +1861,35 @@ body {
 
 .btn-clear-time.hidden {
   display: none;
+}
+
+/* Recurring Alarm Selector Button */
+.picker-value-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-fill-secondary);
+  border: 0.5px solid var(--glass-border);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 300 !important;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.picker-value-btn:hover {
+  border-color: var(--accent-color);
+}
+
+.picker-value-btn:active {
+  background: var(--color-fill-tertiary);
+  transform: scale(0.96);
+}
+
+.picker-value-btn svg {
+  color: var(--color-text-tertiary);
 }
 
 /* Compact Alarm Segmented Radios */
@@ -2205,84 +2303,34 @@ body {
   background: var(--color-fill-secondary);
 }
 
-/* Theme Segmented Switcher & Wallpaper Preview Thumbnails */
+/* Theme Segmented Switcher */
 #theme-segmented-control .segmented-option {
   font-size: 0.75rem;
   padding: 0 0.25rem;
   white-space: nowrap;
 }
 
-.wallpaper-previews-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.wallpaper-preview-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem;
-  border-radius: 0.75rem;
-  background: var(--color-fill-secondary);
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-  touch-action: manipulation;
-}
-
-.wallpaper-preview-card:active {
-  transform: scale(0.92);
-}
-
-.wallpaper-preview-card.active {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 12px rgba(var(--accent-color-rgb), 0.45);
-}
-
-.wallpaper-thumb {
-  width: 100%;
-  aspect-ratio: 9 / 16;
-  border-radius: 0.5rem;
-  background-size: cover;
-  background-position: center;
-  border: 0.5px solid var(--glass-border-specular);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 3px 8px rgba(0, 0, 0, 0.25);
-}
-
-.wallpaper-preview-card span {
-  font-size: 0.6875rem;
-  font-weight: 300 !important;
-  color: var(--color-text-secondary);
-  letter-spacing: -0.01em;
-}
-
-.wallpaper-preview-card.active span {
-  color: var(--color-text-primary);
-  font-weight: 400 !important;
-}
-
-/* Swatches Picker & Spectrum Gradient Icon */
+/* Swatches Picker & Full-Width Rectangular Spectrum Bar */
 .swatches-row {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  flex-wrap: wrap;
-  padding: 0.35rem 0;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.25rem 0;
 }
 
 .swatch-btn {
-  width: 2rem;
-  height: 2rem;
+  flex: 1;
+  max-width: 2.125rem;
+  height: 2.125rem;
   border-radius: 50%;
-  border: 2.5px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
   position: relative;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   touch-action: manipulation;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .swatch-btn:active {
@@ -2291,49 +2339,88 @@ body {
 
 .swatch-btn.active {
   border-color: #ffffff;
-  transform: scale(1.18);
-  box-shadow: 0 0 14px rgba(var(--accent-color-rgb), 0.5);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-/* Spectrum Conic Gradient Icon (No raster PNG) */
-.custom-color-picker-wrap {
+/* Full-Width Rectangular Spectrum Bar */
+.custom-spectrum-bar-wrap {
   position: relative;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
+  width: 100%;
+  height: 2.375rem;
+  border-radius: 0.75rem;
   overflow: hidden;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: conic-gradient(
-    from 180deg at 50% 50%,
-    #ff0000 0deg,
-    #ff8800 45deg,
-    #ffdd00 90deg,
-    #00dd66 135deg,
-    #00ffff 180deg,
-    #0077ff 225deg,
-    #9900ff 270deg,
-    #ff0099 315deg,
-    #ff0000 360deg
-  );
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  border: 0.5px solid var(--glass-border-specular);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  touch-action: manipulation;
 }
 
-.custom-color-picker-wrap:active {
-  transform: scale(0.88);
+.custom-spectrum-bar-wrap:active {
+  transform: scale(0.98);
 }
 
-.custom-color-picker-wrap input[type="color"] {
+.custom-spectrum-bar-wrap input[type="color"] {
   position: absolute;
   inset: -10px;
-  width: 200%;
-  height: 200%;
-  cursor: pointer;
+  width: calc(100% + 20px);
+  height: calc(100% + 20px);
   opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.spectrum-bar-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.875rem;
+  pointer-events: none;
+}
+
+.spectrum-gradient-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    #ff3b30 0%, 
+    #ff9500 14%, 
+    #ffcc00 28%, 
+    #34c759 42%, 
+    #5ac8fa 57%, 
+    #007aff 71%, 
+    #5856d6 85%, 
+    #ff2d55 100%
+  );
+  opacity: 0.88;
+}
+
+.spectrum-content-overlay {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.spectrum-bar-label {
+  font-size: 0.8125rem;
+  font-weight: 300 !important;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+  letter-spacing: -0.01em;
+}
+
+.spectrum-current-indicator {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--accent-color);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================

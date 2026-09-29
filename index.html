@@ -13,7 +13,7 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-ios26-v7";
+    window.APP_BUILD_VERSION = "20260929-ios26-v8";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -50,12 +50,12 @@
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v7">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v7">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v8">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v8">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-ios26-v7">
+  <link rel="stylesheet" href="style.css?v=20260929-ios26-v8">
 </head>
 <body>
 
@@ -76,13 +76,7 @@
     <!-- Liquid Glass Top Navigation & Controls Bar -->
     <header class="top-nav-liquid" id="top-nav-bar">
       <div class="top-nav-row">
-        <!-- Minimalist Brand Pill -->
-        <div class="brand-pill" title="Postr Reminders">
-          <span class="brand-dot"></span>
-          <span class="brand-title">Postr</span>
-        </div>
-
-        <!-- Integrated Search Capsule -->
+        <!-- Integrated Search Capsule (Full-Width Left) -->
         <div class="search-box">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
@@ -243,45 +237,36 @@
           </div>
 
           <!-- Line 3: Due Date Controls -->
-          <div class="compact-row">
+          <div class="compact-row" id="row-due-date">
             <span class="row-label">Due Date</span>
             <div class="compact-inline-controls">
-              <input type="datetime-local" id="input-due-time" class="input-datetime-compact" disabled>
-              <button type="button" id="btn-clear-due-time" class="btn-clear-time hidden" title="Clear due time">
+              <input type="datetime-local" id="input-due-time" class="input-datetime-compact" aria-label="Due Date and Time">
+              <button type="button" id="btn-due-presets" class="btn-picker-inline" title="Due Date Presets" aria-label="Due Date Presets">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </button>
+              <button type="button" id="btn-clear-due-time" class="btn-clear-time hidden" title="Clear due time" aria-label="Clear due time">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
-              <input type="checkbox" id="toggle-due-time" class="ios-switch">
+              <input type="checkbox" id="toggle-due-time" class="ios-switch" title="Toggle Due Date">
             </div>
           </div>
 
-          <!-- Line 4: Recurring Alarm Presets -->
-          <div class="compact-row">
+          <!-- Line 4: Recurring Alarm Selector Action Menu -->
+          <div class="compact-row" id="row-alarm-select">
             <span class="row-label">Alarm</span>
-            <div class="alarm-compact-row">
-              <div class="alarm-radio-item">
-                <input type="radio" id="p0" name="pingPreset" value="0" checked>
-                <label for="p0">Off</label>
-              </div>
-              <div class="alarm-radio-item">
-                <input type="radio" id="p1" name="pingPreset" value="1">
-                <label for="p1">1m</label>
-              </div>
-              <div class="alarm-radio-item">
-                <input type="radio" id="p5" name="pingPreset" value="5">
-                <label for="p5">5m</label>
-              </div>
-              <div class="alarm-radio-item">
-                <input type="radio" id="p10" name="pingPreset" value="10">
-                <label for="p10">10m</label>
-              </div>
-              <div class="alarm-radio-item">
-                <input type="radio" id="pCustom" name="pingPreset" value="custom">
-                <label for="pCustom">Custom</label>
-              </div>
-            </div>
+            <input type="hidden" id="input-alarm-value" value="0">
+            <button type="button" id="btn-select-alarm" class="picker-value-btn" aria-label="Select Alarm Interval">
+              <span id="selected-alarm-label">Off</span>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -394,31 +379,11 @@
                 <small>Select from 4 iOS 26 atmospheric liquid glass styles</small>
               </div>
               <div class="segmented-control" id="theme-segmented-control">
-                <button type="button" class="segmented-option" data-theme-val="system">System</button>
+                <button type="button" class="segmented-option" data-theme-val="auto">Auto</button>
                 <button type="button" class="segmented-option" data-theme-val="light">Light</button>
                 <button type="button" class="segmented-option active" data-theme-val="dark">Dark</button>
                 <button type="button" class="segmented-option" data-theme-val="aurora">Aurora</button>
                 <button type="button" class="segmented-option" data-theme-val="sunset">Sunset</button>
-              </div>
-
-              <!-- Interactive Visual Wallpaper Previews -->
-              <div class="wallpaper-previews-grid" id="wallpaper-previews">
-                <button type="button" class="wallpaper-preview-card active" data-theme-target="dark" title="Dark Obsidian">
-                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-dark.webp');"></div>
-                  <span>Dark</span>
-                </button>
-                <button type="button" class="wallpaper-preview-card" data-theme-target="light" title="Light Ceramic">
-                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-light.webp');"></div>
-                  <span>Light</span>
-                </button>
-                <button type="button" class="wallpaper-preview-card" data-theme-target="aurora" title="Aurora Violet">
-                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-aurora.webp');"></div>
-                  <span>Aurora</span>
-                </button>
-                <button type="button" class="wallpaper-preview-card" data-theme-target="sunset" title="Sunset Amber">
-                  <div class="wallpaper-thumb" style="background-image: url('assets/backgrounds/wallpaper-sunset.webp');"></div>
-                  <span>Sunset</span>
-                </button>
               </div>
             </div>
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
@@ -427,16 +392,24 @@
                 <small>Tint color applied across switches, badges, and controls</small>
               </div>
               <div class="swatches-row" id="swatches-palette">
-                <button type="button" class="swatch-btn" data-color="#007aff" style="background: #007aff;"></button>
-                <button type="button" class="swatch-btn" data-color="#ff3b30" style="background: #ff3b30;"></button>
-                <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;"></button>
-                <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;"></button>
-                <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;"></button>
-                <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;"></button>
-                <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;"></button>
-                <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;"></button>
-                <div class="custom-color-picker-wrap" title="Custom spectrum color picker">
-                  <input type="color" id="input-custom-color" value="#007aff">
+                <button type="button" class="swatch-btn" data-color="#007aff" style="background: #007aff;" title="Blue"></button>
+                <button type="button" class="swatch-btn" data-color="#ff3b30" style="background: #ff3b30;" title="Red"></button>
+                <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;" title="Orange"></button>
+                <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;" title="Green"></button>
+                <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;" title="Teal"></button>
+                <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;" title="Indigo"></button>
+                <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;" title="Purple"></button>
+                <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;" title="Pink"></button>
+              </div>
+              <!-- Full-Width Rectangular Spectrum Bar -->
+              <div class="custom-spectrum-bar-wrap" id="custom-spectrum-bar-wrap" title="Custom color spectrum">
+                <input type="color" id="input-custom-color" value="#007aff" aria-label="Custom Spectrum Color">
+                <div class="spectrum-bar-inner">
+                  <div class="spectrum-gradient-bg"></div>
+                  <div class="spectrum-content-overlay">
+                    <span class="spectrum-bar-label">Custom Spectrum</span>
+                    <span class="spectrum-current-indicator" id="spectrum-current-indicator"></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -631,6 +604,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260929-ios26-v7"></script>
+  <script src="app.js?v=20260929-ios26-v8"></script>
 </body>
 </html>
