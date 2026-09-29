@@ -6,14 +6,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Postr">
-  <meta name="theme-color" id="meta-theme-color" content="#0a0a0c">
+  <meta name="theme-color" id="meta-theme-color" content="#060608">
   <meta name="mobile-web-app-capable" content="yes">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-ios26-v5";
+    window.APP_BUILD_VERSION = "20260929-ios26-v6";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -50,29 +50,14 @@
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v5">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v5">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v6">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v6">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-ios26-v5">
+  <link rel="stylesheet" href="style.css?v=20260929-ios26-v6">
 </head>
 <body>
-  <!-- iOS 26 Kit Specular Glass Filter Defs from Shape.svg -->
-  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
-    <defs>
-      <filter id="ios26-liquid-glass" x="-2%" y="-2%" width="104%" height="104%" filterUnits="objectBoundingBox">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur"></feGaussianBlur>
-        <feOffset in="blur" dx="0" dy="1" result="offset"></feOffset>
-        <feComposite in="offset" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="innerShadow"></feComposite>
-        <feColorMatrix in="innerShadow" type="matrix" values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.35 0" result="specularHighlight"></feColorMatrix>
-        <feMerge>
-          <feMergeNode in="SourceGraphic"></feMergeNode>
-          <feMergeNode in="specularHighlight"></feMergeNode>
-        </feMerge>
-      </filter>
-    </defs>
-  </svg>
 
   <!-- Atmospheric Liquid Wallpaper Backdrop -->
   <div class="wallpaper-backdrop" id="wallpaper-backdrop"></div>
@@ -88,335 +73,94 @@
   </div>
 
   <div id="app-viewport">
-    <div class="views-wrapper">
+    <!-- Liquid Glass Top Navigation & Controls Bar -->
+    <header class="top-nav-liquid" id="top-nav-bar">
+      <div class="top-nav-row">
+        <!-- Minimalist Brand Pill -->
+        <div class="brand-pill" title="Postr Reminders">
+          <span class="brand-dot"></span>
+          <span class="brand-title">Postr</span>
+        </div>
 
-      <!-- View 1: Active Reminders Feed -->
-      <section class="tab-view active" id="view-feed">
-        <!-- Navigation Header -->
-        <header class="ios-nav-header">
-          <div class="ios-nav-bar-row">
-            <h1 class="ios-nav-title">Reminders</h1>
-            <div class="ios-nav-actions">
-              <!-- Notification Permission Bell -->
-              <button id="btn-notify-perm" class="btn-nav-icon" title="Enable Notifications" aria-label="Notifications">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <!-- Search & Category Controls -->
-        <section class="controls-bar">
-          <div class="search-box">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="search-input" placeholder="Search reminders..." autocomplete="off">
-            <button id="btn-clear-search" class="btn-clear-search hidden" aria-label="Clear search">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-
-          <div class="filter-pills" id="category-filters">
-            <button class="filter-chip" data-filter="School">School</button>
-            <button class="filter-chip" data-filter="Work">Work</button>
-            <button class="filter-chip" data-filter="Shopping">Shopping</button>
-            <button class="filter-chip" data-filter="Personal">Personal</button>
-            <button class="filter-chip" data-filter="Tasks">Tasks</button>
-          </div>
-        </section>
-
-        <!-- Feed List Container -->
-        <main class="feed-scroll-container" id="reminder-container">
-          <div id="empty-state" class="empty-view">
-            <div class="empty-icon-wrap">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="12" y1="18" x2="12" y2="12"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-            </div>
-            <h3>No Active Reminders</h3>
-            <p>Tap the plus button below to create a persistent lock screen reminder.</p>
-          </div>
-          <div id="card-list" class="cards-list"></div>
-        </main>
-
-        <!-- Floating Action Button -->
-        <button id="btn-add" class="fab" aria-label="Add Reminder">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
+        <!-- Integrated Search Capsule -->
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-        </button>
-      </section>
+          <input type="text" id="search-input" placeholder="Search..." autocomplete="off">
+          <button id="btn-clear-search" class="btn-clear-search hidden" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
 
-      <!-- View 2: Recently Deleted / Trash -->
-      <section class="tab-view" id="view-trash">
-        <header class="ios-nav-header">
-          <div class="ios-nav-bar-row">
-            <h1 class="ios-nav-title">Recently Deleted</h1>
-          </div>
-        </header>
+        <!-- Ergonomic Top Action Icons -->
+        <div class="top-nav-actions">
+          <!-- Notification Permission Bell -->
+          <button id="btn-notify-perm" class="btn-glass-icon" title="Notifications" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </button>
 
-        <div class="trash-scroll-container">
-          <div class="trash-notice-banner">
+          <!-- Trash Icon Button -->
+          <button id="btn-open-trash" class="btn-glass-icon" title="Recently Deleted" aria-label="Recently Deleted">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span id="trash-badge" class="nav-badge hidden">0</span>
+          </button>
+
+          <!-- Settings Icon Button -->
+          <button id="btn-open-settings" class="btn-glass-icon" title="Settings" aria-label="Settings">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
-            <span>Notes in recently deleted are kept for 24 hours before permanent removal.</span>
-          </div>
-
-          <div id="trash-list" class="cards-list"></div>
-
-          <div id="trash-empty-state" class="empty-view">
-            <div class="empty-icon-wrap">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            </div>
-            <h3>Trash is Empty</h3>
-            <p>Deleted reminders will appear here for 24 hours with restore options.</p>
-          </div>
-
-          <div style="padding-top: 1rem;">
-            <button id="btn-empty-trash" class="btn-destructive-action hidden">EMPTY TRASH NOW</button>
-          </div>
+          </button>
         </div>
-      </section>
+      </div>
 
-      <!-- View 3: Settings -->
-      <section class="tab-view" id="view-settings">
-        <header class="ios-nav-header">
-          <div class="ios-nav-bar-row">
-            <h1 class="ios-nav-title">Settings</h1>
-          </div>
-        </header>
+      <!-- Pastel Category Filter Capsules -->
+      <div class="filter-pills" id="category-filters">
+        <button class="filter-chip chip-all active" data-filter="all">All</button>
+        <button class="filter-chip chip-school" data-filter="School">School</button>
+        <button class="filter-chip chip-work" data-filter="Work">Work</button>
+        <button class="filter-chip chip-shopping" data-filter="Shopping">Shopping</button>
+        <button class="filter-chip chip-personal" data-filter="Personal">Personal</button>
+        <button class="filter-chip chip-tasks" data-filter="Tasks">Tasks</button>
+      </div>
+    </header>
 
-        <div class="settings-scroll-container">
-
-          <!-- Section: Subscription & Plan -->
-          <div class="ios-section">
-            <div class="ios-section-header">Subscription Plan</div>
-            <div class="ios-group-card">
-              <div class="ios-cell">
-                <div class="ios-cell-label">
-                  <strong>Current Tier</strong>
-                  <small id="settings-plan-subtitle">5 active reminders included</small>
-                </div>
-                <span class="badge-tag badge-category" id="settings-plan-badge">Free Plan</span>
-              </div>
-              <div class="ios-cell" id="cell-upgrade-action">
-                <button type="button" class="btn-primary-action" id="btn-open-upgrade">UPGRADE TO PREMIUM</button>
-              </div>
-              <div class="ios-cell hidden" id="cell-cancel-subscription">
-                <button type="button" class="btn-destructive-action" id="btn-cancel-subscription">Cancel Test Subscription</button>
-              </div>
-              <div class="ios-cell">
-                <div class="ios-cell-label">
-                  <strong>Test Plan Switch</strong>
-                  <small>Development toggle to test tier limits</small>
-                </div>
-                <input type="checkbox" id="toggle-dev-premium" class="ios-switch">
-              </div>
-            </div>
-            <div class="ios-section-footer">Free tier includes up to 5 active reminders and standard interval alerts. Premium unlocks unlimited active reminders and custom interval scheduling.</div>
-          </div>
-
-          <!-- Section: Appearance -->
-          <div class="ios-section">
-            <div class="ios-section-header">Appearance</div>
-            <div class="ios-group-card">
-              <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
-                <div class="ios-cell-label">
-                  <strong>Theme Mode</strong>
-                </div>
-                <div class="segmented-control" id="theme-segmented-control">
-                  <button type="button" class="segmented-option" data-theme-val="system">System</button>
-                  <button type="button" class="segmented-option" data-theme-val="light">Light</button>
-                  <button type="button" class="segmented-option active" data-theme-val="dark">Dark</button>
-                </div>
-              </div>
-              <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
-                <div class="ios-cell-label">
-                  <strong>Accent Color</strong>
-                  <small>Tint color applied across switches, badges, and controls</small>
-                </div>
-                <div class="swatches-row" id="swatches-palette">
-                  <button type="button" class="swatch-btn" data-color="#007aff" style="background: #007aff;"></button>
-                  <button type="button" class="swatch-btn" data-color="#ff3b30" style="background: #ff3b30;"></button>
-                  <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;"></button>
-                  <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;"></button>
-                  <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;"></button>
-                  <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;"></button>
-                  <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;"></button>
-                  <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;"></button>
-                  <div class="custom-color-picker-wrap" title="Custom color picker">
-                    <input type="color" id="input-custom-color" value="#007aff">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Preferences -->
-          <div class="ios-section">
-            <div class="ios-section-header">Reminders & Alerts</div>
-            <div class="ios-group-card">
-              <div class="ios-cell">
-                <div class="ios-cell-label">
-                  <strong>Daily Morning Briefing</strong>
-                  <small>8:00 AM summary of pinned and scheduled notes</small>
-                </div>
-                <input type="checkbox" id="toggle-morning-briefing" class="ios-switch">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Security -->
-          <div class="ios-section">
-            <div class="ios-section-header">Security</div>
-            <div class="ios-group-card">
-              <div class="ios-cell">
-                <div class="ios-cell-label">
-                  <strong>App Lock (Face ID / Passcode)</strong>
-                  <small>Biometric or 4-digit PIN verification on launch</small>
-                </div>
-                <input type="checkbox" id="toggle-app-lock" class="ios-switch">
-              </div>
-              <div class="ios-cell ios-cell-clickable hidden" id="pin-management-row">
-                <span class="ios-cell-label">
-                  <strong>Change 4-Digit Passcode</strong>
-                </span>
-                <span class="ios-cell-value">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Data Management -->
-          <div class="ios-section">
-            <div class="ios-section-header">Data & Backup</div>
-            <div class="ios-group-card">
-              <div class="ios-cell" style="gap: 0.5rem;">
-                <button type="button" class="btn-secondary-action" id="btn-export-backup">Export Backup (JSON)</button>
-                <label class="btn-secondary-action" style="cursor: pointer;">
-                  <span>Import Backup</span>
-                  <input type="file" id="file-import-backup" accept=".json" style="display: none;">
-                </label>
-              </div>
-            </div>
-            <div class="ios-section-footer">Export your reminders and trash archive to a JSON document for local backup and multi-device transfer.</div>
-          </div>
-
-          
-          <!-- Section: iOS Lock Screen & Widgets Ecosystem (iOS 26 Kit) -->
-          <div class="ios-section">
-            <div class="ios-section-header">iOS Lock Screen & Widgets</div>
-            <div class="ios-group-card" style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-              <div style="font-size: 0.8125rem; font-weight: 300; color: var(--color-text-secondary); line-height: 1.45;">
-                Postr reminders synchronize with persistent iOS Lock Screen and Desktop widget architecture.
-              </div>
-              <div style="border-radius: 0.875rem; overflow: hidden; border: 0.5px solid var(--glass-border-specular); box-shadow: 0 6px 20px rgba(0,0,0,0.3); max-height: 180px; position: relative;">
-                <img src="assets/ios_kit/widgets-preview.png" alt="iOS Widgets Architecture" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;">
-                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.4) 60%, transparent 100%); padding: 0.625rem 0.875rem; color: #ffffff; font-size: 0.75rem; font-weight: 300; display: flex; align-items: center; justify-content: space-between;">
-                  <span>Widget Ecosystem Preview</span>
-                  <span style="font-size: 0.6875rem; color: var(--accent-color);">iOS 26 Kit</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Guide & Information -->
-          <div class="ios-section">
-            <div class="ios-section-header">About & Guide</div>
-            <div class="ios-group-card">
-              <div class="ios-cell ios-cell-clickable" id="btn-open-guide-cell">
-                <span class="ios-cell-label">
-                  <strong>User Guide & Gestures</strong>
-                </span>
-                <span class="ios-cell-value">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </span>
-              </div>
-              <div class="ios-cell">
-                <span class="ios-cell-label">
-                  <strong>Version</strong>
-                </span>
-                <span class="ios-cell-value" id="app-version-badge">1.0</span>
-              </div>
-              <div class="ios-cell">
-                <span class="ios-cell-label">
-                  <strong>Typography</strong>
-                </span>
-                <span class="ios-cell-value">Helvetica Neue Light</span>
-              </div>
-              <div class="ios-cell">
-                <span class="ios-cell-label">
-                  <strong>Material</strong>
-                </span>
-                <span class="ios-cell-value">Liquid Glass</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-    </div>
-
-    <!-- Liquid Glass Bottom Tab Bar (iOS 26 Kit) -->
-    <nav class="tab-bar" id="tab-bar" aria-label="Main Navigation">
-      <button class="tab-bar-item" data-tab-target="view-trash" aria-label="Recently Deleted">
-        <div class="tab-icon-wrap">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-          <span id="trash-badge" class="tab-badge hidden">0</span>
-        </div>
-        <span class="tab-label">Trash</span>
-      </button>
-
-      <button class="tab-bar-item active" data-tab-target="view-feed" aria-label="Reminders">
-        <div class="tab-icon-wrap">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    <!-- Main Active Feed Scroll View -->
+    <main class="feed-scroll-container" id="reminder-container">
+      <div id="empty-state" class="empty-view">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
         </div>
-        <span class="tab-label">Reminders</span>
-      </button>
+        <h3>No Active Reminders</h3>
+        <p>Tap the plus button below to create a persistent lock screen reminder.</p>
+      </div>
+      <div id="card-list" class="cards-list"></div>
+    </main>
 
-      <button class="tab-bar-item" data-tab-target="view-settings" aria-label="Settings">
-        <div class="tab-icon-wrap">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </div>
-        <span class="tab-label">Settings</span>
-      </button>
-    </nav>
+    <!-- Floating Action Button (+) -->
+    <button id="btn-add" class="fab" aria-label="Add Reminder">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
   </div>
 
   <!-- Create / Edit Reminder Modal Sheet -->
@@ -445,110 +189,302 @@
 
         <input type="text" id="input-title" class="form-input-text" placeholder="What needs remembering?" required autocomplete="off">
 
-        <textarea id="input-body" class="form-textarea" placeholder="Notes or instructions (optional)" rows="3"></textarea>
-
-        <!-- Checklist Builder -->
-        <div id="checklist-builder" class="checklist-builder hidden">
-          <div class="checklist-builder-header">
-            <span>Checklist Items</span>
-            <button type="button" id="btn-checklist-menu" class="btn-modal-close" style="width: 1.5rem; height: 1.5rem;" title="List Actions">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <circle cx="5" cy="12" r="2"></circle>
-                <circle cx="12" cy="12" r="2"></circle>
-                <circle cx="19" cy="12" r="2"></circle>
-              </svg>
-            </button>
-          </div>
-          <div id="checklist-rows-container" class="builder-rows-list"></div>
-          <button type="button" id="btn-add-checklist-row" class="btn-add-checklist-item">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Add Item</span>
-          </button>
-        </div>
-
-        <!-- Category Picker -->
-        <div class="ios-section">
-          <div class="ios-section-header" style="padding-left: 0;">Category Label</div>
-          <div class="labels-picker-grid" id="label-selector">
-            <button type="button" class="label-pill" data-label="School">School</button>
-            <button type="button" class="label-pill" data-label="Work">Work</button>
-            <button type="button" class="label-pill" data-label="Shopping">Shopping</button>
-            <button type="button" class="label-pill" data-label="Personal">Personal</button>
-            <button type="button" class="label-pill" data-label="Tasks">Tasks</button>
+        <!-- Animated Note vs Checklist Content Slider -->
+        <div class="mode-slider-wrap">
+          <div class="mode-slider-track" id="mode-slider-track">
+            <!-- Mode 1: Note Textarea -->
+            <div class="mode-panel active" id="panel-mode-note">
+              <textarea id="input-body" class="form-textarea" placeholder="Notes or instructions (optional)" rows="3"></textarea>
+            </div>
+            <!-- Mode 2: Checklist Builder -->
+            <div class="mode-panel" id="panel-mode-checklist">
+              <div id="checklist-builder" class="checklist-builder">
+                <div class="checklist-builder-header">
+                  <span>Checklist Items</span>
+                  <button type="button" id="btn-checklist-menu" class="btn-modal-close" style="width: 1.5rem; height: 1.5rem;" title="List Actions">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <circle cx="5" cy="12" r="2"></circle>
+                      <circle cx="12" cy="12" r="2"></circle>
+                      <circle cx="19" cy="12" r="2"></circle>
+                    </svg>
+                  </button>
+                </div>
+                <div id="checklist-rows-container" class="builder-rows-list"></div>
+                <button type="button" id="btn-add-checklist-row" class="btn-add-checklist-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Add Item</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Pin to Top Switch -->
-        <div class="ios-group-card">
-          <div class="ios-cell">
-            <span class="ios-cell-label">
-              <strong>Pin to Top</strong>
-            </span>
+        <!-- Single-Line Grouped Settings Card -->
+        <div class="ios-compact-group">
+          <!-- Line 1: Category Picker -->
+          <div class="compact-row">
+            <span class="row-label">Category</span>
+            <div class="labels-picker-row" id="label-selector">
+              <button type="button" class="label-pill pill-school" data-label="School">School</button>
+              <button type="button" class="label-pill pill-work" data-label="Work">Work</button>
+              <button type="button" class="label-pill pill-shopping" data-label="Shopping">Shopping</button>
+              <button type="button" class="label-pill pill-personal" data-label="Personal">Personal</button>
+              <button type="button" class="label-pill pill-tasks" data-label="Tasks">Tasks</button>
+            </div>
+          </div>
+
+          <!-- Line 2: Pin to Top -->
+          <div class="compact-row">
+            <span class="row-label">Pin to Top</span>
             <input type="checkbox" id="input-pin-note" class="ios-switch">
           </div>
-        </div>
 
-        <!-- Due Time Section -->
-        <div class="ios-group-card">
-          <div class="ios-cell" style="flex-direction: column; align-items: stretch;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span class="ios-cell-label">
-                <strong>Specific Due Time</strong>
-              </span>
-              <input type="checkbox" id="toggle-due-time" class="ios-switch">
-            </div>
-            <div id="due-time-controls" class="due-time-box disabled">
-              <input type="datetime-local" id="input-due-time" class="input-datetime" disabled>
-              <button type="button" id="btn-clear-due-time" class="btn-clear-time" title="Clear due time" disabled>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <!-- Line 3: Due Date Controls -->
+          <div class="compact-row">
+            <span class="row-label">Due Date</span>
+            <div class="compact-inline-controls">
+              <input type="datetime-local" id="input-due-time" class="input-datetime-compact" disabled>
+              <button type="button" id="btn-clear-due-time" class="btn-clear-time hidden" title="Clear due time">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
+              <input type="checkbox" id="toggle-due-time" class="ios-switch">
+            </div>
+          </div>
+
+          <!-- Line 4: Recurring Alarm Presets -->
+          <div class="compact-row">
+            <span class="row-label">Alarm</span>
+            <div class="alarm-compact-row">
+              <div class="alarm-radio-item">
+                <input type="radio" id="p0" name="pingPreset" value="0" checked>
+                <label for="p0">Off</label>
+              </div>
+              <div class="alarm-radio-item">
+                <input type="radio" id="p1" name="pingPreset" value="1">
+                <label for="p1">1m</label>
+              </div>
+              <div class="alarm-radio-item">
+                <input type="radio" id="p5" name="pingPreset" value="5">
+                <label for="p5">5m</label>
+              </div>
+              <div class="alarm-radio-item">
+                <input type="radio" id="p10" name="pingPreset" value="10">
+                <label for="p10">10m</label>
+              </div>
+              <div class="alarm-radio-item">
+                <input type="radio" id="pCustom" name="pingPreset" value="custom">
+                <label for="pCustom">Custom</label>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Recurring Alarm Section -->
-        <div class="ios-section">
-          <div class="ios-section-header" style="padding-left: 0;">Recurring Alarm</div>
-          <div class="alarm-radios-grid">
-            <div class="alarm-radio-item">
-              <input type="radio" id="p0" name="pingPreset" value="0" checked>
-              <label for="p0">Off</label>
-            </div>
-            <div class="alarm-radio-item">
-              <input type="radio" id="p1" name="pingPreset" value="1">
-              <label for="p1">1m</label>
-            </div>
-            <div class="alarm-radio-item">
-              <input type="radio" id="p5" name="pingPreset" value="5">
-              <label for="p5">5m</label>
-            </div>
-            <div class="alarm-radio-item">
-              <input type="radio" id="p10" name="pingPreset" value="10">
-              <label for="p10">10m</label>
-            </div>
-            <div class="alarm-radio-item">
-              <input type="radio" id="pCustom" name="pingPreset" value="custom">
-              <label for="pCustom">Custom</label>
-            </div>
-          </div>
-
-          <div id="custom-time-row" class="custom-time-row hidden">
-            <input type="number" id="custom-val" placeholder="Value" min="1" max="1000" value="15">
-            <select id="custom-unit">
-              <option value="m">Minutes</option>
-              <option value="h">Hours</option>
-            </select>
-          </div>
+        <div id="custom-time-row" class="custom-time-row hidden">
+          <input type="number" id="custom-val" placeholder="Value" min="1" max="1000" value="15">
+          <select id="custom-unit">
+            <option value="m">Minutes</option>
+            <option value="h">Hours</option>
+          </select>
         </div>
 
-        <button type="submit" id="btn-submit" class="btn-primary-action" style="margin-top: 0.5rem;">PIN TO LOCK SCREEN</button>
+        <button type="submit" id="btn-submit" class="btn-primary-action" style="margin-top: 0.25rem;">PIN TO LOCK SCREEN</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Recently Deleted / Trash Modal Sheet -->
+  <div id="trash-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-grabber"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">RECENTLY DELETED</h3>
+        <button id="btn-close-trash" class="btn-modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="trash-scroll-container">
+        <div class="trash-notice-banner">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Notes in recently deleted are kept for 24 hours before permanent removal.</span>
+        </div>
+
+        <div id="trash-list" class="cards-list"></div>
+
+        <div id="trash-empty-state" class="empty-view">
+          <div class="empty-icon-wrap">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
+          <h3>Trash is Empty</h3>
+          <p>Deleted reminders will appear here for 24 hours with restore options.</p>
+        </div>
+
+        <div style="padding-top: 0.5rem; padding-bottom: 1rem;">
+          <button id="btn-empty-trash" class="btn-destructive-action hidden">EMPTY TRASH NOW</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal Sheet -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-grabber"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">SETTINGS</h3>
+        <button id="btn-close-settings" class="btn-modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-scroll-container">
+        <!-- Section: Subscription Plan -->
+        <div class="ios-section">
+          <div class="ios-section-header">Subscription Plan</div>
+          <div class="ios-group-card">
+            <div class="ios-cell">
+              <div class="ios-cell-label">
+                <strong>Current Tier</strong>
+                <small id="settings-plan-subtitle">5 active reminders included</small>
+              </div>
+              <span class="badge-tag badge-category" id="settings-plan-badge">Free Plan</span>
+            </div>
+            <div class="ios-cell" id="cell-upgrade-action">
+              <button type="button" class="btn-primary-action" id="btn-open-upgrade">UPGRADE TO PREMIUM</button>
+            </div>
+            <div class="ios-cell hidden" id="cell-cancel-subscription">
+              <button type="button" class="btn-destructive-action" id="btn-cancel-subscription">Cancel Test Subscription</button>
+            </div>
+            <div class="ios-cell">
+              <div class="ios-cell-label">
+                <strong>Test Plan Switch</strong>
+                <small>Development toggle to test tier limits</small>
+              </div>
+              <input type="checkbox" id="toggle-dev-premium" class="ios-switch">
+            </div>
+          </div>
+          <div class="ios-section-footer">Free tier includes up to 5 active reminders and standard interval alerts. Premium unlocks unlimited active reminders and custom interval scheduling.</div>
+        </div>
+
+        <!-- Section: Appearance -->
+        <div class="ios-section">
+          <div class="ios-section-header">Appearance</div>
+          <div class="ios-group-card">
+            <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
+              <div class="ios-cell-label">
+                <strong>Theme Mode</strong>
+              </div>
+              <div class="segmented-control" id="theme-segmented-control">
+                <button type="button" class="segmented-option" data-theme-val="system">System</button>
+                <button type="button" class="segmented-option" data-theme-val="light">Light</button>
+                <button type="button" class="segmented-option active" data-theme-val="dark">Dark</button>
+              </div>
+            </div>
+            <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
+              <div class="ios-cell-label">
+                <strong>Accent Color</strong>
+                <small>Tint color applied across switches, badges, and controls</small>
+              </div>
+              <div class="swatches-row" id="swatches-palette">
+                <button type="button" class="swatch-btn" data-color="#007aff" style="background: #007aff;"></button>
+                <button type="button" class="swatch-btn" data-color="#ff3b30" style="background: #ff3b30;"></button>
+                <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;"></button>
+                <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;"></button>
+                <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;"></button>
+                <button type="button" class="swatch-btn" data-color="#5856d6" style="background: #5856d6;"></button>
+                <button type="button" class="swatch-btn" data-color="#af52de" style="background: #af52de;"></button>
+                <button type="button" class="swatch-btn" data-color="#ff2d55" style="background: #ff2d55;"></button>
+                <div class="custom-color-picker-wrap" title="Custom spectrum color picker">
+                  <input type="color" id="input-custom-color" value="#007aff">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Preferences -->
+        <div class="ios-section">
+          <div class="ios-section-header">Reminders & Alerts</div>
+          <div class="ios-group-card">
+            <div class="ios-cell">
+              <div class="ios-cell-label">
+                <strong>Daily Morning Briefing</strong>
+                <small>8:00 AM summary of pinned and scheduled notes</small>
+              </div>
+              <input type="checkbox" id="toggle-morning-briefing" class="ios-switch">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Data Management -->
+        <div class="ios-section">
+          <div class="ios-section-header">Data & Backup</div>
+          <div class="ios-group-card">
+            <div class="ios-cell" style="gap: 0.5rem;">
+              <button type="button" class="btn-secondary-action" id="btn-export-backup">Export Backup (JSON)</button>
+              <label class="btn-secondary-action" style="cursor: pointer;">
+                <span>Import Backup</span>
+                <input type="file" id="file-import-backup" accept=".json" style="display: none;">
+              </label>
+            </div>
+          </div>
+          <div class="ios-section-footer">Export your reminders and trash archive to a JSON document for local backup and multi-device transfer.</div>
+        </div>
+
+        <!-- Section: Guide & Information -->
+        <div class="ios-section">
+          <div class="ios-section-header">About & Guide</div>
+          <div class="ios-group-card">
+            <div class="ios-cell ios-cell-clickable" id="btn-open-guide-cell">
+              <span class="ios-cell-label">
+                <strong>User Guide & Gestures</strong>
+              </span>
+              <span class="ios-cell-value">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </span>
+            </div>
+            <div class="ios-cell">
+              <span class="ios-cell-label">
+                <strong>Version</strong>
+              </span>
+              <span class="ios-cell-value" id="app-version-badge">1.0</span>
+            </div>
+            <div class="ios-cell">
+              <span class="ios-cell-label">
+                <strong>Typography</strong>
+              </span>
+              <span class="ios-cell-value">Helvetica Neue Light</span>
+            </div>
+            <div class="ios-cell">
+              <span class="ios-cell-label">
+                <strong>Material</strong>
+              </span>
+              <span class="ios-cell-value">Liquid Glass</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
@@ -619,34 +555,29 @@
         <div class="carousel-viewport" id="carousel-track">
           <div class="carousel-slides">
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 1 / 6</div>
+              <div class="slide-badge">GUIDE 1 / 5</div>
               <h3>Swipe Gestures</h3>
               <p>Swipe a card to the right until the orange underlay expands to edit contents or alarms.<br>Swipe to the left until the red underlay expands to move it to the 24-hour trash bin.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 2 / 6</div>
+              <div class="slide-badge">GUIDE 2 / 5</div>
               <h3>24-Hour Retention</h3>
-              <p>Deleted reminders stay in the Trash tab for exactly 24 hours with live countdown indicators. You can restore them to your active list at any time or permanently delete them.</p>
+              <p>Deleted reminders stay in the Recently Deleted modal for exactly 24 hours with live countdown indicators. You can restore them or permanently delete them.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 3 / 6</div>
+              <div class="slide-badge">GUIDE 3 / 5</div>
               <h3>Checklists & Menus</h3>
               <p>Switch to Checklist mode to track actionable tasks with live progress bars. Tap the three dots icon on any card to access native options (Duplicate, Pin, Snooze, Complete All).</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 4 / 6</div>
+              <div class="slide-badge">GUIDE 4 / 5</div>
               <h3>Pinning & Drag Reorder</h3>
               <p>Tap the pin icon to keep high-priority notes at the top. Press and hold any card for a moment to drag and drop it into a customized sort order.</p>
             </div>
             <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 5 / 6</div>
+              <div class="slide-badge">GUIDE 5 / 5</div>
               <h3>Due Dates & Alarms</h3>
               <p>Assign scheduled due times to receive lock screen notifications. Configure recurring alarm intervals to keep persistent reminders sticky.</p>
-            </div>
-            <div class="carousel-slide">
-              <div class="slide-badge">GUIDE 6 / 6</div>
-              <h3>App Lock & Backup</h3>
-              <p>Protect your reminders with Face ID or a 4-digit numeric passcode in Settings. Export and import JSON data files anytime for local backups.</p>
             </div>
           </div>
         </div>
@@ -657,7 +588,6 @@
           <span class="dot" data-index="2"></span>
           <span class="dot" data-index="3"></span>
           <span class="dot" data-index="4"></span>
-          <span class="dot" data-index="5"></span>
         </div>
       </div>
     </div>
@@ -678,130 +608,6 @@
     </div>
   </div>
 
-  <!-- App Lock Screen Overlay (Liquid Glass) -->
-  <div id="app-lock-overlay" class="app-lock-overlay hidden" aria-modal="true" role="dialog">
-    <div class="lock-container">
-      <div class="lock-header">
-        <div class="lock-icon-badge" id="btn-lock-faceid-trigger" title="Tap to use Face ID">
-          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-            <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-            <path d="M9 9h.01"></path>
-            <path d="M15 9h.01"></path>
-            <path d="M10 13a2 2 0 0 0 4 0"></path>
-          </svg>
-        </div>
-        <h2 class="lock-title">POSTR</h2>
-        <p class="lock-subtitle" id="lock-subtitle-text">Enter Passcode or Face ID</p>
-      </div>
-
-      <div class="pin-dots-container" id="pin-dots-container">
-        <span class="pin-dot"></span>
-        <span class="pin-dot"></span>
-        <span class="pin-dot"></span>
-        <span class="pin-dot"></span>
-      </div>
-
-      <div class="pin-error-msg" id="pin-error-msg"></div>
-
-      <div class="pin-keypad" id="pin-keypad">
-        <button type="button" class="key-btn" data-key="1">
-          <span class="key-digit">1</span>
-        </button>
-        <button type="button" class="key-btn" data-key="2">
-          <span class="key-digit">2</span>
-          <span class="key-sub">A B C</span>
-        </button>
-        <button type="button" class="key-btn" data-key="3">
-          <span class="key-digit">3</span>
-          <span class="key-sub">D E F</span>
-        </button>
-        <button type="button" class="key-btn" data-key="4">
-          <span class="key-digit">4</span>
-          <span class="key-sub">G H I</span>
-        </button>
-        <button type="button" class="key-btn" data-key="5">
-          <span class="key-digit">5</span>
-          <span class="key-sub">J K L</span>
-        </button>
-        <button type="button" class="key-btn" data-key="6">
-          <span class="key-digit">6</span>
-          <span class="key-sub">M N O</span>
-        </button>
-        <button type="button" class="key-btn" data-key="7">
-          <span class="key-digit">7</span>
-          <span class="key-sub">P Q R S</span>
-        </button>
-        <button type="button" class="key-btn" data-key="8">
-          <span class="key-digit">8</span>
-          <span class="key-sub">T U V</span>
-        </button>
-        <button type="button" class="key-btn" data-key="9">
-          <span class="key-digit">9</span>
-          <span class="key-sub">W X Y Z</span>
-        </button>
-        <button type="button" class="key-btn key-btn-aux" id="key-btn-bio" title="Face ID / Touch ID">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-            <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-            <path d="M9 9h.01"></path>
-            <path d="M15 9h.01"></path>
-            <path d="M10 13a2 2 0 0 0 4 0"></path>
-          </svg>
-        </button>
-        <button type="button" class="key-btn" data-key="0">
-          <span class="key-digit">0</span>
-        </button>
-        <button type="button" class="key-btn key-btn-aux" id="key-btn-del" title="Delete">
-          <img src="assets/ios_kit/delete-dark.png" alt="Delete" class="key-del-img">
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Passcode Setup Modal Sheet -->
-  <div id="pin-setup-modal" class="modal-backdrop">
-    <div class="modal-sheet">
-      <div class="modal-grabber"></div>
-      <div class="modal-header">
-        <h3 class="modal-title">SECURITY PASSCODE</h3>
-        <button id="btn-close-pin-setup" class="btn-modal-close" aria-label="Close">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body-scroll">
-        <p style="font-size: 0.9375rem; font-weight: 300; line-height: 1.45; color: var(--color-text-secondary);">
-          Create a 4-digit numeric passcode to secure your reminders when opening Postr.
-        </p>
-
-        <div style="display: flex; flex-direction: column; gap: 0.375rem;">
-          <label for="pin-input-code" style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-secondary);">Passcode (4 Digits)</label>
-          <input type="password" id="pin-input-code" class="form-input-text" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 0.375rem;">
-          <label for="pin-input-confirm" style="font-size: 0.75rem; text-transform: uppercase; color: var(--color-text-secondary);">Confirm 4-Digit PIN</label>
-          <input type="password" id="pin-input-confirm" class="form-input-text" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="••••" autocomplete="off">
-        </div>
-
-        <div id="pin-setup-error" class="pin-error-msg" style="text-align: left;"></div>
-
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-          <button type="button" id="btn-save-pin" class="btn-primary-action">SAVE PASSCODE</button>
-          <button type="button" id="btn-cancel-pin" class="btn-secondary-action">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js?v=20260929-ios26-v5"></script>
+  <script src="app.js?v=20260929-ios26-v6"></script>
 </body>
 </html>

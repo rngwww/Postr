@@ -1,4 +1,4 @@
-// Postr - Liquid Glass Application Engine
+// Postr - Liquid Glass Application Engine (iOS 26 Kit inspired)
 
 // Storage Keys
 const STORAGE_KEY = "postr_notes_db";
@@ -7,10 +7,6 @@ const TRASH_RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const MORNING_BRIEFING_KEY = "postr_morning_briefing_enabled";
 const LAST_BRIEFING_DATE_KEY = "postr_last_morning_briefing_date";
-const APP_LOCK_KEY = "postr_app_lock_enabled";
-const PIN_CODE_KEY = "postr_pin_code";
-const WEBAUTHN_ID_KEY = "postr_webauthn_id";
-
 const THEME_MODE_KEY = "postr_theme_mode";
 const ACCENT_COLOR_KEY = "postr_accent_color";
 const SUBSCRIPTION_PLAN_KEY = "postr_subscription_plan";
@@ -24,14 +20,19 @@ let activeFilterCategory = null;
 let searchQuery = "";
 let toastTimeout = null;
 
-// Category Color Mapping
-const PASTEL_MAP = {
-  School: "#b2d8d8",
-  Work: "#d4b8e5",
-  Shopping: "#f8c8dc",
-  Personal: "#fde49e",
-  Tasks: "#b5ead7"
-};
+// Category Badge Helper for Distinct Pastel Tags
+function getCategoryBadgeClass(label) {
+  if (!label) return "badge-category";
+  const l = label.toLowerCase();
+  switch (l) {
+    case "school": return "badge-category badge-cat-school";
+    case "work": return "badge-category badge-cat-work";
+    case "shopping": return "badge-category badge-cat-shopping";
+    case "personal": return "badge-category badge-cat-personal";
+    case "tasks": return "badge-category badge-cat-tasks";
+    default: return "badge-category";
+  }
+}
 
 // ============================================================================
 // FREEMIUM ENTITLEMENT MANAGER
@@ -165,7 +166,7 @@ function showToast(message) {
   toastTimeout = setTimeout(() => {
     pill.classList.remove("visible");
     toastTimeout = null;
-  }, 2500);
+  }, 2400);
 }
 
 // ============================================================================
@@ -182,7 +183,7 @@ function applyTheme(themeMode) {
 
   const metaThemeColor = document.getElementById("meta-theme-color");
   if (metaThemeColor) {
-    metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0a0a0c" : "#f2f2f7");
+    metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#060608" : "#f2f2f7");
   }
 
   // Sync segmented buttons
@@ -200,7 +201,6 @@ function applyAccentColor(hexColor) {
   if (!hexColor) return;
   document.documentElement.style.setProperty("--accent-color", hexColor);
 
-  // Parse RGB for translucent variants
   const c = hexColor.replace("#", "");
   if (c.length === 6) {
     const r = parseInt(c.substring(0, 2), 16);
@@ -232,7 +232,6 @@ function initThemeAndAppearance() {
   const savedColor = localStorage.getItem(ACCENT_COLOR_KEY) || "#007aff";
   applyAccentColor(savedColor);
 
-  // Listen to system preference changes
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     const currentMode = localStorage.getItem(THEME_MODE_KEY) || "dark";
     if (currentMode === "system") {
@@ -240,7 +239,6 @@ function initThemeAndAppearance() {
     }
   });
 
-  // Segmented control clicks
   document.querySelectorAll("#theme-segmented-control .segmented-option").forEach(btn => {
     btn.addEventListener("click", () => {
       const mode = btn.getAttribute("data-theme-val");
@@ -248,7 +246,6 @@ function initThemeAndAppearance() {
     });
   });
 
-  // Swatches palette clicks
   document.querySelectorAll("#swatches-palette .swatch-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const color = btn.getAttribute("data-color");
@@ -265,71 +262,60 @@ function initThemeAndAppearance() {
 }
 
 // ============================================================================
-// TAB BAR NAVIGATION
+// TOP NAVIGATION & SCROLL ELEVATION
 // ============================================================================
-const TAB_ORDER = ["view-trash", "view-feed", "view-settings"];
-let currentTabIndex = 1; // view-feed is active initially
-let isTabSwitching = false;
+function initTopNavigation() {
+  const reminderContainer = document.getElementById("reminder-container");
+  const topNavBar = document.getElementById("top-nav-bar");
 
-function initTabBar() {
-  const tabs = document.querySelectorAll(".tab-bar-item");
-  const views = document.querySelectorAll(".tab-view");
-
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      if (isTabSwitching) return;
-      const targetId = tab.getAttribute("data-tab-target");
-      if (!targetId) return;
-
-      const newIndex = TAB_ORDER.indexOf(targetId);
-      if (newIndex === -1 || newIndex === currentTabIndex) return;
-
-      const isMovingRight = newIndex > currentTabIndex;
-      const prevTabId = TAB_ORDER[currentTabIndex];
-      const prevView = document.getElementById(prevTabId);
-      const newView = document.getElementById(targetId);
-
-      currentTabIndex = newIndex;
-      isTabSwitching = true;
-
-      // Haptic feedback
-      if ("vibrate" in navigator) {
-        try { navigator.vibrate(10); } catch (e) {}
-      }
-
-      // Update tab active state
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      if (prevView && newView) {
-        views.forEach(v => {
-          v.classList.remove("slide-enter-from-right", "slide-leave-to-left", "slide-enter-from-left", "slide-leave-to-right");
-        });
-
-        if (isMovingRight) {
-          prevView.classList.add("slide-leave-to-left");
-          newView.classList.add("slide-enter-from-right");
-        } else {
-          prevView.classList.add("slide-leave-to-right");
-          newView.classList.add("slide-enter-from-left");
-        }
-
-        setTimeout(() => {
-          views.forEach(v => {
-            v.classList.remove("active", "slide-enter-from-right", "slide-leave-to-left", "slide-enter-from-left", "slide-leave-to-right");
-          });
-          newView.classList.add("active");
-          isTabSwitching = false;
-        }, 320);
+  // Dynamic Liquid Glass Elevation when Feed is Scrolled
+  if (reminderContainer && topNavBar) {
+    reminderContainer.addEventListener("scroll", () => {
+      if (reminderContainer.scrollTop > 8) {
+        topNavBar.classList.add("scrolled");
       } else {
-        views.forEach(v => v.classList.toggle("active", v.id === targetId));
-        isTabSwitching = false;
+        topNavBar.classList.remove("scrolled");
       }
+    }, { passive: true });
+  }
 
-      if (targetId === "view-trash") {
-        renderTrashList();
-      } else if (targetId === "view-settings") {
-        syncSubscriptionUI();
+  // Trash Icon in Top Nav
+  const btnOpenTrash = document.getElementById("btn-open-trash");
+  if (btnOpenTrash) {
+    btnOpenTrash.addEventListener("click", () => {
+      renderTrashList();
+      openModal("trash-modal");
+    });
+  }
+
+  const btnCloseTrash = document.getElementById("btn-close-trash");
+  if (btnCloseTrash) {
+    btnCloseTrash.addEventListener("click", () => {
+      closeModal("trash-modal");
+    });
+  }
+
+  // Settings Icon in Top Nav
+  const btnOpenSettings = document.getElementById("btn-open-settings");
+  if (btnOpenSettings) {
+    btnOpenSettings.addEventListener("click", () => {
+      syncSubscriptionUI();
+      openModal("settings-modal");
+    });
+  }
+
+  const btnCloseSettings = document.getElementById("btn-close-settings");
+  if (btnCloseSettings) {
+    btnCloseSettings.addEventListener("click", () => {
+      closeModal("settings-modal");
+    });
+  }
+
+  // Close sheet when tapping on backdrop outside sheet
+  document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        closeModal(backdrop.id);
       }
     });
   });
@@ -388,7 +374,6 @@ if ("serviceWorker" in navigator) {
         if (newWorker) {
           newWorker.addEventListener("statechange", () => {
             if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // Tell new worker to take over immediately
               newWorker.postMessage({ type: "SKIP_WAITING" });
             }
           });
@@ -833,7 +818,7 @@ function render() {
             ${renderCardBody(item)}
             <div class="card-tags-row">
               ${item.pinned ? `<span class="badge-tag badge-pinned">PINNED</span>` : ""}
-              ${item.label ? `<span class="badge-tag badge-category">${escapeHtml(item.label)}</span>` : ""}
+              ${item.label ? `<span class="badge-tag ${getCategoryBadgeClass(item.label)}">${escapeHtml(item.label)}</span>` : ""}
               ${item.dueTime ? (
                 dueStatus.isOverdue
                   ? `<span class="badge-tag badge-due is-overdue">OVERDUE • ${dueStatus.overdueAgo}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">+15m</button>`
@@ -1048,156 +1033,121 @@ function attachCardInteractions(wrapper, item) {
     placeholder.className = "card-placeholder";
     placeholder.style.height = `${initialRect.height}px`;
     placeholder.style.marginBottom = "12px";
-    placeholder.setAttribute("data-placeholder-for", item.id);
+
     wrapper.parentNode.insertBefore(placeholder, wrapper);
 
+    wrapper.classList.add("is-dragging");
     wrapper.style.position = "fixed";
     wrapper.style.left = `${initialRect.left}px`;
     wrapper.style.top = `${initialRect.top}px`;
     wrapper.style.width = `${initialRect.width}px`;
     wrapper.style.height = `${initialRect.height}px`;
-    wrapper.style.margin = "0";
-    wrapper.classList.add("is-dragging");
-    cardList.classList.add("is-reordering");
+    wrapper.style.zIndex = "1000";
+
+    if ("vibrate" in navigator) {
+      try { navigator.vibrate(35); } catch (err) {}
+    }
   }
 
   function onPointerMove(e) {
     if (!isDragging) return;
-
     const point = e.touches ? e.touches[0] : e;
-    const diffX = point.clientX - startX;
-    const diffY = point.clientY - startY;
-    currentOffsetX = diffX;
-    currentOffsetY = diffY;
-
-    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-      if (longPressTimer && !isReordering) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-    }
+    const deltaX = point.clientX - startX;
+    const deltaY = point.clientY - startY;
 
     if (isReordering) {
       if (e.cancelable) e.preventDefault();
-      const currentY = point.clientY;
-      const targetTop = initialRect.top + diffY;
-      wrapper.style.top = `${targetTop}px`;
-
-      const container = document.getElementById("reminder-container");
-      if (container) {
-        const cRect = container.getBoundingClientRect();
-        if (currentY < cRect.top + 70) {
-          container.scrollTop -= 8;
-        } else if (currentY > cRect.bottom - 70) {
-          container.scrollTop += 8;
-        }
-      }
+      wrapper.style.top = `${initialRect.top + deltaY}px`;
 
       const cardList = document.getElementById("card-list");
-      if (cardList && placeholder) {
-        const siblings = Array.from(cardList.querySelectorAll(".card-wrapper:not(.is-dragging)"));
-        const draggedCenterY = targetTop + (initialRect.height / 2);
+      if (!cardList) return;
 
-        for (const sib of siblings) {
-          const sRect = sib.getBoundingClientRect();
-          const sibCenterY = sRect.top + (sRect.height / 2);
-
-          if (draggedCenterY < sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING)) {
-            cardList.insertBefore(placeholder, sib);
+      const siblings = Array.from(cardList.querySelectorAll(".card-wrapper:not(.is-dragging)"));
+      for (const sib of siblings) {
+        const box = sib.getBoundingClientRect();
+        if (point.clientY >= box.top && point.clientY <= box.bottom) {
+          if (sib !== lastHoveredSibling) {
             lastHoveredSibling = sib;
-            break;
-          } else if (draggedCenterY > sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING)) {
-            cardList.insertBefore(placeholder, sib.nextSibling);
-            lastHoveredSibling = sib;
-            break;
+            const middle = box.top + box.height / 2;
+            if (point.clientY < middle) {
+              cardList.insertBefore(placeholder, sib);
+            } else {
+              cardList.insertBefore(placeholder, sib.nextSibling);
+            }
           }
+          break;
         }
       }
       return;
     }
 
     if (!swipeDirection) {
-      if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX < 0) {
-          swipeDirection = "left";
-          underlayDelete.style.opacity = "1";
-          underlayEdit.style.opacity = "0";
+      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+        if (longPressTimer) clearTimeout(longPressTimer);
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          swipeDirection = deltaX < 0 ? "left" : "right";
         } else {
-          swipeDirection = "right";
-          underlayDelete.style.opacity = "0";
-          underlayEdit.style.opacity = "1";
+          isDragging = false;
+          return;
         }
-      } else if (Math.abs(diffY) > 8) {
-        isDragging = false;
+      } else {
         return;
       }
     }
 
-    if (swipeDirection === "left") {
+    if (swipeDirection) {
       if (e.cancelable) e.preventDefault();
-      if (diffX <= 0) {
-        card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
-        const dist = Math.abs(diffX);
-        const scale = Math.min(2.0, Math.max(0.8, dist / 80));
-        trashIcon.style.transform = `scale(${scale})`;
+      currentOffsetX = deltaX;
+      card.style.transform = `translate3d(${currentOffsetX}px, 0px, 0px)`;
 
-        const threshold = Math.min(card.offsetWidth * 0.42, 130);
-        if (dist >= threshold && !hasThresholdCrossed) {
-          hasThresholdCrossed = true;
-        } else if (dist < threshold && hasThresholdCrossed) {
-          hasThresholdCrossed = false;
+      const cardWidth = card.offsetWidth;
+      const progress = Math.min(Math.abs(currentOffsetX) / (cardWidth * 0.45), 1.6);
+      const isThreshold = Math.abs(currentOffsetX) >= Math.min(cardWidth * 0.42, 130);
+
+      if (isThreshold && !hasThresholdCrossed) {
+        hasThresholdCrossed = true;
+        if ("vibrate" in navigator) {
+          try { navigator.vibrate(12); } catch (err) {}
         }
+      } else if (!isThreshold && hasThresholdCrossed) {
+        hasThresholdCrossed = false;
       }
-    } else if (swipeDirection === "right") {
-      if (e.cancelable) e.preventDefault();
-      if (diffX >= 0) {
-        card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
-        const dist = diffX;
-        const scale = Math.min(2.0, Math.max(0.8, dist / 80));
-        editIcon.style.transform = `scale(${scale})`;
 
-        const threshold = Math.min(card.offsetWidth * 0.42, 130);
-        if (dist >= threshold && !hasThresholdCrossed) {
-          hasThresholdCrossed = true;
-        } else if (dist < threshold && hasThresholdCrossed) {
-          hasThresholdCrossed = false;
+      if (currentOffsetX < 0) {
+        if (underlayDelete) underlayDelete.style.opacity = Math.min(progress, 1);
+        if (underlayEdit) underlayEdit.style.opacity = 0;
+        if (trashIcon) {
+          trashIcon.style.transform = `scale(${0.8 + progress * 0.4})`;
+        }
+      } else {
+        if (underlayEdit) underlayEdit.style.opacity = Math.min(progress, 1);
+        if (underlayDelete) underlayDelete.style.opacity = 0;
+        if (editIcon) {
+          editIcon.style.transform = `scale(${0.8 + progress * 0.4})`;
         }
       }
     }
   }
 
   function onPointerEnd() {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
+    if (longPressTimer) clearTimeout(longPressTimer);
     if (!isDragging) return;
     isDragging = false;
 
     if (isReordering) {
       isReordering = false;
-      const cardList = document.getElementById("card-list");
-      if (cardList) cardList.classList.remove("is-reordering");
-
       if (placeholder && placeholder.parentNode) {
-        const targetRect = placeholder.getBoundingClientRect();
-        wrapper.style.transition = "top 0.18s cubic-bezier(0.16, 1, 0.3, 1)";
-        wrapper.style.top = `${targetRect.top}px`;
-
-        setTimeout(() => {
-          if (placeholder && placeholder.parentNode) {
-            placeholder.parentNode.insertBefore(wrapper, placeholder);
-            placeholder.remove();
-            placeholder = null;
-          }
-          cleanupReorderStyles();
-          reorderRemindersArrayFromDOM(item);
-        }, 180);
+        placeholder.parentNode.insertBefore(wrapper, placeholder);
+        cleanupReorderStyles();
+        reorderRemindersArrayFromDOM(item);
       } else {
         cleanupReorderStyles();
       }
       return;
     }
+
+    if (underlayDelete) underlayDelete.style.opacity = 0;
+    if (underlayEdit) underlayEdit.style.opacity = 0;
 
     if (swipeDirection === "left") {
       const cardWidth = card.offsetWidth;
@@ -1213,7 +1163,7 @@ function attachCardInteractions(wrapper, item) {
       } else {
         card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
-        trashIcon.style.transform = "scale(0.8)";
+        if (trashIcon) trashIcon.style.transform = "scale(0.8)";
       }
     } else if (swipeDirection === "right") {
       const cardWidth = card.offsetWidth;
@@ -1229,7 +1179,7 @@ function attachCardInteractions(wrapper, item) {
       } else {
         card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
-        editIcon.style.transform = "scale(0.8)";
+        if (editIcon) editIcon.style.transform = "scale(0.8)";
       }
     }
 
@@ -1298,6 +1248,49 @@ function resetLabelSelection(presetLabel = null) {
   });
 }
 
+function setEditorMode(mode) {
+  const inputNoteType = document.getElementById("input-note-type");
+  const tabModeNote = document.getElementById("tab-mode-note");
+  const tabModeChecklist = document.getElementById("tab-mode-checklist");
+  const modeSliderTrack = document.getElementById("mode-slider-track");
+  const panelModeNote = document.getElementById("panel-mode-note");
+  const panelModeChecklist = document.getElementById("panel-mode-checklist");
+  const checklistRowsContainer = document.getElementById("checklist-rows-container");
+
+  if (inputNoteType) inputNoteType.value = mode;
+
+  if (mode === "checklist") {
+    tabModeChecklist?.classList.add("active");
+    tabModeNote?.classList.remove("active");
+    if (modeSliderTrack) modeSliderTrack.classList.add("show-checklist");
+    if (panelModeNote) panelModeNote.classList.remove("active");
+    if (panelModeChecklist) panelModeChecklist.classList.add("active");
+    if (checklistRowsContainer && checklistRowsContainer.children.length === 0) {
+      createBuilderRow("", false, true);
+    }
+  } else {
+    tabModeNote?.classList.add("active");
+    tabModeChecklist?.classList.remove("active");
+    if (modeSliderTrack) modeSliderTrack.classList.remove("show-checklist");
+    if (panelModeNote) panelModeNote.classList.add("active");
+    if (panelModeChecklist) panelModeChecklist.classList.remove("active");
+  }
+}
+
+const tabModeNote = document.getElementById("tab-mode-note");
+if (tabModeNote) {
+  tabModeNote.addEventListener("click", () => {
+    setEditorMode("note");
+  });
+}
+
+const tabModeChecklist = document.getElementById("tab-mode-checklist");
+if (tabModeChecklist) {
+  tabModeChecklist.addEventListener("click", () => {
+    setEditorMode("checklist");
+  });
+}
+
 function openCreateModal() {
   if (!premiumManager.canAddReminder()) {
     premiumManager.startCheckout();
@@ -1315,15 +1308,13 @@ function openCreateModal() {
   populateBuilderChecklist([]);
 
   const toggleDue = document.getElementById("toggle-due-time");
-  const dueControls = document.getElementById("due-time-controls");
   const inputDue = document.getElementById("input-due-time");
   const btnClearDue = document.getElementById("btn-clear-due-time");
-  if (toggleDue && dueControls && inputDue) {
+  if (toggleDue && inputDue) {
     toggleDue.checked = false;
-    dueControls.classList.add("disabled");
     inputDue.disabled = true;
     inputDue.value = "";
-    if (btnClearDue) btnClearDue.disabled = true;
+    if (btnClearDue) btnClearDue.classList.add("hidden");
   }
 
   document.getElementById("p0").checked = true;
@@ -1351,22 +1342,19 @@ function openEditModal(item) {
   }
 
   const toggleDue = document.getElementById("toggle-due-time");
-  const dueControls = document.getElementById("due-time-controls");
   const inputDue = document.getElementById("input-due-time");
   const btnClearDue = document.getElementById("btn-clear-due-time");
-  if (toggleDue && dueControls && inputDue) {
+  if (toggleDue && inputDue) {
     if (item.dueTime) {
       toggleDue.checked = true;
-      dueControls.classList.remove("disabled");
       inputDue.disabled = false;
       inputDue.value = item.dueTime;
-      if (btnClearDue) btnClearDue.disabled = false;
+      if (btnClearDue) btnClearDue.classList.remove("hidden");
     } else {
       toggleDue.checked = false;
-      dueControls.classList.add("disabled");
       inputDue.disabled = true;
       inputDue.value = "";
-      if (btnClearDue) btnClearDue.disabled = true;
+      if (btnClearDue) btnClearDue.classList.add("hidden");
     }
   }
 
@@ -1486,16 +1474,14 @@ if (btnCloseModal) {
 
 // Due Time Toggle & Clear Controls
 const toggleDueTime = document.getElementById("toggle-due-time");
-const dueTimeControls = document.getElementById("due-time-controls");
 const inputDueTime = document.getElementById("input-due-time");
 const btnClearDue = document.getElementById("btn-clear-due-time");
 
-if (toggleDueTime && dueTimeControls && inputDueTime) {
+if (toggleDueTime && inputDueTime) {
   toggleDueTime.addEventListener("change", () => {
     if (toggleDueTime.checked) {
-      dueTimeControls.classList.remove("disabled");
       inputDueTime.disabled = false;
-      if (btnClearDue) btnClearDue.disabled = false;
+      if (btnClearDue) btnClearDue.classList.remove("hidden");
       if (!inputDueTime.value) {
         const d = new Date(Date.now() + 3600000);
         d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
@@ -1503,9 +1489,8 @@ if (toggleDueTime && dueTimeControls && inputDueTime) {
         inputDueTime.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       }
     } else {
-      dueTimeControls.classList.add("disabled");
       inputDueTime.disabled = true;
-      if (btnClearDue) btnClearDue.disabled = true;
+      if (btnClearDue) btnClearDue.classList.add("hidden");
     }
   });
 }
@@ -1513,6 +1498,11 @@ if (toggleDueTime && dueTimeControls && inputDueTime) {
 if (btnClearDue && inputDueTime) {
   btnClearDue.addEventListener("click", () => {
     inputDueTime.value = "";
+    if (toggleDueTime) {
+      toggleDueTime.checked = false;
+      inputDueTime.disabled = true;
+      btnClearDue.classList.add("hidden");
+    }
   });
 }
 
@@ -1664,45 +1654,10 @@ function openCardIosMenu(item, wrapper) {
   });
 }
 
-// Mode Switcher & Checklist Builder
-const tabModeNote = document.getElementById("tab-mode-note");
-const tabModeChecklist = document.getElementById("tab-mode-checklist");
-const inputNoteType = document.getElementById("input-note-type");
-const inputBody = document.getElementById("input-body");
-const checklistBuilder = document.getElementById("checklist-builder");
+// Checklist Builder Logic
 const checklistRowsContainer = document.getElementById("checklist-rows-container");
 const btnAddChecklistRow = document.getElementById("btn-add-checklist-row");
 const btnChecklistMenu = document.getElementById("btn-checklist-menu");
-
-function setEditorMode(mode) {
-  if (inputNoteType) inputNoteType.value = mode;
-  if (mode === "checklist") {
-    tabModeChecklist?.classList.add("active");
-    tabModeNote?.classList.remove("active");
-    if (inputBody) inputBody.style.display = "none";
-    if (checklistBuilder) checklistBuilder.classList.remove("hidden");
-    if (checklistRowsContainer && checklistRowsContainer.children.length === 0) {
-      createBuilderRow("", false, true);
-    }
-  } else {
-    tabModeNote?.classList.add("active");
-    tabModeChecklist?.classList.remove("active");
-    if (inputBody) inputBody.style.display = "block";
-    if (checklistBuilder) checklistBuilder.classList.add("hidden");
-  }
-}
-
-if (tabModeNote) {
-  tabModeNote.addEventListener("click", () => {
-    setEditorMode("note");
-  });
-}
-
-if (tabModeChecklist) {
-  tabModeChecklist.addEventListener("click", () => {
-    setEditorMode("checklist");
-  });
-}
 
 function createBuilderRow(text = "", done = false, autoFocus = false) {
   if (!checklistRowsContainer) return null;
@@ -1890,12 +1845,13 @@ if (categoryFilters) {
   categoryFilters.querySelectorAll(".filter-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       const filter = chip.getAttribute("data-filter");
-      if (activeFilterCategory === filter) {
+      categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+      if (activeFilterCategory === filter || filter === "all") {
         activeFilterCategory = null;
-        chip.classList.remove("active");
+        const allChip = categoryFilters.querySelector('.filter-chip[data-filter="all"]');
+        if (allChip) allChip.classList.add("active");
       } else {
         activeFilterCategory = filter;
-        categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
         chip.classList.add("active");
       }
       render();
@@ -2037,6 +1993,8 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
     activeFilterCategory = null;
     if (categoryFilters) {
       categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+      const allChip = categoryFilters.querySelector('.filter-chip[data-filter="all"]');
+      if (allChip) allChip.classList.add("active");
     }
     showToast("Reminder Added");
   }
@@ -2047,7 +2005,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
 // Tips Carousel
 let currentSlide = 0;
-const totalSlides = 6;
+const totalSlides = 5;
 const track = document.querySelector(".carousel-slides");
 const dots = document.querySelectorAll(".carousel-dots .dot");
 let startCarouselX = 0;
@@ -2187,278 +2145,9 @@ if (toggleMorningBriefing) {
   });
 }
 
-// App Lock: Biometrics & 4-Digit Passcode
-const appLockOverlay = document.getElementById("app-lock-overlay");
-const pinDotsContainer = document.getElementById("pin-dots-container");
-const pinErrorMsg = document.getElementById("pin-error-msg");
-const pinKeypad = document.getElementById("pin-keypad");
-const keyBtnBio = document.getElementById("key-btn-bio");
-const keyBtnDel = document.getElementById("key-btn-del");
-const btnLockFaceIdTrigger = document.getElementById("btn-lock-faceid-trigger");
-
-const toggleAppLock = document.getElementById("toggle-app-lock");
-const pinManagementRow = document.getElementById("pin-management-row");
-const pinSetupModal = document.getElementById("pin-setup-modal");
-const btnClosePinSetup = document.getElementById("btn-close-pin-setup");
-const btnCancelPin = document.getElementById("btn-cancel-pin");
-const btnSavePin = document.getElementById("btn-save-pin");
-const pinInputCode = document.getElementById("pin-input-code");
-const pinInputConfirm = document.getElementById("pin-input-confirm");
-const pinSetupError = document.getElementById("pin-setup-error");
-
-let enteredPin = "";
-
-function updatePinDots() {
-  if (!pinDotsContainer) return;
-  const dots = pinDotsContainer.querySelectorAll(".pin-dot");
-  dots.forEach((dot, index) => {
-    dot.classList.toggle("filled", index < enteredPin.length);
-  });
-}
-
-function lockApp() {
-  if (!appLockOverlay) return;
-  enteredPin = "";
-  if (pinErrorMsg) pinErrorMsg.textContent = "";
-  updatePinDots();
-  appLockOverlay.classList.remove("hidden");
-  tryBiometricUnlock();
-}
-
-function unlockApp() {
-  if (!appLockOverlay) return;
-  enteredPin = "";
-  if (pinErrorMsg) pinErrorMsg.textContent = "";
-  updatePinDots();
-  appLockOverlay.classList.add("hidden");
-}
-
-async function tryBiometricUnlock() {
-  if (!window.PublicKeyCredential || !navigator.credentials) return false;
-  try {
-    if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      if (!isAvailable) return false;
-    }
-
-    const challenge = new Uint8Array(32);
-    if (window.crypto && window.crypto.getRandomValues) {
-      window.crypto.getRandomValues(challenge);
-    }
-
-    const credIdStr = localStorage.getItem(WEBAUTHN_ID_KEY);
-    if (credIdStr) {
-      const rawId = Uint8Array.from(atob(credIdStr), c => c.charCodeAt(0));
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge: challenge,
-          timeout: 60000,
-          userVerification: "required",
-          allowCredentials: [{
-            type: "public-key",
-            id: rawId,
-            transports: ["internal"]
-          }]
-        }
-      });
-      if (assertion) {
-        unlockApp();
-        showToast("Unlocked with Face ID");
-        return true;
-      }
-    }
-  } catch (err) {}
-  return false;
-}
-
-async function tryBiometricRegister() {
-  if (!window.PublicKeyCredential || !navigator.credentials) return false;
-  try {
-    if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-      const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      if (!isAvailable) return false;
-    }
-
-    const challenge = new Uint8Array(32);
-    const userId = new Uint8Array(16);
-    if (window.crypto && window.crypto.getRandomValues) {
-      window.crypto.getRandomValues(challenge);
-      window.crypto.getRandomValues(userId);
-    }
-
-    const credential = await navigator.credentials.create({
-      publicKey: {
-        challenge: challenge,
-        rp: { name: "Postr" },
-        user: {
-          id: userId,
-          name: "postr_user",
-          displayName: "Postr User"
-        },
-        pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-        authenticatorSelection: {
-          authenticatorAttachment: "platform",
-          userVerification: "required"
-        },
-        timeout: 60000
-      }
-    });
-
-    if (credential && credential.rawId) {
-      const idB64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-      localStorage.setItem(WEBAUTHN_ID_KEY, idB64);
-      return true;
-    }
-  } catch (err) {}
-  return false;
-}
-
-if (pinKeypad) {
-  pinKeypad.addEventListener("click", (e) => {
-    const btn = e.target.closest(".key-btn");
-    if (!btn) return;
-    const key = btn.dataset.key;
-    if (key !== undefined) {
-      if (enteredPin.length < 4) {
-        enteredPin += key;
-        if (pinErrorMsg) pinErrorMsg.textContent = "";
-        updatePinDots();
-
-        if (enteredPin.length === 4) {
-          const storedPin = localStorage.getItem(PIN_CODE_KEY);
-          if (enteredPin === storedPin) {
-            unlockApp();
-          } else {
-            if (pinDotsContainer) pinDotsContainer.classList.add("shake");
-            if (pinErrorMsg) pinErrorMsg.textContent = "Incorrect Passcode";
-            setTimeout(() => {
-              if (pinDotsContainer) pinDotsContainer.classList.remove("shake");
-              enteredPin = "";
-              updatePinDots();
-            }, 500);
-          }
-        }
-      }
-    }
-  });
-}
-
-if (keyBtnDel) {
-  keyBtnDel.addEventListener("click", () => {
-    if (enteredPin.length > 0) {
-      enteredPin = enteredPin.slice(0, -1);
-      if (pinErrorMsg) pinErrorMsg.textContent = "";
-      updatePinDots();
-    }
-  });
-}
-
-if (keyBtnBio) {
-  keyBtnBio.addEventListener("click", () => {
-    tryBiometricUnlock();
-  });
-}
-
-if (btnLockFaceIdTrigger) {
-  btnLockFaceIdTrigger.addEventListener("click", () => {
-    tryBiometricUnlock();
-  });
-}
-
-function openPinSetupModal() {
-  if (!pinSetupModal) return;
-  if (pinInputCode) pinInputCode.value = "";
-  if (pinInputConfirm) pinInputConfirm.value = "";
-  if (pinSetupError) pinSetupError.textContent = "";
-  openModal("pin-setup-modal");
-  setTimeout(() => pinInputCode?.focus(), 200);
-}
-
-function closePinSetupModal() {
-  if (!pinSetupModal) return;
-  closeModal("pin-setup-modal");
-  const hasPin = !!localStorage.getItem(PIN_CODE_KEY);
-  const isLocked = localStorage.getItem(APP_LOCK_KEY) === "true";
-  if (toggleAppLock) toggleAppLock.checked = isLocked && hasPin;
-}
-
-if (btnClosePinSetup) btnClosePinSetup.addEventListener("click", closePinSetupModal);
-if (btnCancelPin) btnCancelPin.addEventListener("click", closePinSetupModal);
-
-if (btnSavePin) {
-  btnSavePin.addEventListener("click", () => {
-    const valCode = pinInputCode ? pinInputCode.value.trim() : "";
-    const valConfirm = pinInputConfirm ? pinInputConfirm.value.trim() : "";
-
-    if (!/^\d{4}$/.test(valCode)) {
-      if (pinSetupError) pinSetupError.textContent = "Passcode must be exactly 4 digits.";
-      return;
-    }
-
-    if (valCode !== valConfirm) {
-      if (pinSetupError) pinSetupError.textContent = "Passcodes do not match.";
-      return;
-    }
-
-    localStorage.setItem(PIN_CODE_KEY, valCode);
-    localStorage.setItem(APP_LOCK_KEY, "true");
-    if (toggleAppLock) toggleAppLock.checked = true;
-    if (pinManagementRow) pinManagementRow.classList.remove("hidden");
-    closePinSetupModal();
-    showToast("Passcode Saved");
-    tryBiometricRegister();
-  });
-}
-
-if (pinManagementRow) {
-  pinManagementRow.addEventListener("click", () => {
-    openPinSetupModal();
-  });
-}
-
-if (toggleAppLock) {
-  const hasPin = !!localStorage.getItem(PIN_CODE_KEY);
-  const isLocked = localStorage.getItem(APP_LOCK_KEY) === "true";
-  toggleAppLock.checked = isLocked && hasPin;
-  if (isLocked && hasPin && pinManagementRow) {
-    pinManagementRow.classList.remove("hidden");
-  }
-
-  toggleAppLock.addEventListener("change", () => {
-    if (toggleAppLock.checked) {
-      const existingPin = localStorage.getItem(PIN_CODE_KEY);
-      if (!existingPin) {
-        toggleAppLock.checked = false;
-        openPinSetupModal();
-      } else {
-        localStorage.setItem(APP_LOCK_KEY, "true");
-        if (pinManagementRow) pinManagementRow.classList.remove("hidden");
-        showToast("App Lock Enabled");
-        tryBiometricRegister();
-      }
-    } else {
-      localStorage.setItem(APP_LOCK_KEY, "false");
-      if (pinManagementRow) pinManagementRow.classList.add("hidden");
-      showToast("App Lock Disabled");
-    }
-  });
-}
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") {
-    if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CODE_KEY)) {
-      lockApp();
-    }
-  }
-});
-
-if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CODE_KEY)) {
-  lockApp();
-}
-
 // Initial App Bootstrap
 initThemeAndAppearance();
-initTabBar();
+initTopNavigation();
 updateViewportHeight();
 setupDynamicAppIcon();
 setupLabelSelector();
