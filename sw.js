@@ -1,4 +1,4 @@
-const BUILD_VERSION = "20260929-ios26-v8";
+const BUILD_VERSION = "20260929-v10";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -8,19 +8,45 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(keys.map((key) => caches.delete(key)));
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      return self.clients.claim();
+    }).then(() => {
+      return self.clients.matchAll({ type: "window" }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({ type: "POSTR_UPDATE_READY", version: BUILD_VERSION });
+        });
+      });
+    })
   );
 });
 
-// Network-first: bypass cache completely for live app updates
+// Always force-reload network for app files, bypassing browser HTTP disk cache completely
 self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // If navigation (loading index.html) or app code files (js, css, html, json)
+  const isAppFile = req.mode === "navigate" ||
+                    url.pathname.endsWith(".html") ||
+                    url.pathname.endsWith(".js") ||
+                    url.pathname.endsWith(".css") ||
+                    url.pathname.endsWith(".json");
+
+  if (isAppFile && req.method === "GET") {
+    event.respondWith(
+      fetch(new Request(req, { cache: "reload" }))
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(req).catch(() => caches.match(req))
   );
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
+  if (event.data && (event.data.type === "SKIP_WAITING" || event.data.type === "FORCE_UPDATE")) {
     self.skipWaiting();
   }
   if (event.data && event.data.type === "TRIGGER_NOTIFICATION") {

@@ -20,8 +20,8 @@
   --font-weight-bold: 400;
 
   /* Accent Color */
-  --accent-color: #007aff;
-  --accent-color-rgb: 0, 122, 255;
+  --accent-color: #000000;
+  --accent-color-rgb: 0, 0, 0;
   --accent-contrast: #ffffff;
 
   /* Standard System Colors */
@@ -1634,13 +1634,32 @@ body,
 @keyframes builderRowSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(-8px) scale(0.95);
+    transform: translateY(-8px) scale(0.96);
     max-height: 0;
+    margin-bottom: -0.5rem;
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    max-height: 4rem;
+    max-height: 3.5rem;
+    margin-bottom: 0;
+  }
+}
+
+@keyframes builderRowSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 3.5rem;
+    margin-bottom: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    max-height: 0;
+    margin-bottom: -0.5rem;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
 
@@ -1648,7 +1667,14 @@ body,
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  animation: builderRowSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+  animation: builderRowSlideIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.builder-row.builder-row-removing {
+  animation: builderRowSlideOut 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .builder-row-check {
@@ -2309,6 +2335,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   min-height: 2.875rem;
   padding: 0.625rem 1rem;
   color: var(--color-text-primary);
@@ -2325,6 +2352,8 @@ body,
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .ios-cell-label strong {
@@ -2377,7 +2406,7 @@ body,
   max-width: 2.125rem;
   height: 2.125rem;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 1.5px solid rgba(125, 125, 125, 0.3);
   cursor: pointer;
   position: relative;
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
@@ -2393,6 +2422,24 @@ body,
   border-color: #ffffff;
   transform: scale(1.15);
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.swatch-btn[data-color="#ffffff"] {
+  border: 1.5px solid rgba(150, 150, 150, 0.45);
+}
+
+.swatch-btn[data-color="#ffffff"].active {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.swatch-btn[data-color="#000000"] {
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+}
+
+.swatch-btn[data-color="#000000"].active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Full-Width Rectangular Spectrum Bar */

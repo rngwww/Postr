@@ -225,6 +225,11 @@ function applyAccentColor(hexColor) {
     const g = parseInt(c.substring(2, 4), 16);
     const b = parseInt(c.substring(4, 6), 16);
     document.documentElement.style.setProperty("--accent-color-rgb", `${r}, ${g}, ${b}`);
+
+    // Update contrast color based on luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const contrast = luminance > 0.65 ? "#000000" : "#ffffff";
+    document.documentElement.style.setProperty("--accent-contrast", contrast);
   }
 
   // Sync swatches
@@ -253,7 +258,11 @@ function initThemeAndAppearance() {
   const savedTheme = localStorage.getItem(THEME_MODE_KEY) || "dark";
   applyTheme(savedTheme);
 
-  const savedColor = localStorage.getItem(ACCENT_COLOR_KEY) || "#007aff";
+  let savedColor = localStorage.getItem(ACCENT_COLOR_KEY);
+  if (!savedColor || savedColor.toLowerCase() === "#007aff" || savedColor.toLowerCase() === "#ff3b30") {
+    savedColor = "#000000";
+    localStorage.setItem(ACCENT_COLOR_KEY, savedColor);
+  }
   applyAccentColor(savedColor);
 
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
@@ -431,15 +440,20 @@ function setupDynamicAppIcon() {
 // SERVICE WORKER & NOTIFICATIONS
 // ============================================================================
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js?v=" + (window.APP_BUILD_VERSION || Date.now()))
+  navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
     .then((reg) => {
       swRegistration = reg;
       reg.update();
+
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+
       reg.addEventListener("updatefound", () => {
         const newWorker = reg.installing;
         if (newWorker) {
           newWorker.addEventListener("statechange", () => {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            if (newWorker.state === "installed") {
               newWorker.postMessage({ type: "SKIP_WAITING" });
             }
           });
@@ -448,9 +462,20 @@ if ("serviceWorker" in navigator) {
     })
     .catch((err) => console.log("SW error:", err));
 
+  let isSwReloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    window.location.reload();
+    if (!isSwReloading) {
+      isSwReloading = true;
+      window.location.reload();
+    }
   });
+
+  // Background auto-update check every 30 seconds
+  setInterval(() => {
+    if (swRegistration) {
+      swRegistration.update();
+    }
+  }, 30000);
 
   navigator.serviceWorker.addEventListener("message", (event) => {
     if (!event.data) return;
@@ -1629,6 +1654,8 @@ function openCreateModal() {
   document.getElementById("input-pin-note").checked = false;
 
   _builderCheckingAllowed = false;
+  const btnChecklistMenu = document.getElementById("btn-checklist-menu");
+  if (btnChecklistMenu) btnChecklistMenu.style.display = "none";
   setEditorMode("note");
   populateBuilderChecklist([]);
 
@@ -1657,6 +1684,8 @@ function openEditModal(item) {
   document.getElementById("input-pin-note").checked = !!item.pinned;
 
   _builderCheckingAllowed = true;
+  const btnChecklistMenu = document.getElementById("btn-checklist-menu");
+  if (btnChecklistMenu) btnChecklistMenu.style.display = "";
   if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
     setEditorMode("checklist");
     populateBuilderChecklist(item.checklistItems || []);
@@ -2042,12 +2071,16 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
   row.dataset.rowId = rowId;
 
   const isCheckable = _builderCheckingAllowed;
-  row.innerHTML = `
-    <button type="button" class="builder-row-check ${done ? "checked" : ""}${!isCheckable ? " disabled" : ""}" title="Toggle Complete"${!isCheckable ? ' disabled' : ''}>
+  const checkBtnHtml = isCheckable ? `
+    <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="Toggle Complete">
       <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     </button>
+  ` : "";
+
+  row.innerHTML = `
+    ${checkBtnHtml}
     <input type="text" class="builder-row-input ${done ? "checked" : ""}" placeholder="List item..." value="${escapeHtml(text)}">
     <button type="button" class="builder-row-del" title="Delete row">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -2061,17 +2094,28 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
   const input = row.querySelector(".builder-row-input");
   const delBtn = row.querySelector(".builder-row-del");
 
-  checkBtn.addEventListener("click", () => {
-    if (!_builderCheckingAllowed) return;
-    checkBtn.classList.toggle("checked");
-    input.classList.toggle("checked");
-  });
+  if (checkBtn) {
+    checkBtn.addEventListener("click", () => {
+      if (!_builderCheckingAllowed) return;
+      checkBtn.classList.toggle("checked");
+      input.classList.toggle("checked");
+    });
+  }
+
+  const removeThisRow = () => {
+    if (row.classList.contains("builder-row-removing")) return;
+    row.classList.add("builder-row-removing");
+    const onEnd = () => {
+      row.remove();
+    };
+    row.addEventListener("animationend", onEnd, { once: true });
+    setTimeout(() => {
+      if (row.parentNode) row.remove();
+    }, 280);
+  };
 
   delBtn.addEventListener("click", () => {
-    row.remove();
-    if (checklistRowsContainer.children.length === 0) {
-      createBuilderRow("", false, true);
-    }
+    removeThisRow();
   });
 
   input.addEventListener("keydown", (e) => {
@@ -2082,11 +2126,11 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
     } else if (e.key === "Backspace" && input.value === "" && checklistRowsContainer.children.length > 1) {
       e.preventDefault();
       const prev = row.previousElementSibling;
-      row.remove();
       if (prev) {
         const prevInput = prev.querySelector(".builder-row-input");
         if (prevInput) prevInput.focus();
       }
+      removeThisRow();
     }
   });
 
@@ -2101,6 +2145,7 @@ function getBuilderChecklistItems() {
   const items = [];
   if (!checklistRowsContainer) return items;
   checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+    if (row.classList.contains("builder-row-removing")) return;
     const input = row.querySelector(".builder-row-input");
     const checkBtn = row.querySelector(".builder-row-check");
     const text = input ? input.value.trim() : "";
@@ -2166,12 +2211,12 @@ function openChecklistBuilderIosMenu() {
         action: () => {
           checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
             if (row.querySelector(".builder-row-check")?.classList.contains("checked")) {
-              row.remove();
+              if (row.classList.contains("builder-row-removing")) return;
+              row.classList.add("builder-row-removing");
+              row.addEventListener("animationend", () => row.remove(), { once: true });
+              setTimeout(() => { if (row.parentNode) row.remove(); }, 280);
             }
           });
-          if (checklistRowsContainer.children.length === 0) {
-            createBuilderRow("", false, false);
-          }
         }
       },
       {
@@ -2179,8 +2224,12 @@ function openChecklistBuilderIosMenu() {
         icon: trashSvg,
         destructive: true,
         action: () => {
-          checklistRowsContainer.innerHTML = "";
-          createBuilderRow("", false, true);
+          checklistRowsContainer.querySelectorAll(".builder-row").forEach(row => {
+            if (row.classList.contains("builder-row-removing")) return;
+            row.classList.add("builder-row-removing");
+            row.addEventListener("animationend", () => row.remove(), { once: true });
+            setTimeout(() => { if (row.parentNode) row.remove(); }, 280);
+          });
         }
       }
     ]
@@ -2521,6 +2570,35 @@ if (toggleMorningBriefing) {
       Notification.requestPermission();
     }
     showToast(enabled ? "Morning Briefing enabled (8:00 AM)" : "Morning Briefing disabled");
+  });
+}
+
+// Manual Force Update on Version Cell
+const cellCheckUpdate = document.getElementById("cell-check-update");
+if (cellCheckUpdate) {
+  cellCheckUpdate.addEventListener("click", async () => {
+    showToast("Checking for updates...");
+    if ("caches" in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch (e) {}
+    }
+    if ("serviceWorker" in navigator) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          await reg.update();
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        }
+      } catch (e) {}
+    }
+    setTimeout(() => {
+      showToast("Reloading latest version...");
+      window.location.reload();
+    }, 400);
   });
 }
 

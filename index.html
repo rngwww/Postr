@@ -13,7 +13,7 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-ios26-v8";
+    window.APP_BUILD_VERSION = "20260929-v10";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -26,36 +26,65 @@
 
     // Auto-update Service Worker & Force Auto-reload when new version is activated
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (var i = 0; i < registrations.length; i++) {
-          registrations[i].update();
+      var isRefreshing = false;
+      function reloadOnce() {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          console.log('[Postr] New version active! Reloading...');
+          window.location.reload();
+        }
+      }
+
+      navigator.serviceWorker.addEventListener('controllerchange', reloadOnce);
+
+      navigator.serviceWorker.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'POSTR_UPDATE_READY') {
+          reloadOnce();
         }
       });
 
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        console.log('[Postr] New version active! Reloading...');
-        window.location.reload();
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          var reg = registrations[i];
+          reg.update();
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+          // Remove legacy query-param worker registrations
+          var scriptUrl = (reg.active || reg.installing || reg.waiting || {}).scriptURL || '';
+          if (scriptUrl && scriptUrl.indexOf('?v=') !== -1) {
+            reg.unregister();
+          }
+        }
       });
     }
 
-    // Refresh check on tab focus
-    window.addEventListener('focus', function() {
+    // Refresh check on tab focus & visibility change
+    function checkForUpdates() {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for (var i = 0; i < registrations.length; i++) {
-            registrations[i].update();
+            var reg = registrations[i];
+            reg.update();
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
           }
         });
       }
+    }
+    window.addEventListener('focus', checkForUpdates);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') checkForUpdates();
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v8">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v8">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-v10">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-v10">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-ios26-v8">
+  <link rel="stylesheet" href="style.css?v=20260929-v10">
 </head>
 <body>
 
@@ -138,7 +167,7 @@
           <span class="empty-face-emoji">:D</span>
         </div>
         <h3>No Active Reminders</h3>
-        <p>Tap the plus button below to create a persistent lock screen reminder.</p>
+        <p>Tap the plus button to create a new reminder.</p>
       </div>
       <div id="card-list" class="cards-list"></div>
     </main>
@@ -311,7 +340,6 @@
             </svg>
           </div>
           <h3>Trash is Empty</h3>
-          <p>Deleted reminders will appear here for 24 hours with restore options.</p>
         </div>
 
         <div style="padding-top: 0.5rem; padding-bottom: 1rem;">
@@ -371,7 +399,6 @@
             <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
               <div class="ios-cell-label">
                 <strong>Theme Mode</strong>
-                <small>Select from 4 iOS 26 atmospheric liquid glass styles</small>
               </div>
               <div class="segmented-control" id="theme-segmented-control">
                 <button type="button" class="segmented-option" data-theme-val="auto">Auto</button>
@@ -387,8 +414,8 @@
                 <small>Tint color applied across switches, badges, and controls</small>
               </div>
               <div class="swatches-row" id="swatches-palette">
-                <button type="button" class="swatch-btn" data-color="#007aff" style="background: #007aff;" title="Blue"></button>
-                <button type="button" class="swatch-btn" data-color="#ff3b30" style="background: #ff3b30;" title="Red"></button>
+                <button type="button" class="swatch-btn" data-color="#000000" style="background: #000000;" title="Black"></button>
+                <button type="button" class="swatch-btn" data-color="#ffffff" style="background: #ffffff;" title="White"></button>
                 <button type="button" class="swatch-btn" data-color="#ff9500" style="background: #ff9500;" title="Orange"></button>
                 <button type="button" class="swatch-btn" data-color="#34c759" style="background: #34c759;" title="Green"></button>
                 <button type="button" class="swatch-btn" data-color="#5ac8fa" style="background: #5ac8fa;" title="Teal"></button>
@@ -398,7 +425,7 @@
               </div>
               <!-- Full-Width Rectangular Spectrum Bar -->
               <div class="custom-spectrum-bar-wrap" id="custom-spectrum-bar-wrap" title="Custom color spectrum">
-                <input type="color" id="input-custom-color" value="#007aff" aria-label="Custom Spectrum Color">
+                <input type="color" id="input-custom-color" value="#000000" aria-label="Custom Spectrum Color">
                 <div class="spectrum-bar-inner">
                   <div class="spectrum-gradient-bg"></div>
                   <div class="spectrum-content-overlay">
@@ -416,13 +443,13 @@
           <div class="ios-section-header">Reminders & Alerts</div>
           <div class="ios-group-card">
             <div class="ios-cell">
-              <div class="ios-cell-label">
+              <span class="ios-cell-label">
                 <strong>Daily Morning Briefing</strong>
-                <small>8:00 AM summary of pinned and scheduled notes</small>
-              </div>
+              </span>
               <input type="checkbox" id="toggle-morning-briefing" class="ios-switch">
             </div>
           </div>
+          <div class="ios-section-footer">8:00 AM summary of pinned and scheduled notes.</div>
         </div>
 
         <!-- Section: Data Management -->
@@ -454,23 +481,12 @@
                 </svg>
               </span>
             </div>
-            <div class="ios-cell">
+            <div class="ios-cell ios-cell-clickable" id="cell-check-update" title="Tap to force update">
               <span class="ios-cell-label">
                 <strong>Version</strong>
+                <small id="settings-build-id">Build 20260929-v10</small>
               </span>
-              <span class="ios-cell-value" id="app-version-badge">1.0</span>
-            </div>
-            <div class="ios-cell">
-              <span class="ios-cell-label">
-                <strong>Typography</strong>
-              </span>
-              <span class="ios-cell-value">Helvetica Neue Light</span>
-            </div>
-            <div class="ios-cell">
-              <span class="ios-cell-label">
-                <strong>Material</strong>
-              </span>
-              <span class="ios-cell-value">Liquid Glass</span>
+              <span class="ios-cell-value" id="app-version-badge">1.0 • Check for Update</span>
             </div>
           </div>
         </div>
@@ -599,6 +615,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260929-ios26-v8"></script>
+  <script src="app.js?v=20260929-v10"></script>
 </body>
 </html>
