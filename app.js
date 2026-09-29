@@ -267,25 +267,64 @@ function initThemeAndAppearance() {
 // ============================================================================
 // TAB BAR NAVIGATION
 // ============================================================================
+const TAB_ORDER = ["view-trash", "view-feed", "view-settings"];
+let currentTabIndex = 1; // view-feed is active initially
+let isTabSwitching = false;
+
 function initTabBar() {
   const tabs = document.querySelectorAll(".tab-bar-item");
   const views = document.querySelectorAll(".tab-view");
 
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
+      if (isTabSwitching) return;
       const targetId = tab.getAttribute("data-tab-target");
       if (!targetId) return;
 
+      const newIndex = TAB_ORDER.indexOf(targetId);
+      if (newIndex === -1 || newIndex === currentTabIndex) return;
+
+      const isMovingRight = newIndex > currentTabIndex;
+      const prevTabId = TAB_ORDER[currentTabIndex];
+      const prevView = document.getElementById(prevTabId);
+      const newView = document.getElementById(targetId);
+
+      currentTabIndex = newIndex;
+      isTabSwitching = true;
+
+      // Haptic feedback
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate(10); } catch (e) {}
+      }
+
+      // Update tab active state
       tabs.forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
 
-      views.forEach(v => {
-        if (v.id === targetId) {
-          v.classList.add("active");
+      if (prevView && newView) {
+        views.forEach(v => {
+          v.classList.remove("slide-enter-from-right", "slide-leave-to-left", "slide-enter-from-left", "slide-leave-to-right");
+        });
+
+        if (isMovingRight) {
+          prevView.classList.add("slide-leave-to-left");
+          newView.classList.add("slide-enter-from-right");
         } else {
-          v.classList.remove("active");
+          prevView.classList.add("slide-leave-to-right");
+          newView.classList.add("slide-enter-from-left");
         }
-      });
+
+        setTimeout(() => {
+          views.forEach(v => {
+            v.classList.remove("active", "slide-enter-from-right", "slide-leave-to-left", "slide-enter-from-left", "slide-leave-to-right");
+          });
+          newView.classList.add("active");
+          isTabSwitching = false;
+        }, 320);
+      } else {
+        views.forEach(v => v.classList.toggle("active", v.id === targetId));
+        isTabSwitching = false;
+      }
 
       if (targetId === "view-trash") {
         renderTrashList();
@@ -948,7 +987,16 @@ function attachCardInteractions(wrapper, item) {
 
   btnDone.addEventListener("click", (e) => {
     e.stopPropagation();
-    moveToTrash(item.id, wrapper);
+    btnDone.style.transform = "scale(1.25)";
+    btnDone.style.background = "rgba(52, 199, 89, 0.22)";
+    btnDone.style.borderColor = "var(--system-green)";
+    btnDone.style.color = "var(--system-green)";
+    if ("vibrate" in navigator) {
+      try { navigator.vibrate([15, 30, 20]); } catch (err) {}
+    }
+    setTimeout(() => {
+      moveToTrash(item.id, wrapper);
+    }, 180);
   });
 
   let startX = 0;

@@ -1,4 +1,4 @@
-const BUILD_VERSION = "20260929-v2";
+const BUILD_VERSION = "20260929-ios26-v5";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
