@@ -85,14 +85,21 @@ function applyLanguage(lang, showToastNotification = false) {
     if (key) el.setAttribute("aria-label", t(key));
   });
 
-  // Sync segmented control for language
-  const langControl = document.getElementById("language-segmented-control");
-  if (langControl) {
-    langControl.querySelectorAll(".segmented-option").forEach(btn => {
+  // Sync language dropdown trigger text and active option
+  const langDropdownCell = document.getElementById("language-dropdown-cell");
+  const langSelectedText = document.getElementById("language-selected-text");
+  if (langSelectedText) {
+    const langKey = "lang_" + lang;
+    langSelectedText.setAttribute("data-i18n", langKey);
+    langSelectedText.textContent = t(langKey);
+  }
+  if (langDropdownCell) {
+    langDropdownCell.querySelectorAll(".ios-dropdown-option").forEach(btn => {
       const val = btn.getAttribute("data-lang-val");
-      btn.classList.toggle("active", val === lang);
+      const isActive = (val === lang);
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
     });
-    updateSegmentedPill(langControl);
   }
 
   // Update dynamic labels & inputs
@@ -134,13 +141,32 @@ function initLanguage() {
     applyLanguage(detected, false);
   }
 
-  const langControl = document.getElementById("language-segmented-control");
-  if (langControl) {
-    langControl.querySelectorAll(".segmented-option").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const lang = btn.getAttribute("data-lang-val");
-        setLanguage(lang);
+  const dropdownCell = document.getElementById("language-dropdown-cell");
+  const dropdownTrigger = document.getElementById("language-dropdown-trigger");
+  if (dropdownCell && dropdownTrigger) {
+    dropdownTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dropdownCell.classList.toggle("open");
+      dropdownTrigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+
+    dropdownCell.querySelectorAll(".ios-dropdown-option").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const selectedLang = btn.getAttribute("data-lang-val");
+        setLanguage(selectedLang);
+        setTimeout(() => {
+          dropdownCell.classList.remove("open");
+          dropdownTrigger.setAttribute("aria-expanded", "false");
+        }, 180);
       });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!dropdownCell.contains(e.target) && dropdownCell.classList.contains("open")) {
+        dropdownCell.classList.remove("open");
+        dropdownTrigger.setAttribute("aria-expanded", "false");
+      }
     });
   }
 }

@@ -1,4 +1,4 @@
-const BUILD_VERSION = "20260929-v11";
+const BUILD_VERSION = "20260929-v12";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();

@@ -447,16 +447,46 @@
         <div class="ios-section">
           <div class="ios-section-header" data-i18n="section_language">Language</div>
           <div class="ios-group-card">
-            <div class="ios-cell" style="flex-direction: column; align-items: stretch; gap: 0.625rem;">
-              <div class="ios-cell-label">
-                <strong data-i18n="label_language">Interface Language</strong>
-                <small data-i18n="sub_language">Select your preferred UI display language</small>
-              </div>
-              <div class="segmented-control" id="language-segmented-control">
-                <button type="button" class="segmented-option active" data-lang-val="en" data-i18n="lang_en">English</button>
-                <button type="button" class="segmented-option" data-lang-val="zh" data-i18n="lang_zh">中文</button>
-                <button type="button" class="segmented-option" data-lang-val="es" data-i18n="lang_es">Español</button>
-                <button type="button" class="segmented-option" data-lang-val="de" data-i18n="lang_de">Deutsch</button>
+            <div class="ios-dropdown-cell" id="language-dropdown-cell">
+              <button type="button" class="ios-dropdown-trigger" id="language-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <div class="ios-cell-label">
+                  <strong data-i18n="label_language">Interface Language</strong>
+                  <small data-i18n="sub_language">Select your preferred UI display language</small>
+                </div>
+                <div class="ios-dropdown-selected">
+                  <span class="ios-dropdown-selected-text" id="language-selected-text" data-i18n="lang_en">English</span>
+                  <svg class="ios-dropdown-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </button>
+              <div class="ios-dropdown-menu" id="language-dropdown-menu" role="listbox" aria-label="Language options">
+                <div class="ios-dropdown-list">
+                  <button type="button" class="ios-dropdown-option active" data-lang-val="en" role="option" aria-selected="true">
+                    <span class="ios-dropdown-option-label" data-i18n="lang_en">English</span>
+                    <svg class="ios-dropdown-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                  <button type="button" class="ios-dropdown-option" data-lang-val="zh" role="option" aria-selected="false">
+                    <span class="ios-dropdown-option-label" data-i18n="lang_zh">Chinese</span>
+                    <svg class="ios-dropdown-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                  <button type="button" class="ios-dropdown-option" data-lang-val="es" role="option" aria-selected="false">
+                    <span class="ios-dropdown-option-label" data-i18n="lang_es">Spanish</span>
+                    <svg class="ios-dropdown-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                  <button type="button" class="ios-dropdown-option" data-lang-val="de" role="option" aria-selected="false">
+                    <span class="ios-dropdown-option-label" data-i18n="lang_de">German</span>
+                    <svg class="ios-dropdown-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -640,7 +670,7 @@
     </div>
   </div>
 
-  <script src="translations.js?v=20260929-v11"></script>
-  <script src="app.js?v=20260929-v11"></script>
+  <script src="translations.js?v=20260929-v12"></script>
+  <script src="app.js?v=20260929-v12"></script>
 </body>
 </html>
