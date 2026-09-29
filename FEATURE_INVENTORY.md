@@ -117,7 +117,7 @@ This document provides a complete checklist of all functional specifications, st
   - Crossing threshold triggers opening the edit modal on release.
 - Long Press and Drag to Reorder:
   - Holding for 340ms without horizontal movement initiates reordering.
-  - Dragged card is elevated with a shadow.
+  - Dragged card is lifted with a shadow.
   - Ghost placeholder reserves space in the list.
   - Moving above or below siblings swaps placeholder position dynamically.
   - Auto-scrolls feed when dragging near the top or bottom edge of the container.
