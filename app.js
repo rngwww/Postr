@@ -196,6 +196,9 @@ function applyTheme(themeMode) {
     const isActive = (val === themeMode) || (val === "auto" && themeMode === "system") || (val === "system" && themeMode === "auto");
     btn.classList.toggle("active", isActive);
   });
+  // Animate the sliding pill
+  const themeControl = document.getElementById("theme-segmented-control");
+  if (themeControl) updateSegmentedPill(themeControl);
 }
 
 function setThemeMode(themeMode) {
@@ -228,6 +231,7 @@ function applyAccentColor(hexColor) {
   document.querySelectorAll("#swatches-palette .swatch-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-color").toLowerCase() === hexColor.toLowerCase());
   });
+  // Animate swatches sliding pill (accent color palette is row of buttons, not a segmented control)
 
   const customInput = document.getElementById("input-custom-color");
   if (customInput) {
@@ -279,6 +283,48 @@ function initThemeAndAppearance() {
       setAccentColor(e.target.value);
     });
   }
+
+  // Initialize sliding pill for all segmented controls
+  initAllSegmentedPills();
+}
+
+// ============================================================================
+// SEGMENTED CONTROL SLIDING PILL ANIMATION
+// ============================================================================
+function initAllSegmentedPills() {
+  document.querySelectorAll('.segmented-control').forEach(control => {
+    initSegmentedPill(control);
+  });
+}
+
+function initSegmentedPill(control) {
+  if (!control) return;
+  // Create the pill element if it doesn't exist
+  let pill = control.querySelector('.segmented-pill');
+  if (!pill) {
+    pill = document.createElement('div');
+    pill.className = 'segmented-pill';
+    control.insertBefore(pill, control.firstChild);
+  }
+  // Position it on the active button
+  updateSegmentedPill(control);
+}
+
+function updateSegmentedPill(control) {
+  if (!control) return;
+  const pill = control.querySelector('.segmented-pill');
+  if (!pill) return;
+  const activeBtn = control.querySelector('.segmented-option.active');
+  if (!activeBtn) {
+    pill.style.opacity = '0';
+    return;
+  }
+  pill.style.opacity = '1';
+  const controlRect = control.getBoundingClientRect();
+  const btnRect = activeBtn.getBoundingClientRect();
+  const offsetLeft = btnRect.left - controlRect.left;
+  pill.style.width = `${btnRect.width}px`;
+  pill.style.transform = `translateX(${offsetLeft - 2}px)`;
 }
 
 // ============================================================================
@@ -1335,6 +1381,9 @@ function setEditorMode(mode) {
     if (panelModeNote) panelModeNote.classList.add("active");
     if (panelModeChecklist) panelModeChecklist.classList.remove("active");
   }
+  // Animate the note/checklist segmented pill
+  const modeSegmented = tabModeNote?.closest('.segmented-control');
+  if (modeSegmented) requestAnimationFrame(() => updateSegmentedPill(modeSegmented));
 }
 
 const tabModeNote = document.getElementById("tab-mode-note");
@@ -1579,6 +1628,7 @@ function openCreateModal() {
   document.getElementById("input-body").value = "";
   document.getElementById("input-pin-note").checked = false;
 
+  _builderCheckingAllowed = false;
   setEditorMode("note");
   populateBuilderChecklist([]);
 
@@ -1606,6 +1656,7 @@ function openEditModal(item) {
   document.getElementById("input-body").value = item.body || "";
   document.getElementById("input-pin-note").checked = !!item.pinned;
 
+  _builderCheckingAllowed = true;
   if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
     setEditorMode("checklist");
     populateBuilderChecklist(item.checklistItems || []);
@@ -1981,6 +2032,8 @@ const checklistRowsContainer = document.getElementById("checklist-rows-container
 const btnAddChecklistRow = document.getElementById("btn-add-checklist-row");
 const btnChecklistMenu = document.getElementById("btn-checklist-menu");
 
+let _builderCheckingAllowed = false;
+
 function createBuilderRow(text = "", done = false, autoFocus = false) {
   if (!checklistRowsContainer) return null;
   const rowId = "ci_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4);
@@ -1988,8 +2041,9 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
   row.className = "builder-row";
   row.dataset.rowId = rowId;
 
+  const isCheckable = _builderCheckingAllowed;
   row.innerHTML = `
-    <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="Toggle Complete">
+    <button type="button" class="builder-row-check ${done ? "checked" : ""}${!isCheckable ? " disabled" : ""}" title="Toggle Complete"${!isCheckable ? ' disabled' : ''}>
       <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
@@ -2008,6 +2062,7 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
   const delBtn = row.querySelector(".builder-row-del");
 
   checkBtn.addEventListener("click", () => {
+    if (!_builderCheckingAllowed) return;
     checkBtn.classList.toggle("checked");
     input.classList.toggle("checked");
   });
