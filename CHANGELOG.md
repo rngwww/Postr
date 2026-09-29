@@ -85,3 +85,21 @@ A centralized entitlement module (premiumManager) manages plan states and limits
 4. Touch Delays: Applied touch-action: manipulation and disabled tap highlight flashing.
 5. Modals: Configured with overscroll-behavior: contain to eliminate scroll chaining.
 6. Emoji Removal: Removed all emoji characters from UI text, code, notifications, and documentation, replacing them with semantic SVG icons or plain text.
+
+---
+
+## iOS 26 Kit Menu Redesign and Tab Navigation Alignment
+
+1. **Tab Bar Reordering & Symmetry**:
+   - Reordered main bottom navigation tabs: **Trash** (left), **Reminders** (middle), and **Settings** (right).
+   - Preserved default active state for **Reminders** (`view-feed`) in the center upon launch.
+   - Retained live numeric counter badge on the Trash tab.
+
+2. **iOS 26 Kit Liquid Glass Menu Look and Feel**:
+   - Bottom Tab Bar: Integrated 32px backdrop blur with 210% saturation boost, 0.5px specular highlight border, dual-pass inner specular lighting (`inset 0 1px 1px 0 rgba(255, 255, 255, 0.35)` and `inset 0 -1px 1px 0 rgba(0, 0, 0, 0.15)`), and elevated ambient shadow.
+   - Active Tab Indicator: Added glowing translucent capsule pill behind active icon with specular edge reflection and spring transition.
+   - Action Sheet / Context Menus: Refined group cards to 1.125rem (18px) continuous curvature with 36px blur, 200% saturation, specular borders, and active press selection highlights inspired by the iOS kit selection specification (`Selection.png`).
+   - Card Menu & Checklist Buttons: Applied subtle rounded glass hover states and smooth spring response.
+
+3. **Typography Compliance**:
+   - Strictly preserved **Helvetica Neue Light** (`font-weight: 300`) across all tab labels, context menu items, menu headers, settings sections, and segmented controls.

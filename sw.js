@@ -1,4 +1,4 @@
-const CACHE_NAME = "postr-cache-20260929";
+const BUILD_VERSION = "20260929-v2";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -7,18 +7,22 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => clients.claim())
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Network-first: bypass cache completely for live app updates
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
 
 self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
   if (event.data && event.data.type === "TRIGGER_NOTIFICATION") {
     const { title, body, tag, icon, badge, data, actions } = event.data;
     self.registration.showNotification(title, {

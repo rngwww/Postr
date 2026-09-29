@@ -39,7 +39,7 @@ This report evaluates every component, data model, gesture, background task, and
 | Trash button and badge | CHANGED | Relocated to dedicated Trash tab in the bottom tab bar with real-time numeric counter badge. |
 | Notification permission bell | PASS | Displayed in top navigation; triggers permission request and active state tint. |
 | Tips and Guide trigger | CHANGED | Accessible via Settings tab cell and guide modal sheet with 6-slide carousel. |
-| Bottom tab bar | CHANGED | Added iOS 26 Liquid Glass tab bar with Reminders, Trash, and Settings tabs. |
+| Bottom tab bar | PASS | Redesigned with iOS 26 Kit look and feel; reordered to Trash (left), Reminders (middle), and Settings (right); Helvetica Neue Light preserved. |
 
 ---
 

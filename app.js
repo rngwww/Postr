@@ -340,12 +340,27 @@ function setupDynamicAppIcon() {
 // SERVICE WORKER & NOTIFICATIONS
 // ============================================================================
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js?v=20260929")
+  navigator.serviceWorker.register("./sw.js?v=" + (window.APP_BUILD_VERSION || Date.now()))
     .then((reg) => {
       swRegistration = reg;
       reg.update();
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // Tell new worker to take over immediately
+              newWorker.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
+        }
+      });
     })
     .catch((err) => console.log("SW error:", err));
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    window.location.reload();
+  });
 
   navigator.serviceWorker.addEventListener("message", (event) => {
     if (!event.data) return;
