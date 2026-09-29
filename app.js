@@ -340,8 +340,11 @@ function setupDynamicAppIcon() {
 // SERVICE WORKER & NOTIFICATIONS
 // ============================================================================
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js")
-    .then((reg) => { swRegistration = reg; })
+  navigator.serviceWorker.register("./sw.js?v=20260929")
+    .then((reg) => {
+      swRegistration = reg;
+      reg.update();
+    })
     .catch((err) => console.log("SW error:", err));
 
   navigator.serviceWorker.addEventListener("message", (event) => {
