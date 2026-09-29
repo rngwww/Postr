@@ -13,7 +13,7 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
-    window.APP_BUILD_VERSION = "20260929-v2";
+    window.APP_BUILD_VERSION = "20260929-ios26-v3";
 
     // Immediate purge of any stale CacheStorage
     if ('caches' in window) {
@@ -50,14 +50,30 @@
     });
   </script>
 
-  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-v2">
-  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-v2">
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="icon.svg?v=20260929-ios26-v3">
+  <link id="dynamic-apple-icon" rel="apple-touch-icon" href="icon.svg?v=20260929-ios26-v3">
 
   <title>Postr</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=20260929-v2">
+  <link rel="stylesheet" href="style.css?v=20260929-ios26-v3">
 </head>
 <body>
+  <!-- iOS 26 Kit Specular Glass Filter Defs from Shape.svg -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
+    <defs>
+      <filter id="ios26-liquid-glass" x="-2%" y="-2%" width="104%" height="104%" filterUnits="objectBoundingBox">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur"></feGaussianBlur>
+        <feOffset in="blur" dx="0" dy="1" result="offset"></feOffset>
+        <feComposite in="offset" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="innerShadow"></feComposite>
+        <feColorMatrix in="innerShadow" type="matrix" values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.35 0" result="specularHighlight"></feColorMatrix>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"></feMergeNode>
+          <feMergeNode in="specularHighlight"></feMergeNode>
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
   <!-- Atmospheric Liquid Wallpaper Backdrop -->
   <div class="wallpaper-backdrop" id="wallpaper-backdrop"></div>
 
@@ -304,6 +320,24 @@
               </div>
             </div>
             <div class="ios-section-footer">Export your reminders and trash archive to a JSON document for local backup and multi-device transfer.</div>
+          </div>
+
+          
+          <!-- Section: iOS Lock Screen & Widgets Ecosystem (iOS 26 Kit) -->
+          <div class="ios-section">
+            <div class="ios-section-header">iOS Lock Screen & Widgets</div>
+            <div class="ios-group-card" style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="font-size: 0.8125rem; font-weight: 300; color: var(--color-text-secondary); line-height: 1.45;">
+                Postr reminders synchronize with persistent iOS Lock Screen and Desktop widget architecture.
+              </div>
+              <div style="border-radius: 0.875rem; overflow: hidden; border: 0.5px solid var(--glass-border-specular); box-shadow: 0 6px 20px rgba(0,0,0,0.3); max-height: 180px; position: relative;">
+                <img src="assets/ios_kit/widgets-preview.png" alt="iOS Widgets Architecture" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(10,10,12,0.92) 0%, rgba(10,10,12,0.4) 60%, transparent 100%); padding: 0.625rem 0.875rem; color: #ffffff; font-size: 0.75rem; font-weight: 300; display: flex; align-items: center; justify-content: space-between;">
+                  <span>Widget Ecosystem Preview</span>
+                  <span style="font-size: 0.6875rem; color: var(--accent-color);">iOS 26 Kit</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Section: Guide & Information -->
@@ -673,17 +707,43 @@
       <div class="pin-error-msg" id="pin-error-msg"></div>
 
       <div class="pin-keypad" id="pin-keypad">
-        <button type="button" class="key-btn" data-key="1">1</button>
-        <button type="button" class="key-btn" data-key="2">2</button>
-        <button type="button" class="key-btn" data-key="3">3</button>
-        <button type="button" class="key-btn" data-key="4">4</button>
-        <button type="button" class="key-btn" data-key="5">5</button>
-        <button type="button" class="key-btn" data-key="6">6</button>
-        <button type="button" class="key-btn" data-key="7">7</button>
-        <button type="button" class="key-btn" data-key="8">8</button>
-        <button type="button" class="key-btn" data-key="9">9</button>
+        <button type="button" class="key-btn" data-key="1">
+          <span class="key-digit">1</span>
+        </button>
+        <button type="button" class="key-btn" data-key="2">
+          <span class="key-digit">2</span>
+          <span class="key-sub">A B C</span>
+        </button>
+        <button type="button" class="key-btn" data-key="3">
+          <span class="key-digit">3</span>
+          <span class="key-sub">D E F</span>
+        </button>
+        <button type="button" class="key-btn" data-key="4">
+          <span class="key-digit">4</span>
+          <span class="key-sub">G H I</span>
+        </button>
+        <button type="button" class="key-btn" data-key="5">
+          <span class="key-digit">5</span>
+          <span class="key-sub">J K L</span>
+        </button>
+        <button type="button" class="key-btn" data-key="6">
+          <span class="key-digit">6</span>
+          <span class="key-sub">M N O</span>
+        </button>
+        <button type="button" class="key-btn" data-key="7">
+          <span class="key-digit">7</span>
+          <span class="key-sub">P Q R S</span>
+        </button>
+        <button type="button" class="key-btn" data-key="8">
+          <span class="key-digit">8</span>
+          <span class="key-sub">T U V</span>
+        </button>
+        <button type="button" class="key-btn" data-key="9">
+          <span class="key-digit">9</span>
+          <span class="key-sub">W X Y Z</span>
+        </button>
         <button type="button" class="key-btn key-btn-aux" id="key-btn-bio" title="Face ID / Touch ID">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
             <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
             <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
@@ -693,13 +753,11 @@
             <path d="M10 13a2 2 0 0 0 4 0"></path>
           </svg>
         </button>
-        <button type="button" class="key-btn" data-key="0">0</button>
+        <button type="button" class="key-btn" data-key="0">
+          <span class="key-digit">0</span>
+        </button>
         <button type="button" class="key-btn key-btn-aux" id="key-btn-del" title="Delete">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
-            <line x1="18" y1="9" x2="12" y2="15"></line>
-            <line x1="12" y1="9" x2="18" y2="15"></line>
-          </svg>
+          <img src="assets/ios_kit/delete-dark.png" alt="Delete" class="key-del-img">
         </button>
       </div>
     </div>
@@ -744,6 +802,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260929-v2"></script>
+  <script src="app.js?v=20260929-ios26-v3"></script>
 </body>
 </html>

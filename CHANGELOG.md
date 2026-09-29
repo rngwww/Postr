@@ -103,3 +103,22 @@ A centralized entitlement module (premiumManager) manages plan states and limits
 
 3. **Typography Compliance**:
    - Strictly preserved **Helvetica Neue Light** (`font-weight: 300`) across all tab labels, context menu items, menu headers, settings sections, and segmented controls.
+
+---
+
+## iOS 26 Kit Literal UI Integration & Modern Interface Redesign
+
+1. **Floating Liquid Glass Dock Navigation**:
+   - Re-architected bottom navigation from a static edge dock into an elevated **Floating Liquid Glass Capsule Dock** with 32px squircle curvature, 36px backdrop blur, 220% saturation boost, and multi-pass specular rim lighting (`box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2), 0 16px 40px rgba(0, 0, 0, 0.45)`).
+   - Floating Action Button (+) dynamically floats directly above the dock with glowing accent physics.
+   - Symmetrical 3-tab layout: **Trash** (left), **Reminders** (middle, active), **Settings** (right).
+
+2. **Literal iOS Kit Assets Integrated into the UI**:
+   - **Keypad / Passcode Screen**: Integrated literal kit asset `assets/ios_kit/delete-dark.png` into the delete key, styled numeric buttons matching `Number Pad@3x.png` with dual digit and letter subtext (e.g. 2 A B C, 3 D E F).
+   - **Action Sheet / Context Menu**: Embedded literal kit selection texture `assets/ios_kit/selection.png` into menu item hover and active states.
+   - **SVG Filter Defs**: Embedded specular inner-shadow filter `#ios26-liquid-glass` derived from kit `Shape.svg`.
+   - **Widget Ecosystem Showcase**: Embedded literal kit asset `assets/ios_kit/widgets-preview.png` in Settings demonstrating lock screen and desktop widget synchronization.
+   - **Cards**: Enhanced reminder cards with 20px squircle curvature, specular top borders, and glowing interactive status chips.
+
+3. **Typography**:
+   - Strictly maintained **Helvetica Neue Light** (`font-weight: 300`) across all components, headers, buttons, and subtext.
