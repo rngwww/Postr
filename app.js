@@ -1,15 +1,30 @@
-const CURRENT_VERSION = "2.1";
+// Postr - Liquid Glass Application Engine
+
+// Storage Keys
 const STORAGE_KEY = "postr_notes_db";
 const TRASH_STORAGE_KEY = "postr_trash_db";
 const TRASH_RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+const MORNING_BRIEFING_KEY = "postr_morning_briefing_enabled";
+const LAST_BRIEFING_DATE_KEY = "postr_last_morning_briefing_date";
+const APP_LOCK_KEY = "postr_app_lock_enabled";
+const PIN_CODE_KEY = "postr_pin_code";
+const WEBAUTHN_ID_KEY = "postr_webauthn_id";
+
+const THEME_MODE_KEY = "postr_theme_mode";
+const ACCENT_COLOR_KEY = "postr_accent_color";
+const SUBSCRIPTION_PLAN_KEY = "postr_subscription_plan";
+
+// State
 let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let trashedNotes = JSON.parse(localStorage.getItem(TRASH_STORAGE_KEY) || "[]");
 let swRegistration = null;
 let activeSelectedLabel = null;
 let activeFilterCategory = null;
 let searchQuery = "";
+let toastTimeout = null;
 
+// Category Color Mapping
 const PASTEL_MAP = {
   School: "#b2d8d8",
   Work: "#d4b8e5",
@@ -18,7 +33,272 @@ const PASTEL_MAP = {
   Tasks: "#b5ead7"
 };
 
-// Generates high-res PNG for iOS Homescreen
+// ============================================================================
+// FREEMIUM ENTITLEMENT MANAGER
+// ============================================================================
+const premiumManager = {
+  limits: {
+    maxFreeReminders: 5,
+    freeAlarmPresets: [0, 1, 5, 10]
+  },
+
+  getPlan() {
+    return localStorage.getItem(SUBSCRIPTION_PLAN_KEY) || "free";
+  },
+
+  isPremium() {
+    return this.getPlan() === "premium";
+  },
+
+  canAddReminder() {
+    if (this.isPremium()) return true;
+    return reminders.length < this.limits.maxFreeReminders;
+  },
+
+  canUseCustomAlarm() {
+    return this.isPremium();
+  },
+
+  setPlan(plan) {
+    localStorage.setItem(SUBSCRIPTION_PLAN_KEY, plan);
+    syncSubscriptionUI();
+    const isPrem = plan === "premium";
+    showToast(isPrem ? "Activated Premium Plan" : "Switched to Free Plan");
+  },
+
+  startCheckout() {
+    openModal("upgrade-modal");
+  },
+
+  cancelSubscription() {
+    this.setPlan("free");
+  }
+};
+
+function syncSubscriptionUI() {
+  const isPrem = premiumManager.isPremium();
+  const badge = document.getElementById("settings-plan-badge");
+  const subtitle = document.getElementById("settings-plan-subtitle");
+  const cellUpgrade = document.getElementById("cell-upgrade-action");
+  const cellCancel = document.getElementById("cell-cancel-subscription");
+  const devToggle = document.getElementById("toggle-dev-premium");
+
+  if (badge) {
+    badge.textContent = isPrem ? "Premium Plan" : "Free Plan";
+    badge.className = isPrem ? "badge-tag badge-pinned" : "badge-tag badge-category";
+  }
+
+  if (subtitle) {
+    if (isPrem) {
+      subtitle.textContent = "Unlimited active reminders unlocked";
+    } else {
+      subtitle.textContent = `${reminders.length} of ${premiumManager.limits.maxFreeReminders} active reminders used`;
+    }
+  }
+
+  if (cellUpgrade) {
+    cellUpgrade.classList.toggle("hidden", isPrem);
+  }
+
+  if (cellCancel) {
+    cellCancel.classList.toggle("hidden", !isPrem);
+  }
+
+  if (devToggle) {
+    devToggle.checked = isPrem;
+  }
+}
+
+// Development toggle in Settings
+const toggleDevPremium = document.getElementById("toggle-dev-premium");
+if (toggleDevPremium) {
+  toggleDevPremium.addEventListener("change", () => {
+    premiumManager.setPlan(toggleDevPremium.checked ? "premium" : "free");
+  });
+}
+
+// Upgrade Modal Actions
+const btnOpenUpgrade = document.getElementById("btn-open-upgrade");
+if (btnOpenUpgrade) {
+  btnOpenUpgrade.addEventListener("click", () => {
+    premiumManager.startCheckout();
+  });
+}
+
+const btnCloseUpgrade = document.getElementById("btn-close-upgrade");
+if (btnCloseUpgrade) {
+  btnCloseUpgrade.addEventListener("click", () => {
+    closeModal("upgrade-modal");
+  });
+}
+
+const btnTestPurchase = document.getElementById("btn-test-purchase");
+if (btnTestPurchase) {
+  btnTestPurchase.addEventListener("click", () => {
+    premiumManager.setPlan("premium");
+    closeModal("upgrade-modal");
+  });
+}
+
+const btnCancelSubscription = document.getElementById("btn-cancel-subscription");
+if (btnCancelSubscription) {
+  btnCancelSubscription.addEventListener("click", () => {
+    premiumManager.cancelSubscription();
+  });
+}
+
+// ============================================================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================================================
+function showToast(message) {
+  const pill = document.getElementById("toast-pill");
+  const msgEl = document.getElementById("toast-message");
+  if (!pill || !msgEl) return;
+
+  msgEl.textContent = message;
+  pill.classList.add("visible");
+
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+
+  toastTimeout = setTimeout(() => {
+    pill.classList.remove("visible");
+    toastTimeout = null;
+  }, 2500);
+}
+
+// ============================================================================
+// THEMES AND APPEARANCE ENGINE
+// ============================================================================
+function applyTheme(themeMode) {
+  let effectiveTheme = themeMode;
+  if (themeMode === "system") {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    effectiveTheme = isDark ? "dark" : "light";
+  }
+
+  document.documentElement.setAttribute("data-theme", effectiveTheme);
+
+  const metaThemeColor = document.getElementById("meta-theme-color");
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0a0a0c" : "#f2f2f7");
+  }
+
+  // Sync segmented buttons
+  document.querySelectorAll("#theme-segmented-control .segmented-option").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-theme-val") === themeMode);
+  });
+}
+
+function setThemeMode(themeMode) {
+  localStorage.setItem(THEME_MODE_KEY, themeMode);
+  applyTheme(themeMode);
+}
+
+function applyAccentColor(hexColor) {
+  if (!hexColor) return;
+  document.documentElement.style.setProperty("--accent-color", hexColor);
+
+  // Parse RGB for translucent variants
+  const c = hexColor.replace("#", "");
+  if (c.length === 6) {
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    document.documentElement.style.setProperty("--accent-color-rgb", `${r}, ${g}, ${b}`);
+  }
+
+  // Sync swatches
+  document.querySelectorAll("#swatches-palette .swatch-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-color").toLowerCase() === hexColor.toLowerCase());
+  });
+
+  const customInput = document.getElementById("input-custom-color");
+  if (customInput) {
+    customInput.value = hexColor;
+  }
+}
+
+function setAccentColor(hexColor) {
+  localStorage.setItem(ACCENT_COLOR_KEY, hexColor);
+  applyAccentColor(hexColor);
+}
+
+function initThemeAndAppearance() {
+  const savedTheme = localStorage.getItem(THEME_MODE_KEY) || "dark";
+  applyTheme(savedTheme);
+
+  const savedColor = localStorage.getItem(ACCENT_COLOR_KEY) || "#007aff";
+  applyAccentColor(savedColor);
+
+  // Listen to system preference changes
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    const currentMode = localStorage.getItem(THEME_MODE_KEY) || "dark";
+    if (currentMode === "system") {
+      applyTheme("system");
+    }
+  });
+
+  // Segmented control clicks
+  document.querySelectorAll("#theme-segmented-control .segmented-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.getAttribute("data-theme-val");
+      setThemeMode(mode);
+    });
+  });
+
+  // Swatches palette clicks
+  document.querySelectorAll("#swatches-palette .swatch-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const color = btn.getAttribute("data-color");
+      setAccentColor(color);
+    });
+  });
+
+  const customInput = document.getElementById("input-custom-color");
+  if (customInput) {
+    customInput.addEventListener("input", (e) => {
+      setAccentColor(e.target.value);
+    });
+  }
+}
+
+// ============================================================================
+// TAB BAR NAVIGATION
+// ============================================================================
+function initTabBar() {
+  const tabs = document.querySelectorAll(".tab-bar-item");
+  const views = document.querySelectorAll(".tab-view");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const targetId = tab.getAttribute("data-tab-target");
+      if (!targetId) return;
+
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      views.forEach(v => {
+        if (v.id === targetId) {
+          v.classList.add("active");
+        } else {
+          v.classList.remove("active");
+        }
+      });
+
+      if (targetId === "view-trash") {
+        renderTrashList();
+      } else if (targetId === "view-settings") {
+        syncSubscriptionUI();
+      }
+    });
+  });
+}
+
+// ============================================================================
+// DYNAMIC APP ICON GENERATION (PNG for iOS Home Screen)
+// ============================================================================
 function setupDynamicAppIcon() {
   try {
     const canvas = document.createElement("canvas");
@@ -38,7 +318,7 @@ function setupDynamicAppIcon() {
     ctx.stroke();
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "900 340px -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro', system-ui, sans-serif";
+    ctx.font = "300 340px 'Helvetica Neue', Helvetica, Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("P", 236, 276);
@@ -56,26 +336,36 @@ function setupDynamicAppIcon() {
   } catch (e) {}
 }
 
-function syncVersionDisplay() {
-  const badge = document.getElementById("app-version-badge");
-  if (badge) {
-    badge.innerText = `VERSION ${CURRENT_VERSION}`;
-  }
-}
-
-// Haptic feedback disabled
-function triggerHaptic() {}
-function triggerDeleteHaptic() {}
-function applyHapticOverlays() {}
-
+// ============================================================================
+// SERVICE WORKER & NOTIFICATIONS
+// ============================================================================
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js")
     .then((reg) => { swRegistration = reg; })
     .catch((err) => console.log("SW error:", err));
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (!event.data) return;
+    if (event.data.type === "NOTIFICATION_ACTION_SNOOZE") {
+      if (event.data.reminderId) {
+        snoozeReminderById(event.data.reminderId, 15);
+      }
+    } else if (event.data.type === "NOTIFICATION_ACTION_DONE") {
+      if (event.data.reminderId) {
+        moveToTrash(event.data.reminderId);
+      }
+    } else if (event.data.type === "NOTIFICATION_CLICK_OPEN") {
+      if (event.data.reminderId) {
+        const el = document.querySelector(`.card-wrapper[data-id="${event.data.reminderId}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  });
 }
 
 function updateNotifyButton() {
   const btn = document.getElementById("btn-notify-perm");
+  if (!btn) return;
   if (!("Notification" in window)) {
     btn.style.display = "none";
     return;
@@ -87,16 +377,18 @@ function updateNotifyButton() {
   }
 }
 
-document.getElementById("btn-notify-perm").addEventListener("click", async () => {
-  triggerHaptic();
-  if ("Notification" in window) {
-    const perm = await Notification.requestPermission();
-    updateNotifyButton();
-    if (perm === "granted") {
-      triggerNotification("Reminders Active", "Lock screen pings and custom intervals enabled.", "perm_granted");
+const btnNotifyPerm = document.getElementById("btn-notify-perm");
+if (btnNotifyPerm) {
+  btnNotifyPerm.addEventListener("click", async () => {
+    if ("Notification" in window) {
+      const perm = await Notification.requestPermission();
+      updateNotifyButton();
+      if (perm === "granted") {
+        triggerNotification("Reminders Active", "Lock screen alerts and custom intervals enabled.", "perm_granted");
+      }
     }
-  }
-});
+  });
+}
 
 function triggerNotification(primaryText, secondaryText, tag, options = {}) {
   const payload = {
@@ -109,8 +401,8 @@ function triggerNotification(primaryText, secondaryText, tag, options = {}) {
       reminderId: options.reminderId || null
     },
     actions: options.actions || [
-      { action: "snooze_15", title: "⏱ Snooze 15m" },
-      { action: "mark_done", title: "✓ Done" }
+      { action: "snooze_15", title: "Snooze 15m" },
+      { action: "mark_done", title: "Done" }
     ]
   };
 
@@ -131,7 +423,6 @@ function triggerNotification(primaryText, secondaryText, tag, options = {}) {
   }
 }
 
-
 function updateAppBadge() {
   if ("setAppBadge" in navigator) {
     try {
@@ -144,6 +435,9 @@ function updateAppBadge() {
   }
 }
 
+// ============================================================================
+// TRASH & RETENTION ENGINE (24 Hours)
+// ============================================================================
 function cleanupExpiredTrash() {
   const now = Date.now();
   const countBefore = trashedNotes.length;
@@ -171,9 +465,10 @@ function updateTrashBadge() {
   }
 }
 
-function moveToTrash(id, wrapper) {
-  triggerDeleteHaptic();
-  wrapper.classList.add("deleting");
+function moveToTrash(id, wrapper = null) {
+  if (wrapper) {
+    wrapper.classList.add("deleting");
+  }
 
   setTimeout(() => {
     const noteIndex = reminders.findIndex(r => r.id === id);
@@ -184,7 +479,7 @@ function moveToTrash(id, wrapper) {
       persistTrash();
       persistAndSync();
     }
-  }, 300);
+  }, wrapper ? 280 : 0);
 }
 
 function restoreFromTrash(id) {
@@ -196,7 +491,7 @@ function restoreFromTrash(id) {
     reminders.unshift(restoredNote);
     persistTrash();
     persistAndSync();
-    showToast("NOTE RESTORED");
+    showToast("Note Restored");
   }
 }
 
@@ -208,45 +503,17 @@ function permanentlyDeleteFromTrash(id) {
 function animateTrashCardRemoval(card, type, callback) {
   if (card.classList.contains("restoring") || card.classList.contains("deleting")) return;
   card.classList.add(type);
-
-  // Smoothly react on sibling cards below
-  const container = document.getElementById("trash-list");
-  if (container) {
-    const siblings = Array.from(container.querySelectorAll(".trash-item-card:not(.restoring):not(.deleting)"));
-    const idx = siblings.indexOf(card);
-    if (idx !== -1) {
-      siblings.slice(idx + 1).forEach(sib => {
-        sib.classList.add("sibling-slide");
-        setTimeout(() => sib.classList.remove("sibling-slide"), 260);
-      });
-    }
-  }
-
+  card.style.opacity = "0";
+  card.style.transform = type === "restoring" ? "translateY(-20px)" : "translateX(-100%)";
   setTimeout(() => {
     callback();
-  }, 290);
+  }, 260);
 }
 
 function emptyEntireTrash() {
-  triggerDeleteHaptic();
-  const container = document.getElementById("trash-list");
-  const cards = container ? Array.from(container.querySelectorAll(".trash-item-card")) : [];
-  if (cards.length > 0) {
-    cards.forEach((c, idx) => {
-      setTimeout(() => {
-        c.classList.add("deleting");
-      }, idx * 40);
-    });
-    setTimeout(() => {
-      trashedNotes = [];
-      persistTrash();
-      showToast("TRASH EMPTIED");
-    }, cards.length * 40 + 260);
-  } else {
-    trashedNotes = [];
-    persistTrash();
-    showToast("TRASH EMPTIED");
-  }
+  trashedNotes = [];
+  persistTrash();
+  showToast("Trash Emptied");
 }
 
 function formatRemainingTime(deletedAt) {
@@ -270,22 +537,15 @@ function renderTrashList() {
   container.innerHTML = "";
 
   if (trashedNotes.length === 0) {
-    if (emptyState) {
-      emptyState.style.display = "block";
-      emptyState.classList.add("fade-in");
-    }
+    if (emptyState) emptyState.style.display = "flex";
     if (emptyBtn) emptyBtn.classList.add("hidden");
   } else {
-    if (emptyState) {
-      emptyState.style.display = "none";
-      emptyState.classList.remove("fade-in");
-    }
+    if (emptyState) emptyState.style.display = "none";
     if (emptyBtn) emptyBtn.classList.remove("hidden");
 
-    trashedNotes.forEach((item, index) => {
+    trashedNotes.forEach((item) => {
       const card = document.createElement("div");
       card.className = "trash-item-card";
-      card.style.animationDelay = `${index * 45}ms`;
       card.innerHTML = `
         <div class="trash-item-header">
           <h4>${escapeHtml(item.title)}</h4>
@@ -293,14 +553,13 @@ function renderTrashList() {
         </div>
         ${item.body ? `<div class="trash-item-body">${escapeHtml(item.body)}</div>` : ""}
         <div class="trash-item-actions">
-          <button type="button" class="btn-trash-restore" data-id="${item.id}">RESTORE</button>
-          <button type="button" class="btn-trash-delete" data-id="${item.id}">DELETE NOW</button>
+          <button type="button" class="btn-trash-restore" data-id="${item.id}">Restore</button>
+          <button type="button" class="btn-trash-delete" data-id="${item.id}">Delete Now</button>
         </div>
       `;
 
       card.querySelector(".btn-trash-restore").addEventListener("click", (e) => {
         e.stopPropagation();
-        triggerHaptic("medium");
         animateTrashCardRemoval(card, "restoring", () => {
           restoreFromTrash(item.id);
         });
@@ -308,7 +567,6 @@ function renderTrashList() {
 
       card.querySelector(".btn-trash-delete").addEventListener("click", (e) => {
         e.stopPropagation();
-        triggerDeleteHaptic();
         animateTrashCardRemoval(card, "deleting", () => {
           permanentlyDeleteFromTrash(item.id);
         });
@@ -316,52 +574,22 @@ function renderTrashList() {
 
       container.appendChild(card);
     });
-    applyHapticOverlays(container);
   }
 }
 
-function renderNoteBody(bodyText) {
-  if (!bodyText) return "";
-  return `<p>${escapeHtml(bodyText)}</p>`;
+const btnEmptyTrash = document.getElementById("btn-empty-trash");
+if (btnEmptyTrash) {
+  btnEmptyTrash.addEventListener("click", () => {
+    if (trashedNotes.length === 0) return;
+    if (confirm("Permanently empty all notes in the trash?")) {
+      emptyEntireTrash();
+    }
+  });
 }
 
-function renderCardBody(item) {
-  if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
-    const items = item.checklistItems || [];
-    const total = items.length;
-    const completed = items.filter(i => i.done).length;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    const itemsHtml = items.map((ci, idx) => `
-      <div class="card-checklist-item ${ci.done ? "completed" : ""}" data-item-index="${idx}">
-        <button type="button" class="checklist-item-check" aria-label="Toggle ${escapeHtml(ci.text)}">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
-        <span class="checklist-item-text">${escapeHtml(ci.text)}</span>
-      </div>
-    `).join("");
-
-    return `
-      <div class="card-checklist">
-        <div class="card-checklist-progress">
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" style="width: ${percent}%;"></div>
-          </div>
-          <div class="progress-pill-row">
-            <span class="progress-pill">${completed} OF ${total} DONE • ${percent}%</span>
-          </div>
-        </div>
-        <div class="card-checklist-items">
-          ${itemsHtml}
-        </div>
-      </div>
-    `;
-  }
-  return renderNoteBody(item.body);
-}
-
+// ============================================================================
+// REMINDERS FORMATTING & STATUS HELPERS
+// ============================================================================
 function formatDueTime(isoString) {
   if (!isoString) return "";
   try {
@@ -401,7 +629,7 @@ function formatChecklistNotificationBody(item) {
   if (pending.length === 0) {
     return item.body || "All checklist items completed.";
   }
-  const topPending = pending.slice(0, 3).map(i => `□ ${i.text}`).join("\n");
+  const topPending = pending.slice(0, 3).map(i => `[ ] ${i.text}`).join("\n");
   const remaining = pending.length - 3;
   if (remaining > 0) {
     return `${topPending}\n(+${remaining} more item${remaining === 1 ? "" : "s"})`;
@@ -444,6 +672,47 @@ function getFilteredReminders() {
   });
 }
 
+function renderCardBody(item) {
+  if (item.type === "checklist" || (item.checklistItems && item.checklistItems.length > 0)) {
+    const items = item.checklistItems || [];
+    const total = items.length;
+    const completed = items.filter(i => i.done).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const itemsHtml = items.map((ci, idx) => `
+      <div class="card-checklist-item ${ci.done ? "completed" : ""}" data-item-index="${idx}">
+        <button type="button" class="checklist-item-check" aria-label="Toggle ${escapeHtml(ci.text)}">
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+        <span class="checklist-item-text">${escapeHtml(ci.text)}</span>
+      </div>
+    `).join("");
+
+    return `
+      <div class="card-checklist">
+        <div class="card-checklist-progress">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+          </div>
+          <div class="progress-pill-row">
+            <span class="progress-pill">${completed} OF ${total} DONE • ${percent}%</span>
+          </div>
+        </div>
+        <div class="card-checklist-items">
+          ${itemsHtml}
+        </div>
+      </div>
+    `;
+  }
+  if (!item.body) return "";
+  return `<p class="card-body-text">${escapeHtml(item.body)}</p>`;
+}
+
+// ============================================================================
+// FEED RENDERING & INTERACTIONS
+// ============================================================================
 function render() {
   const cardList = document.getElementById("card-list");
   const emptyState = document.getElementById("empty-state");
@@ -469,69 +738,64 @@ function render() {
       let pingLabel = "";
       if (item.pingMinutes > 0) {
         if (item.pingMinutes >= 60 && item.pingMinutes % 60 === 0) {
-          pingLabel = `ALARM: EVERY ${item.pingMinutes / 60}H`;
+          pingLabel = `EVERY ${item.pingMinutes / 60}H`;
         } else {
-          pingLabel = `ALARM: EVERY ${item.pingMinutes}M`;
+          pingLabel = `EVERY ${item.pingMinutes}M`;
         }
       }
 
       const dueStatus = getDueStatus(item.dueTime);
-      const labelColor = PASTEL_MAP[item.label] || "#e0e0e0";
 
       wrapper.innerHTML = `
         <div class="swipe-action-underlay underlay-edit">
-          <div class="edit-action-icon">
+          <div class="underlay-icon edit-action-icon">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"></path>
-              <path d="M2 6h4"></path>
-              <path d="M2 10h4"></path>
-              <path d="M2 14h4"></path>
-              <path d="M2 18h4"></path>
-              <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l5.013-5.01z"></path>
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
             </svg>
           </div>
         </div>
         <div class="swipe-action-underlay underlay-delete">
-          <div class="trash-can-icon">
+          <div class="underlay-icon trash-can-icon">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
           </div>
         </div>
         <div class="card">
           <div class="card-content">
             <div class="card-title-row">
-              <h3>${escapeHtml(item.title)}</h3>
+              <h4>${escapeHtml(item.title)}</h4>
               <button class="btn-pin-toggle ${item.pinned ? "active" : ""}" title="${item.pinned ? "Unpin note" : "Pin note to top"}" aria-label="Pin">
-                ${item.pinned ? "📌" : "📍"}
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="17" x2="12" y2="22"></line>
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.8l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
+                </svg>
               </button>
             </div>
             ${renderCardBody(item)}
             <div class="card-tags-row">
-              ${item.pinned ? `<span class="pin-badge">📌 PINNED</span>` : ""}
-              ${item.label ? `<span class="pastel-tag" style="background-color: ${labelColor};">${escapeHtml(item.label)}</span>` : ""}
+              ${item.pinned ? `<span class="badge-tag badge-pinned">PINNED</span>` : ""}
+              ${item.label ? `<span class="badge-tag badge-category">${escapeHtml(item.label)}</span>` : ""}
               ${item.dueTime ? (
                 dueStatus.isOverdue
-                  ? `<span class="card-due-tag is-overdue" title="Overdue by ${dueStatus.overdueAgo}">🔥 OVERDUE • ${dueStatus.overdueAgo}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}" title="Snooze 15 minutes">+15m</button>`
-                  : `<span class="card-due-tag">⏰ DUE: ${dueStatus.label}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}" title="Snooze 15 minutes">+15m</button>`
+                  ? `<span class="badge-tag badge-due is-overdue">OVERDUE • ${dueStatus.overdueAgo}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">+15m</button>`
+                  : `<span class="badge-tag badge-due">DUE: ${dueStatus.label}</span><button type="button" class="btn-card-snooze" data-snooze-id="${item.id}">+15m</button>`
               ) : ""}
-              ${pingLabel ? `<span class="card-meta">${pingLabel}</span>` : ""}
+              ${pingLabel ? `<span class="badge-tag badge-alarm">${pingLabel}</span>` : ""}
             </div>
           </div>
           <div class="card-actions-col">
-            <button class="btn-complete" title="Move to Trash" aria-label="Move to Trash">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <button class="btn-complete" title="Move to Trash" aria-label="Complete">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </button>
             <button class="btn-card-menu" title="Options" aria-label="Options">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <circle cx="5" cy="12" r="2.2"></circle>
-                <circle cx="12" cy="12" r="2.2"></circle>
-                <circle cx="19" cy="12" r="2.2"></circle>
+                <circle cx="5" cy="12" r="2"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+                <circle cx="19" cy="12" r="2"></circle>
               </svg>
             </button>
           </div>
@@ -541,10 +805,10 @@ function render() {
       cardList.appendChild(wrapper);
       attachCardInteractions(wrapper, item);
     });
-    applyHapticOverlays(cardList);
   }
   updateTrashBadge();
   updateAppBadge();
+  syncSubscriptionUI();
 }
 const renderReminders = render;
 
@@ -553,9 +817,11 @@ function persistAndSync() {
   render();
   updateAppBadge();
   updateTrashBadge();
+  syncSubscriptionUI();
 }
 
 function escapeHtml(str) {
+  if (!str) return "";
   return str.replace(/[&<>'"]/g, tag => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -604,7 +870,7 @@ function reorderRemindersArrayFromDOM(draggedItem) {
   persistAndSync();
 }
 
-// 1:1 Smooth Physical Card Swipe Sync
+// 1:1 Physical Touch & Mouse Swipe Sync
 function attachCardInteractions(wrapper, item) {
   const card = wrapper.querySelector(".card");
   const trashIcon = wrapper.querySelector(".trash-can-icon");
@@ -618,7 +884,6 @@ function attachCardInteractions(wrapper, item) {
     btnPin.addEventListener("click", (e) => {
       e.stopPropagation();
       item.pinned = !item.pinned;
-      triggerHaptic("light");
       persistAndSync();
     });
   }
@@ -652,10 +917,10 @@ function attachCardInteractions(wrapper, item) {
         const completed = items.filter(i => i.done).length;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-        const fillEl = wrapper.querySelector(".progress-bar-fill") || wrapper.querySelector(".progress-fill");
+        const fillEl = wrapper.querySelector(".progress-bar-fill");
         if (fillEl) fillEl.style.width = `${percent}%`;
 
-        const pillEl = wrapper.querySelector(".progress-pill") || wrapper.querySelector(".checklist-progress-text");
+        const pillEl = wrapper.querySelector(".progress-pill");
         if (pillEl) pillEl.textContent = `${completed} OF ${total} DONE • ${percent}%`;
 
         persistAndSync();
@@ -672,7 +937,7 @@ function attachCardInteractions(wrapper, item) {
   let startY = 0;
   let currentOffsetX = 0;
   let currentOffsetY = 0;
-  let swipeDirection = null; // 'left' | 'right' | null
+  let swipeDirection = null;
   let hasThresholdCrossed = false;
   let isDragging = false;
   let isReordering = false;
@@ -702,20 +967,17 @@ function attachCardInteractions(wrapper, item) {
     }, 340);
 
     card.style.transition = "none";
-    trashIcon.style.transition = "none";
-    editIcon.style.transition = "none";
+    if (trashIcon) trashIcon.style.transition = "none";
+    if (editIcon) editIcon.style.transition = "none";
   }
 
   function startReorder() {
     isReordering = true;
-    triggerHaptic("heavy");
-
     const cardList = document.getElementById("card-list");
     if (!cardList) return;
 
     initialRect = wrapper.getBoundingClientRect();
 
-    // Create ghost placeholder at current position
     placeholder = document.createElement("div");
     placeholder.className = "card-placeholder";
     placeholder.style.height = `${initialRect.height}px`;
@@ -723,7 +985,6 @@ function attachCardInteractions(wrapper, item) {
     placeholder.setAttribute("data-placeholder-for", item.id);
     wrapper.parentNode.insertBefore(placeholder, wrapper);
 
-    // Elevate and fix position of dragged card
     wrapper.style.position = "fixed";
     wrapper.style.left = `${initialRect.left}px`;
     wrapper.style.top = `${initialRect.top}px`;
@@ -756,7 +1017,6 @@ function attachCardInteractions(wrapper, item) {
       const targetTop = initialRect.top + diffY;
       wrapper.style.top = `${targetTop}px`;
 
-      // Auto-scroll container when near viewport boundary
       const container = document.getElementById("reminder-container");
       if (container) {
         const cRect = container.getBoundingClientRect();
@@ -767,7 +1027,6 @@ function attachCardInteractions(wrapper, item) {
         }
       }
 
-      // Check position relative to sibling cards in the feed
       const cardList = document.getElementById("card-list");
       if (cardList && placeholder) {
         const siblings = Array.from(cardList.querySelectorAll(".card-wrapper:not(.is-dragging)"));
@@ -779,17 +1038,11 @@ function attachCardInteractions(wrapper, item) {
 
           if (draggedCenterY < sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING)) {
             cardList.insertBefore(placeholder, sib);
-            if (lastHoveredSibling !== sib) {
-              lastHoveredSibling = sib;
-              triggerHaptic("selection");
-            }
+            lastHoveredSibling = sib;
             break;
           } else if (draggedCenterY > sibCenterY && (placeholder.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING)) {
             cardList.insertBefore(placeholder, sib.nextSibling);
-            if (lastHoveredSibling !== sib) {
-              lastHoveredSibling = sib;
-              triggerHaptic("selection");
-            }
+            lastHoveredSibling = sib;
             break;
           }
         }
@@ -797,7 +1050,6 @@ function attachCardInteractions(wrapper, item) {
       return;
     }
 
-    // Normal horizontal swipe gesture detection
     if (!swipeDirection) {
       if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
         if (diffX < 0) {
@@ -820,40 +1072,30 @@ function attachCardInteractions(wrapper, item) {
       if (diffX <= 0) {
         card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
         const dist = Math.abs(diffX);
-        const scale = Math.min(2.2, Math.max(0.75, dist / 80));
-        const rotate = Math.min(16, dist * 0.08);
-        trashIcon.style.transform = `scale(${scale}) rotate(-${rotate}deg)`;
+        const scale = Math.min(2.0, Math.max(0.8, dist / 80));
+        trashIcon.style.transform = `scale(${scale})`;
 
         const threshold = Math.min(card.offsetWidth * 0.42, 130);
         if (dist >= threshold && !hasThresholdCrossed) {
           hasThresholdCrossed = true;
-          triggerHaptic("medium");
         } else if (dist < threshold && hasThresholdCrossed) {
           hasThresholdCrossed = false;
         }
-      } else {
-        card.style.transform = "translate3d(0px, 0px, 0px)";
-        trashIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
     } else if (swipeDirection === "right") {
       if (e.cancelable) e.preventDefault();
       if (diffX >= 0) {
         card.style.transform = `translate3d(${diffX}px, 0px, 0px)`;
         const dist = diffX;
-        const scale = Math.min(2.2, Math.max(0.75, dist / 80));
-        const rotate = Math.min(16, dist * 0.08);
-        editIcon.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
+        const scale = Math.min(2.0, Math.max(0.8, dist / 80));
+        editIcon.style.transform = `scale(${scale})`;
 
         const threshold = Math.min(card.offsetWidth * 0.42, 130);
         if (dist >= threshold && !hasThresholdCrossed) {
           hasThresholdCrossed = true;
-          triggerHaptic("light");
         } else if (dist < threshold && hasThresholdCrossed) {
           hasThresholdCrossed = false;
         }
-      } else {
-        card.style.transform = "translate3d(0px, 0px, 0px)";
-        editIcon.style.transform = "scale(0.8) rotate(0deg)";
       }
     }
   }
@@ -873,13 +1115,10 @@ function attachCardInteractions(wrapper, item) {
 
       if (placeholder && placeholder.parentNode) {
         const targetRect = placeholder.getBoundingClientRect();
-        wrapper.style.transition = "top 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease";
+        wrapper.style.transition = "top 0.18s cubic-bezier(0.16, 1, 0.3, 1)";
         wrapper.style.top = `${targetRect.top}px`;
-        wrapper.style.transform = "scale(1) rotate(0deg)";
-        wrapper.style.boxShadow = "none";
 
         setTimeout(() => {
-          triggerHaptic("light");
           if (placeholder && placeholder.parentNode) {
             placeholder.parentNode.insertBefore(wrapper, placeholder);
             placeholder.remove();
@@ -900,20 +1139,15 @@ function attachCardInteractions(wrapper, item) {
       const threshold = Math.min(cardWidth * 0.42, 130);
 
       if (dist >= threshold) {
-        triggerDeleteHaptic();
         card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = `translate3d(-${cardWidth + 40}px, 0px, 0px)`;
-        trashIcon.style.transition = "transform 0.2s ease";
-        trashIcon.style.transform = "scale(1.8)";
-        
         setTimeout(() => {
           moveToTrash(item.id, wrapper);
         }, 160);
       } else {
-        card.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
-        trashIcon.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
-        trashIcon.style.transform = "scale(0.8) rotate(0deg)";
+        trashIcon.style.transform = "scale(0.8)";
       }
     } else if (swipeDirection === "right") {
       const cardWidth = card.offsetWidth;
@@ -921,20 +1155,15 @@ function attachCardInteractions(wrapper, item) {
       const threshold = Math.min(cardWidth * 0.42, 130);
 
       if (dist >= threshold) {
-        triggerHaptic("medium");
-        card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
-        editIcon.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
-        editIcon.style.transform = "scale(0.8) rotate(0deg)";
-
         setTimeout(() => {
           openEditModal(item);
-        }, 160);
+        }, 140);
       } else {
-        card.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
+        card.style.transition = "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)";
         card.style.transform = "translate3d(0px, 0px, 0px)";
-        editIcon.style.transition = "transform 0.26s cubic-bezier(0.16, 1, 0.3, 1)";
-        editIcon.style.transform = "scale(0.8) rotate(0deg)";
+        editIcon.style.transform = "scale(0.8)";
       }
     }
 
@@ -951,8 +1180,6 @@ function attachCardInteractions(wrapper, item) {
     wrapper.style.height = "";
     wrapper.style.margin = "";
     wrapper.style.transition = "";
-    wrapper.style.transform = "";
-    wrapper.style.boxShadow = "";
     if (placeholder && placeholder.parentNode) {
       placeholder.remove();
       placeholder = null;
@@ -964,7 +1191,6 @@ function attachCardInteractions(wrapper, item) {
   card.addEventListener("touchend", onPointerEnd, { passive: false });
   card.addEventListener("touchcancel", onPointerEnd, { passive: false });
 
-  // Mouse support for desktop / browser testing
   card.addEventListener("mousedown", onPointerStart);
   window.addEventListener("mousemove", (e) => {
     if (isDragging) onPointerMove(e);
@@ -974,12 +1200,15 @@ function attachCardInteractions(wrapper, item) {
   });
 }
 
+// ============================================================================
+// CREATE & EDIT MODAL CONTROLS
+// ============================================================================
 function setupLabelSelector() {
   const container = document.getElementById("label-selector");
+  if (!container) return;
   container.querySelectorAll(".label-pill").forEach(pill => {
     pill.addEventListener("click", () => {
       const label = pill.getAttribute("data-label");
-      triggerHaptic();
       if (activeSelectedLabel === label) {
         activeSelectedLabel = null;
         pill.classList.remove("selected");
@@ -1004,8 +1233,12 @@ function resetLabelSelection(presetLabel = null) {
 }
 
 function openCreateModal() {
-  triggerHaptic();
-  document.getElementById("modal-title").innerText = "NEW REMINDER";
+  if (!premiumManager.canAddReminder()) {
+    premiumManager.startCheckout();
+    return;
+  }
+
+  document.getElementById("modal-title").innerText = "ADD REMINDER";
   document.getElementById("btn-submit").innerText = "PIN TO LOCK SCREEN";
   document.getElementById("edit-reminder-id").value = "";
   document.getElementById("input-title").value = "";
@@ -1032,7 +1265,7 @@ function openCreateModal() {
   resetLabelSelection(null);
 
   openModal("splash-modal");
-  document.getElementById("input-title").focus();
+  setTimeout(() => document.getElementById("input-title")?.focus(), 150);
 }
 
 function openEditModal(item) {
@@ -1096,29 +1329,21 @@ function openEditModal(item) {
 function openModal(modalId) {
   const el = document.getElementById(modalId);
   if (!el) return;
-  applyHapticOverlays(el);
-  el.classList.remove("modal-closing");
   el.classList.add("active");
 }
 
 function closeModal(modalId) {
   const el = document.getElementById(modalId);
   if (!el || !el.classList.contains("active")) return;
-  triggerHaptic("light");
-  el.classList.add("modal-closing");
   el.classList.remove("active");
-  setTimeout(() => {
-    el.classList.remove("modal-closing");
-  }, 240);
 }
 
-// Background Ping & Due Date Interval Loop
+// Background Interval Loop
 setInterval(() => {
   const now = Date.now();
   let changed = false;
 
   reminders.forEach(item => {
-    // Check specific due time
     if (item.dueTime && !item.dueTimeTriggered) {
       const targetTs = new Date(item.dueTime).getTime();
       if (!isNaN(targetTs) && now >= targetTs) {
@@ -1129,17 +1354,16 @@ setInterval(() => {
           ? formatChecklistNotificationBody(item)
           : (item.body || "Scheduled reminder alert.");
 
-        triggerNotification(`⏰ DUE: ${alertHeading}`, noteBody, item.id + "_due", {
+        triggerNotification(`DUE: ${alertHeading}`, noteBody, item.id + "_due", {
           reminderId: item.id,
           actions: [
-            { action: "snooze_15", title: "⏱ Snooze 15m" },
-            { action: "mark_done", title: "✓ Done" }
+            { action: "snooze_15", title: "Snooze 15m" },
+            { action: "mark_done", title: "Done" }
           ]
         });
       }
     }
 
-    // Check repeat ping interval
     if (item.pingMinutes > 0) {
       const intervalMs = item.pingMinutes * 60 * 1000;
       if (now - item.lastPing >= intervalMs) {
@@ -1169,8 +1393,14 @@ setInterval(() => {
 const customTimeRow = document.getElementById("custom-time-row");
 document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
   radio.addEventListener("change", (e) => {
-    triggerHaptic();
     if (e.target.value === "custom") {
+      if (!premiumManager.canUseCustomAlarm()) {
+        e.preventDefault();
+        document.getElementById("p0").checked = true;
+        customTimeRow.classList.add("hidden");
+        premiumManager.startCheckout();
+        return;
+      }
       customTimeRow.classList.remove("hidden");
     } else {
       customTimeRow.classList.add("hidden");
@@ -1178,59 +1408,13 @@ document.querySelectorAll('input[name="pingPreset"]').forEach(radio => {
   });
 });
 
-document.getElementById("btn-add").addEventListener("click", openCreateModal);
-document.getElementById("btn-close-modal").addEventListener("click", () => {
-  triggerHaptic("light");
-  closeModal("splash-modal");
-});
+const btnAdd = document.getElementById("btn-add");
+if (btnAdd) btnAdd.addEventListener("click", openCreateModal);
 
-document.getElementById("btn-tips").addEventListener("click", () => {
-  triggerHaptic("light");
-  currentSlide = 0;
-  updateCarousel();
-  openModal("tips-modal");
-});
-
-document.getElementById("btn-close-tips").addEventListener("click", () => {
-  triggerHaptic("light");
-  closeModal("tips-modal");
-});
-
-document.getElementById("btn-logo").addEventListener("click", () => {
-  triggerHaptic("light");
-  openModal("version-modal");
-});
-
-document.getElementById("btn-close-version").addEventListener("click", () => {
-  triggerHaptic("light");
-  closeModal("version-modal");
-});
-
-// Trash Modal Controls
-const btnTrash = document.getElementById("btn-trash");
-if (btnTrash) {
-  btnTrash.addEventListener("click", () => {
-    triggerHaptic("light");
-    renderTrashList();
-    openModal("trash-modal");
-  });
-}
-
-const btnCloseTrash = document.getElementById("btn-close-trash");
-if (btnCloseTrash) {
-  btnCloseTrash.addEventListener("click", () => {
-    triggerHaptic("light");
-    closeModal("trash-modal");
-  });
-}
-
-const btnEmptyTrash = document.getElementById("btn-empty-trash");
-if (btnEmptyTrash) {
-  btnEmptyTrash.addEventListener("click", () => {
-    if (trashedNotes.length === 0) return;
-    if (confirm("Permanently empty all notes in the trash?")) {
-      emptyEntireTrash();
-    }
+const btnCloseModal = document.getElementById("btn-close-modal");
+if (btnCloseModal) {
+  btnCloseModal.addEventListener("click", () => {
+    closeModal("splash-modal");
   });
 }
 
@@ -1242,7 +1426,6 @@ const btnClearDue = document.getElementById("btn-clear-due-time");
 
 if (toggleDueTime && dueTimeControls && inputDueTime) {
   toggleDueTime.addEventListener("change", () => {
-    triggerHaptic("selection");
     if (toggleDueTime.checked) {
       dueTimeControls.classList.remove("disabled");
       inputDueTime.disabled = false;
@@ -1264,19 +1447,18 @@ if (toggleDueTime && dueTimeControls && inputDueTime) {
 if (btnClearDue && inputDueTime) {
   btnClearDue.addEventListener("click", () => {
     inputDueTime.value = "";
-    triggerHaptic("light");
   });
 }
 
-// iOS Native Context Menu System
+// ============================================================================
+// CONTEXT MENU / ACTION SHEET (LIQUID GLASS)
+// ============================================================================
 function showIosMenu({ title = "Options", items = [] }) {
   const backdrop = document.getElementById("ios-context-menu-backdrop");
   const menuTitle = document.getElementById("ios-menu-title");
   const menuItemsContainer = document.getElementById("ios-menu-items");
 
   if (!backdrop || !menuItemsContainer) return;
-
-  triggerHaptic("medium");
 
   if (title) {
     menuTitle.textContent = title;
@@ -1292,30 +1474,22 @@ function showIosMenu({ title = "Options", items = [] }) {
     btn.className = `ios-menu-item ${item.destructive ? "destructive" : ""}`;
     btn.innerHTML = `
       <span>${escapeHtml(item.label)}</span>
-      <span class="ios-menu-icon">${item.icon || ""}</span>
+      <span>${item.icon || ""}</span>
     `;
     btn.addEventListener("click", () => {
-      triggerHaptic("selection");
       closeIosMenu();
       if (item.action) item.action();
     });
     menuItemsContainer.appendChild(btn);
   });
-  applyHapticOverlays(menuItemsContainer);
 
-  backdrop.classList.remove("menu-closing");
   backdrop.classList.add("active");
 }
 
 function closeIosMenu() {
   const backdrop = document.getElementById("ios-context-menu-backdrop");
-  if (!backdrop || !backdrop.classList.contains("active")) return;
-  triggerHaptic("light");
-  backdrop.classList.add("menu-closing");
+  if (!backdrop) return;
   backdrop.classList.remove("active");
-  setTimeout(() => {
-    backdrop.classList.remove("menu-closing");
-  }, 240);
 }
 
 const btnCancelIosMenu = document.getElementById("btn-cancel-ios-menu");
@@ -1333,7 +1507,7 @@ function openCardIosMenu(item, wrapper) {
   const pinSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.8l-1.78.89A2 2 0 0 0 5 15.24V17z"></path></svg>`;
   const editSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
   const copySvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
   const clockSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
   const menuItems = [
@@ -1370,17 +1544,17 @@ function openCardIosMenu(item, wrapper) {
   if (item.dueTime) {
     menuItems.push(
       {
-        label: "⏱ Snooze 15 Minutes",
+        label: "Snooze 15 Minutes",
         icon: clockSvg,
         action: () => snoozeReminderById(item.id, 15)
       },
       {
-        label: "⏱ Snooze 1 Hour",
+        label: "Snooze 1 Hour",
         icon: clockSvg,
         action: () => snoozeReminderById(item.id, 60)
       },
       {
-        label: "🌅 Snooze to Tomorrow 9 AM",
+        label: "Snooze to Tomorrow 9 AM",
         icon: clockSvg,
         action: () => {
           const d = new Date();
@@ -1399,7 +1573,7 @@ function openCardIosMenu(item, wrapper) {
   if (item.type === "checklist" && item.checklistItems && item.checklistItems.length > 0) {
     const hasUnchecked = item.checklistItems.some(i => !i.done);
     menuItems.push({
-      label: hasUnchecked ? "✓ Complete All Items" : "□ Uncheck All Items",
+      label: hasUnchecked ? "Complete All Items" : "Uncheck All Items",
       icon: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
       action: () => {
         item.checklistItems.forEach(i => i.done = hasUnchecked);
@@ -1454,14 +1628,12 @@ function setEditorMode(mode) {
 
 if (tabModeNote) {
   tabModeNote.addEventListener("click", () => {
-    triggerHaptic("selection");
     setEditorMode("note");
   });
 }
 
 if (tabModeChecklist) {
   tabModeChecklist.addEventListener("click", () => {
-    triggerHaptic("selection");
     setEditorMode("checklist");
   });
 }
@@ -1475,12 +1647,17 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
 
   row.innerHTML = `
     <button type="button" class="builder-row-check ${done ? "checked" : ""}" title="Toggle Complete">
-      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     </button>
     <input type="text" class="builder-row-input ${done ? "checked" : ""}" placeholder="List item..." value="${escapeHtml(text)}">
-    <button type="button" class="builder-row-del" title="Delete row">✕</button>
+    <button type="button" class="builder-row-del" title="Delete row">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
   `;
 
   const checkBtn = row.querySelector(".builder-row-check");
@@ -1488,13 +1665,11 @@ function createBuilderRow(text = "", done = false, autoFocus = false) {
   const delBtn = row.querySelector(".builder-row-del");
 
   checkBtn.addEventListener("click", () => {
-    triggerHaptic("selection");
     checkBtn.classList.toggle("checked");
     input.classList.toggle("checked");
   });
 
   delBtn.addEventListener("click", () => {
-    triggerHaptic("light");
     row.remove();
     if (checklistRowsContainer.children.length === 0) {
       createBuilderRow("", false, true);
@@ -1554,7 +1729,6 @@ function populateBuilderChecklist(items = []) {
 
 if (btnAddChecklistRow) {
   btnAddChecklistRow.addEventListener("click", () => {
-    triggerHaptic("light");
     createBuilderRow("", false, true);
   });
 }
@@ -1563,7 +1737,7 @@ function openChecklistBuilderIosMenu() {
   const checkSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
   const uncheckSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect></svg>`;
   const clearSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>`;
-  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+  const trashSvg = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
   showIosMenu({
     title: "Checklist Actions",
@@ -1576,7 +1750,6 @@ function openChecklistBuilderIosMenu() {
             row.querySelector(".builder-row-check")?.classList.add("checked");
             row.querySelector(".builder-row-input")?.classList.add("checked");
           });
-          triggerHaptic("medium");
         }
       },
       {
@@ -1587,7 +1760,6 @@ function openChecklistBuilderIosMenu() {
             row.querySelector(".builder-row-check")?.classList.remove("checked");
             row.querySelector(".builder-row-input")?.classList.remove("checked");
           });
-          triggerHaptic("medium");
         }
       },
       {
@@ -1602,7 +1774,6 @@ function openChecklistBuilderIosMenu() {
           if (checklistRowsContainer.children.length === 0) {
             createBuilderRow("", false, false);
           }
-          triggerHaptic("light");
         }
       },
       {
@@ -1612,7 +1783,6 @@ function openChecklistBuilderIosMenu() {
         action: () => {
           checklistRowsContainer.innerHTML = "";
           createBuilderRow("", false, true);
-          triggerDeleteHaptic();
         }
       }
     ]
@@ -1632,9 +1802,9 @@ if (searchInput) {
   searchInput.addEventListener("input", (e) => {
     searchQuery = e.target.value.trim();
     if (searchQuery) {
-      btnClearSearch.classList.remove("hidden");
+      btnClearSearch?.classList.remove("hidden");
     } else {
-      btnClearSearch.classList.add("hidden");
+      btnClearSearch?.classList.add("hidden");
     }
     render();
   });
@@ -1645,7 +1815,6 @@ if (btnClearSearch) {
     searchInput.value = "";
     searchQuery = "";
     btnClearSearch.classList.add("hidden");
-    triggerHaptic("light");
     render();
   });
 }
@@ -1655,7 +1824,6 @@ if (categoryFilters) {
   categoryFilters.querySelectorAll(".filter-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       const filter = chip.getAttribute("data-filter");
-      triggerHaptic("light");
       if (activeFilterCategory === filter) {
         activeFilterCategory = null;
         chip.classList.remove("active");
@@ -1671,10 +1839,9 @@ if (categoryFilters) {
 
 // Backup Export & Import Functions
 function exportBackupData() {
-  triggerHaptic("medium");
   const data = {
     app: "Postr",
-    version: CURRENT_VERSION,
+    version: "1.0",
     exportedAt: new Date().toISOString(),
     reminders,
     trashedNotes
@@ -1687,6 +1854,7 @@ function exportBackupData() {
   a.download = `postr-backup-${dateStr}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  showToast("Backup Exported");
 }
 
 function importBackupData(file) {
@@ -1702,9 +1870,7 @@ function importBackupData(file) {
         }
         persistTrash();
         persistAndSync();
-        triggerHaptic("heavy");
-        alert(`Successfully imported ${reminders.length} notes!`);
-        closeModal("version-modal");
+        showToast(`Imported ${reminders.length} reminders`);
       } else {
         alert("Invalid backup file format.");
       }
@@ -1715,13 +1881,19 @@ function importBackupData(file) {
   reader.readAsText(file);
 }
 
-document.getElementById("btn-export-backup").addEventListener("click", exportBackupData);
-document.getElementById("file-import-backup").addEventListener("change", (e) => {
-  if (e.target.files && e.target.files[0]) {
-    importBackupData(e.target.files[0]);
-  }
-});
+const btnExportBackup = document.getElementById("btn-export-backup");
+if (btnExportBackup) btnExportBackup.addEventListener("click", exportBackupData);
 
+const fileImportBackup = document.getElementById("file-import-backup");
+if (fileImportBackup) {
+  fileImportBackup.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      importBackupData(e.target.files[0]);
+    }
+  });
+}
+
+// Form Submission
 document.getElementById("reminder-form").addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -1733,7 +1905,7 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
   let body = rawBody;
   if (noteType === "checklist") {
-    body = checklistItems.map(i => (i.done ? "[✓] " : "[ ] ") + i.text).join("\n");
+    body = checklistItems.map(i => (i.done ? "[x] " : "[ ] ") + i.text).join("\n");
   }
 
   const isPinned = document.getElementById("input-pin-note").checked;
@@ -1745,6 +1917,10 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
 
   let finalMinutes = 0;
   if (selectedPreset === "custom") {
+    if (!premiumManager.canUseCustomAlarm()) {
+      premiumManager.startCheckout();
+      return;
+    }
     const val = parseInt(document.getElementById("custom-val").value, 10) || 1;
     const unit = document.getElementById("custom-unit").value;
     finalMinutes = (unit === "h") ? (val * 60) : val;
@@ -1768,8 +1944,13 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       reminders[index].pingMinutes = finalMinutes;
       reminders[index].lastPing = Date.now();
     }
-    triggerHaptic("medium");
+    showToast("Changes Saved");
   } else {
+    if (!premiumManager.canAddReminder()) {
+      premiumManager.startCheckout();
+      return;
+    }
+
     const newReminder = {
       id: "postr_" + Date.now(),
       title,
@@ -1785,13 +1966,13 @@ document.getElementById("reminder-form").addEventListener("submit", (e) => {
       lastPing: Date.now()
     };
     reminders.unshift(newReminder);
-    triggerHaptic("medium");
     const alertHeading = newReminder.label ? `[${newReminder.label}] ${title}` : title;
     triggerNotification(alertHeading, body || "Added to active reminders.", newReminder.id);
     activeFilterCategory = null;
     if (categoryFilters) {
       categoryFilters.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
     }
+    showToast("Reminder Added");
   }
 
   persistAndSync();
@@ -1803,10 +1984,11 @@ let currentSlide = 0;
 const totalSlides = 6;
 const track = document.querySelector(".carousel-slides");
 const dots = document.querySelectorAll(".carousel-dots .dot");
-let startX = 0;
-let isDragging = false;
+let startCarouselX = 0;
+let isDraggingCarousel = false;
 
 function updateCarousel() {
+  if (!track) return;
   track.style.transform = `translateX(-${currentSlide * 100}%)`;
   dots.forEach((dot, index) => {
     dot.classList.toggle("active", index === currentSlide);
@@ -1817,46 +1999,61 @@ dots.forEach(dot => {
   dot.addEventListener("click", (e) => {
     currentSlide = parseInt(e.target.dataset.index, 10);
     updateCarousel();
-    triggerHaptic();
   });
 });
 
 const viewport = document.getElementById("carousel-track");
-viewport.addEventListener("touchstart", (e) => {
-  startX = e.touches[0].clientX;
-  isDragging = true;
-});
-viewport.addEventListener("touchend", (e) => {
-  if (!isDragging) return;
-  const diffX = e.changedTouches[0].clientX - startX;
-  handleSwipe(diffX);
-  isDragging = false;
-});
-viewport.addEventListener("mousedown", (e) => {
-  startX = e.clientX;
-  isDragging = true;
-});
-viewport.addEventListener("mouseup", (e) => {
-  if (!isDragging) return;
-  const diffX = e.clientX - startX;
-  handleSwipe(diffX);
-  isDragging = false;
-});
+if (viewport) {
+  viewport.addEventListener("touchstart", (e) => {
+    startCarouselX = e.touches[0].clientX;
+    isDraggingCarousel = true;
+  });
+  viewport.addEventListener("touchend", (e) => {
+    if (!isDraggingCarousel) return;
+    const diffX = e.changedTouches[0].clientX - startCarouselX;
+    handleCarouselSwipe(diffX);
+    isDraggingCarousel = false;
+  });
+  viewport.addEventListener("mousedown", (e) => {
+    startCarouselX = e.clientX;
+    isDraggingCarousel = true;
+  });
+  viewport.addEventListener("mouseup", (e) => {
+    if (!isDraggingCarousel) return;
+    const diffX = e.clientX - startCarouselX;
+    handleCarouselSwipe(diffX);
+    isDraggingCarousel = false;
+  });
+}
 
-function handleSwipe(diffX) {
+function handleCarouselSwipe(diffX) {
   const threshold = 40;
   if (diffX < -threshold && currentSlide < totalSlides - 1) {
     currentSlide++;
     updateCarousel();
-    triggerHaptic();
   } else if (diffX > threshold && currentSlide > 0) {
     currentSlide--;
     updateCarousel();
-    triggerHaptic();
   }
 }
 
-// Universal Responsive Viewport Height Calculation for All iPhones
+const btnOpenGuideCell = document.getElementById("btn-open-guide-cell");
+if (btnOpenGuideCell) {
+  btnOpenGuideCell.addEventListener("click", () => {
+    currentSlide = 0;
+    updateCarousel();
+    openModal("tips-modal");
+  });
+}
+
+const btnCloseTips = document.getElementById("btn-close-tips");
+if (btnCloseTips) {
+  btnCloseTips.addEventListener("click", () => {
+    closeModal("tips-modal");
+  });
+}
+
+// Viewport Height Calculation
 function updateViewportHeight() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -1865,8 +2062,6 @@ function updateViewportHeight() {
 
   let actualHeight;
   if (isIOS && isStandalone) {
-    // In iOS PWA standalone mode with black-translucent,
-    // window.screen.height is the true edge-to-edge physical screen height (e.g. 852px on iPhone 14 Pro)
     const screenH = window.screen ? window.screen.height : 0;
     actualHeight = Math.max(screenH, window.innerHeight || 0);
   } else if (window.visualViewport) {
@@ -1877,21 +2072,6 @@ function updateViewportHeight() {
 
   document.documentElement.style.setProperty("--real-vh", `${actualHeight}px`);
   document.documentElement.style.setProperty("--app-height", `${actualHeight}px`);
-
-  const vp = document.getElementById("app-viewport");
-  if (vp) {
-    if (isIOS && isStandalone) {
-      vp.style.height = `${actualHeight}px`;
-      vp.style.minHeight = `${actualHeight}px`;
-      document.body.style.height = `${actualHeight}px`;
-      document.body.style.minHeight = `${actualHeight}px`;
-    } else {
-      vp.style.height = "";
-      vp.style.minHeight = "";
-      document.body.style.height = "";
-      document.body.style.minHeight = "";
-    }
-  }
 }
 
 window.addEventListener("resize", updateViewportHeight);
@@ -1903,39 +2083,7 @@ window.addEventListener("visibilitychange", () => {
   }
 });
 
-
-
-
-
-// ============================================================================
-// SERVICE WORKER NOTIFICATION ACTION LISTENER
-// ============================================================================
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("message", (event) => {
-    if (!event.data) return;
-    if (event.data.type === "NOTIFICATION_ACTION_SNOOZE") {
-      if (event.data.reminderId) {
-        snoozeReminderById(event.data.reminderId, 15);
-      }
-    } else if (event.data.type === "NOTIFICATION_ACTION_DONE") {
-      if (event.data.reminderId) {
-        moveToTrash(event.data.reminderId);
-      }
-    } else if (event.data.type === "NOTIFICATION_CLICK_OPEN") {
-      if (event.data.reminderId) {
-        const el = document.querySelector(`.card-wrapper[data-id="${event.data.reminderId}"]`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }
-  });
-}
-
-// ============================================================================
-// DAILY MORNING BRIEFING
-// ============================================================================
-const MORNING_BRIEFING_KEY = "postr_morning_briefing_enabled";
-const LAST_BRIEFING_DATE_KEY = "postr_last_morning_briefing_date";
-
+// Daily Morning Briefing
 function checkDailyMorningBriefing() {
   const isEnabled = localStorage.getItem(MORNING_BRIEFING_KEY) === "true";
   if (!isEnabled) return;
@@ -1957,7 +2105,7 @@ function checkDailyMorningBriefing() {
   if (totalCount === 0) return;
 
   const msg = `You have ${totalCount} reminder${totalCount === 1 ? "" : "s"} today: ${pinnedCount} pinned, ${dueCount} scheduled.`;
-  triggerNotification("☀️ Good Morning!", msg, "postr_briefing_" + todayStr);
+  triggerNotification("Good Morning", msg, "postr_briefing_" + todayStr);
 }
 
 const toggleMorningBriefing = document.getElementById("toggle-morning-briefing");
@@ -1973,13 +2121,7 @@ if (toggleMorningBriefing) {
   });
 }
 
-// ============================================================================
-// APP LOCK: BIOMETRICS (FACE ID / TOUCH ID) & 4-DIGIT PASSCODE
-// ============================================================================
-const APP_LOCK_KEY = "postr_app_lock_enabled";
-const PIN_CODE_KEY = "postr_pin_code";
-const WEBAUTHN_ID_KEY = "postr_webauthn_id";
-
+// App Lock: Biometrics & 4-Digit Passcode
 const appLockOverlay = document.getElementById("app-lock-overlay");
 const pinDotsContainer = document.getElementById("pin-dots-container");
 const pinErrorMsg = document.getElementById("pin-error-msg");
@@ -1990,16 +2132,14 @@ const btnLockFaceIdTrigger = document.getElementById("btn-lock-faceid-trigger");
 
 const toggleAppLock = document.getElementById("toggle-app-lock");
 const pinManagementRow = document.getElementById("pin-management-row");
-const btnChangePin = document.getElementById("btn-change-pin");
 const pinSetupModal = document.getElementById("pin-setup-modal");
 const btnClosePinSetup = document.getElementById("btn-close-pin-setup");
 const btnCancelPin = document.getElementById("btn-cancel-pin");
 const btnSavePin = document.getElementById("btn-save-pin");
-const pinInputNew = document.getElementById("pin-input-new");
+const pinInputCode = document.getElementById("pin-input-code");
 const pinInputConfirm = document.getElementById("pin-input-confirm");
 const pinSetupError = document.getElementById("pin-setup-error");
 
-let isAppLocked = false;
 let enteredPin = "";
 
 function updatePinDots() {
@@ -2012,7 +2152,6 @@ function updatePinDots() {
 
 function lockApp() {
   if (!appLockOverlay) return;
-  isAppLocked = true;
   enteredPin = "";
   if (pinErrorMsg) pinErrorMsg.textContent = "";
   updatePinDots();
@@ -2022,7 +2161,6 @@ function lockApp() {
 
 function unlockApp() {
   if (!appLockOverlay) return;
-  isAppLocked = false;
   enteredPin = "";
   if (pinErrorMsg) pinErrorMsg.textContent = "";
   updatePinDots();
@@ -2063,9 +2201,7 @@ async function tryBiometricUnlock() {
         return true;
       }
     }
-  } catch (err) {
-    // Biometric cancelled or not recognized, fall back silently to keypad
-  }
+  } catch (err) {}
   return false;
 }
 
@@ -2107,9 +2243,7 @@ async function tryBiometricRegister() {
       localStorage.setItem(WEBAUTHN_ID_KEY, idB64);
       return true;
     }
-  } catch (err) {
-    // WebAuthn registration skipped/cancelled
-  }
+  } catch (err) {}
   return false;
 }
 
@@ -2167,11 +2301,11 @@ if (btnLockFaceIdTrigger) {
 
 function openPinSetupModal() {
   if (!pinSetupModal) return;
-  if (pinInputNew) pinInputNew.value = "";
+  if (pinInputCode) pinInputCode.value = "";
   if (pinInputConfirm) pinInputConfirm.value = "";
   if (pinSetupError) pinSetupError.textContent = "";
   openModal("pin-setup-modal");
-  setTimeout(() => pinInputNew?.focus(), 200);
+  setTimeout(() => pinInputCode?.focus(), 200);
 }
 
 function closePinSetupModal() {
@@ -2187,20 +2321,20 @@ if (btnCancelPin) btnCancelPin.addEventListener("click", closePinSetupModal);
 
 if (btnSavePin) {
   btnSavePin.addEventListener("click", () => {
-    const valNew = pinInputNew ? pinInputNew.value.trim() : "";
+    const valCode = pinInputCode ? pinInputCode.value.trim() : "";
     const valConfirm = pinInputConfirm ? pinInputConfirm.value.trim() : "";
 
-    if (!/^\d{4}$/.test(valNew)) {
+    if (!/^\d{4}$/.test(valCode)) {
       if (pinSetupError) pinSetupError.textContent = "Passcode must be exactly 4 digits.";
       return;
     }
 
-    if (valNew !== valConfirm) {
+    if (valCode !== valConfirm) {
       if (pinSetupError) pinSetupError.textContent = "Passcodes do not match.";
       return;
     }
 
-    localStorage.setItem(PIN_CODE_KEY, valNew);
+    localStorage.setItem(PIN_CODE_KEY, valCode);
     localStorage.setItem(APP_LOCK_KEY, "true");
     if (toggleAppLock) toggleAppLock.checked = true;
     if (pinManagementRow) pinManagementRow.classList.remove("hidden");
@@ -2210,8 +2344,8 @@ if (btnSavePin) {
   });
 }
 
-if (btnChangePin) {
-  btnChangePin.addEventListener("click", () => {
+if (pinManagementRow) {
+  pinManagementRow.addEventListener("click", () => {
     openPinSetupModal();
   });
 }
@@ -2257,14 +2391,13 @@ if (localStorage.getItem(APP_LOCK_KEY) === "true" && localStorage.getItem(PIN_CO
 }
 
 // Initial App Bootstrap
+initThemeAndAppearance();
+initTabBar();
 updateViewportHeight();
 setupDynamicAppIcon();
 setupLabelSelector();
 updateNotifyButton();
-syncVersionDisplay();
 updateTrashBadge();
 updateAppBadge();
+syncSubscriptionUI();
 render();
-applyHapticOverlays();
-
-
